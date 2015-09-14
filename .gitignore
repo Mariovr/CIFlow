@@ -1,0 +1,112 @@
+rundir/*[^ey]
+include/*.*[^h]
+src/*[^ep]
+*.swp
+*.swo
+*tags
+*.tmp
+*.rst
+*.dat
+
+# Integral generation
+mointegrals/*.d
+sointegrals/*.d
+sointegrals/*.py
+
+# Documentation
+doc/doc
+doc/html
+doc/latex
+
+# Binaries
+bin/*.x
+bin
+
+# Library
+lib/*.a
+
+# Tests
+tests/bin
+tests/obj
+tests/results
+
+# Emacs intermediary files
+*#*#
+*/*#*#
+*~
+
+# Cluster compilation outputs
+*CIFlow.e*
+*CIFlow.o*
+
+# Psi4 plugin
+mointegrals/psi.timer.dat
+
+#C++ ignore files
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+#python ignore
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+
+# Sphinx documentation
+docs/_build/
