@@ -266,7 +266,8 @@ def main(*args , **kwargs):
     psir = rp.PsiReader(fname, isbig = False, numorbs = -1 , read_ints = False)
     #cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2,3,4,5,6], []  ], [],fname = detfile1 ,ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0) #CISD
     #cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [[1,2], [2] ], [ ] , fname = detfile2 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0) #CISDDOCI
-    cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [[1,2,3,4,5,6], [] ], [ ] , fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0) #FCI
+    cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [[], [] ], [ 0] , fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0) #DOCI
+    cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [[1,2], [] ], [ ] , fname = detfile2 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0) #CISD
     #cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [[], [] ], [ 0] , fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0) #FCI
     #cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [range(1, psir.values['nalpha'] + psir.values['nbeta'] ) , [] ], [ ] , fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0) #FCI
     #detlist = doci(psir.values['nalpha'],psir.values['norb'])

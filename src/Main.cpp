@@ -56,8 +56,11 @@ double get_no_energy(CIMethod * cim , const CIDens & cid, bool print_no)
         NO.Print();
         occupations.Print();
     }	    
-    //OptIndex opt = ham->get_index_object();
-    //UnitaryMatrix unit = UnitaryMatrix(NO, opt);
+    OptIndex opt = ham->get_index_object();
+    UnitaryMatrix unit(NO, opt);
+    ofstream file("unitary_naturalorbs" + cid.get_cim()->get_name() + cim->get_ham()->get_short_filename()+ ".dat" , std::ofstream::out);
+    unit.print_unitary(file);
+    file.close();
     //unit.print_unitary();
     //unit.CheckDeviationFromUnitary();
     //orbtrans->set_unitary(unit);
@@ -74,8 +77,6 @@ double get_no_energy(CIMethod * cim , const CIDens & cid, bool print_no)
 	    file.close();
     }
     orbtrans.rotate_active_space_vectors(NO.getpointer());
-    OptIndex opt = ham->get_index_object();
-    UnitaryMatrix unit(NO ,  opt);
     orbtrans.fillHamCI(*ham);
     cim->set_ham(ham);
     cim->solve();
@@ -87,9 +88,9 @@ Hamiltonian * get_mmin_ham( CIMethod* cimmin, bool diis)
 {
     Iterative_Subotnik * min_sen;
     if(diis)
-        min_sen = new Iterative_Subotnik_DIIS(cimmin  , 1e-4, 0);
+        min_sen = new Iterative_Subotnik_DIIS(cimmin  , 1e-7, 0);
     else
-        min_sen = new Iterative_Subotnik( cimmin, 1e-7, 0);
+        min_sen = new Iterative_Subotnik( cimmin, 1e-8, 0);
     min_sen->optimize();
     min_sen->save_unitary();
     Hamiltonian * ham = min_sen->get_ham();
@@ -207,7 +208,7 @@ void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
     {
         cim->reset_output(sort);
         cim->print_output();
-        cim->print_rdm();
+        //cim->print_rdm();
         //cim->print_ham();
     }
     cim->delete_ham();
@@ -281,10 +282,10 @@ int main ( int argc, char ** argv){
                 DOCI * cim = new DOCI(ham.get());
                 cim->solve();
                 std::cout  << "DOCI energy: " << cim->get_ci_energy() << std::endl;
-                std::cout << "Spin Squared: " << cim->get_spin_squared() << std::endl;
-                cim->print_output();
+                //std::cout << "Spin Squared: " << cim->get_spin_squared() << std::endl;
+                //cim->print_output();
                 //cim->print_ham();
-                cim->print_rdm();
+                //cim->print_rdm();
 
                 //DensDOCI densmat {cim};
                 //densmat.construct_density(true);
@@ -297,7 +298,8 @@ int main ( int argc, char ** argv){
                 //Take care of the orbital optimizations.
                 cimethod++;
                 if( *cimethod != "none")
-                    orb_opt(*cimethod, cim ,  1,  1);
+                    //orb_opt(*cimethod, cim ,  1,  1);
+                    orb_opt(*cimethod, cim ,  0,  0);
                 delete cim;
             }
             if(*cimethod == "fci"){
@@ -305,23 +307,23 @@ int main ( int argc, char ** argv){
                 cim5->solve();
                 //cim5->check_hermiticity();
                 std::cout  << "FCI energy:" << cim5->get_ci_energy() << " Per site: " << cim5->get_ci_energy() / (double) ham->getL() <<std::endl;
-                cim5->print_output();
+                //cim5->print_output();
                 //cim5->print_rdm();
-                std::cout << "Spin Squared: " << cim5->get_spin_squared() << std::endl;
+                //std::cout << "Spin Squared: " << cim5->get_spin_squared() << std::endl;
                 //cim5->print_ham();
-                //ham->save_file("testtt");
 
                 DensFCI densmatfci {cim5};
                 densmatfci.construct_density();
                 //densmatfci.print_one_dens(std::cout);
                 //densmatfci.print_two_dens(std::cout);
-                std::cout << "FCI-DENS one-electron energy: " << densmatfci.get_one_electron_energy() << std::endl;
-                std::cout << "FCI-DENS two-electron energy: " << densmatfci.get_two_electron_energy() << std::endl;
-                std::cout << "FCI-DENS total energy: " << densmatfci.get_dens_energy() << std::endl;
+                //std::cout << "FCI-DENS one-electron energy: " << densmatfci.get_one_electron_energy() << std::endl;
+                //std::cout << "FCI-DENS two-electron energy: " << densmatfci.get_two_electron_energy() << std::endl;
+                //std::cout << "FCI-DENS total energy: " << densmatfci.get_dens_energy() << std::endl;
 
                 cimethod++;
                 if( *cimethod != "none")
-                    orb_opt(*cimethod, cim5 , 1, 1);
+                    //orb_opt(*cimethod, cim5 , 1, 1);
+                    orb_opt(*cimethod, cim5 , 0,0 );
                 delete cim5;
             }
 
@@ -333,22 +335,22 @@ int main ( int argc, char ** argv){
                 FCI_File *  cim2 = new FCI_File(ham.get(), *cimethod);
                 cim2->solve();
                 std::cout  << "CIenergy " << sort << " of all the dets in " << *cimethod << " :  " << cim2->get_ci_energy() << std::endl;
-                std::cout << "Spin squared: " << cim2->get_spin_squared() << std::endl;
-            	cim2->print_output();
+                //std::cout << "Spin squared: " << cim2->get_spin_squared() << std::endl;
+            	//cim2->print_output();
 	            //cim2->print_ham();
-	            cim2->print_rdm();
+	            //cim2->print_rdm();
 		        //cim2->print_dets();
 
-                DensFILE densmatfile {cim2};
-                densmatfile.construct_density();
+                //DensFILE densmatfile {cim2};
+                //densmatfile.construct_density();
                 //densmatfile.print_one_dens(std::cout);
-                std::cout << "FILE-DENS one-electron energy: " << densmatfile.get_one_electron_energy() << std::endl;
+                //std::cout << "FILE-DENS one-electron energy: " << densmatfile.get_one_electron_energy() << std::endl;
                 //densmatfile.get_NO();
                 //densmatfile.print_two_dens(std::cout);
                 //densmatfile.compare_two_dens(densmat);
                 //densmatfile.compare_one_dens(densmat);
-                std::cout << "FILE-DENS two-electron energy: " << densmatfile.get_two_electron_energy() << std::endl;
-                std::cout << "FILE-DENS total energy: " << densmatfile.get_dens_energy() << std::endl;
+                //std::cout << "FILE-DENS two-electron energy: " << densmatfile.get_two_electron_energy() << std::endl;
+                //std::cout << "FILE-DENS total energy: " << densmatfile.get_dens_energy() << std::endl;
                 cimethod++;
 		        if( *cimethod != "none")
                     orb_opt(*cimethod, cim2 , 1, 1);
@@ -358,7 +360,7 @@ int main ( int argc, char ** argv){
                 CI_Big *  cim3 = new CI_Big(ham.get(), *cimethod);
                 cim3->solve();
                 std::cout  << "CIenergy " << sort << " of all the dets in " << *cimethod << " :  " << cim3->get_ci_energy() << std::endl;
-                cim3->print_output();
+                //cim3->print_output();
                 //cim3->print_ham();
                 cimethod++;
                 if( *cimethod != "none")

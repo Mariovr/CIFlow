@@ -206,6 +206,9 @@ void CIDens::test_invariants(bool twordm)
     }
     SCPP_TEST_ASSERT(fabs(som -N ) < 1e-11 , "Error in density matrices: Trace of the 1rdm : " << som << " is not equal to the sum of Nup: " << _cim->gNup() << " and Ndown:  " << _cim->gNdown()<< std::endl );
 
+    //print_one_dens(cout);
+    //print_two_dens(cout);
+
     if (twordm)
     {
         som = 0;
@@ -230,7 +233,7 @@ void CIDens::test_invariants(bool twordm)
         if(_cim->get_name() == "FCI")
         {
             double spinsq = get_spin_squared();
-            SCPP_TEST_ASSERT(spinsq - floor(fabs(spinsq))  < 1e-11 || fabs(4*(spinsq - floor(fabs(spinsq)) ) - 3) < 1e-11, setprecision(14) << "Error in density matrices: Spin squared is not an integer number, or has .75 as decimal numbers:  spin squared: " <<  spinsq << std::endl );
+            //SCPP_TEST_ASSERT(spinsq - floor(fabs(spinsq))  < 1e-9 || fabs(4*(spinsq - floor(fabs(spinsq)) ) - 3) < 1e-9, setprecision(14) << "Error in density matrices: Spin squared is not an integer number, or has .75 as decimal numbers:  spin squared: " <<  spinsq << std::endl );
         }
     }
 
@@ -689,7 +692,7 @@ void DensDOCI::construct_CI_two_dens()
             TYPE shiftbit = 1;
             if(up1 & ( shiftbit << j))
             {
-                for (int k = 0; k < _cim->get_l(); k++) 
+                for (int k = j; k < dim(); k++) 
                 {
                     if(up1 & ( shiftbit << k))
                     {
@@ -700,8 +703,9 @@ void DensDOCI::construct_CI_two_dens()
 
                             add_two_rdm(2,j,k,j,k, contr) ;
                             //add_two_rdm(2,j,k,k,j, -1.* contr) ;
-                        }
 
+                            add_two_rdm(1,k,j,k,j, contr);
+                        }
                         add_two_rdm(1,j,k,j,k, contr);
                     }
                 }
@@ -721,7 +725,6 @@ void DensDOCI::construct_CI_two_dens()
                         double contr2 = _cim->get_eigvec(i,0) * _cim->get_eigvec(index,0);
                         add_two_rdm(1,j,j,k,k, contr2);
                         add_two_rdm(1,k,k,j,j, contr2);
-                        
                     } 
                 }
             }//End jth orbital is occupied in current determinant.

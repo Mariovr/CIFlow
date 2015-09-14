@@ -46,6 +46,7 @@ class CIDens
 		double get_one_electron_energy();
 		double get_two_electron_energy();
 		double get_dens_energy();
+        CIMethod * get_cim()const{return _cim;};
         std::vector<matrix>  get_two_dm(){return _two_dens;} 
         std::valarray<std::valarray<double> > get_one_dm(){return _one_dens;}
 		void print_one_dens(std::ostream & os) const;
