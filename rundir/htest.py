@@ -409,14 +409,14 @@ def main_opt(*args , **kwargs):
     #methods = [  "file" , detfile1, "sim", "file", detfile2 , "sim" ,"file" ,detfile3 , "sim" , "file", detfile4, "sim", "fci"]
     basissets = ['sto-3g']
     #runlist = [0.1 , 0.2 , 0.3, 0.4 , 0.5 , 0.6 , 0.7,  0.86374047590, 0.9, 1. , 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6.] #BeH2 (linear)
-    runlist = [0.86374047590, 0.9, 1.02 , 1.1, 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6.] #BeH2 (linear)
+    #runlist = [0.86374047590, 0.9, 1.02 , 1.1, 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6.] #BeH2 (linear)
     import numpy as np
     #runlist = list(np.arange(1,2.5,0.2)) + [2.5] + list(np.arange(2.6,4,0.2))
     #runlist = list(np.arange(0.1,1,0.02)) #+ [2.5] + list(np.arange(2.6,4,0.2))
     #runlist = list(np.arange(1,2.5,0.2)) + [2.5] + list(np.arange(2.6,4,0.5))
     #runlist = list(np.arange(2.3,3.1,0.1)) + list(np.arange(3.2,4.2,0.2))
     #runlist = list(np.arange(3. , 50. , 0.1) )
-    #runlist = [2]
+    runlist = [2]
     #runlist = np.arange(1,4, 0.2)
     #runlist = list(np.arange(1,3, 0.3)) + list(np.arange(3, 0.5, 10.1))
     #runlist = list(np.arange(3, 0.5, 10.1))
@@ -433,10 +433,10 @@ def main_opt(*args , **kwargs):
     #runlist = np.arange(0.6 , 1.1, 0.03) 
     #atoms = [6,6] #C2 
     #atoms = [7,6] 
-    #atoms = [8,1,1] #H2O
-    #atoms = [7 , 8]
+    atoms = [8,1,1] #H2O
+    atoms = [7 , 8]
     #atoms = [6,7]
-    atoms = [4,1,1] #beh2
+    #atoms = [4,1,1] #beh2
     #atoms = [1,1]
     #atoms = [1,1,1, 1] #h4 but
     #atoms = [1,1,1,1,1,1,1,1] #h8
@@ -445,8 +445,8 @@ def main_opt(*args , **kwargs):
     #atoms = [6,6,6,6,6,6,1,1,1,1,1,1] #benzene
     #runlist = [x*math.pi/180. for x in range(55,61) ]#+ [59.5]] #, 60]  ] #angle between two triangles in benzene.
     #runlist = [2.224207488557] 
-    name = 'beh2testnewgit'
-    rootdir = './results/beh2testnewgit/' #relative to the directory that contains this script
+    name = 'noplus'
+    rootdir = './results/nopluspatrickham/' #relative to the directory that contains this script
     exe = 'ciflow.x'
     elemdir = 'matrixelements'
     #elemdir = 'output_run'
@@ -454,15 +454,15 @@ def main_opt(*args , **kwargs):
     #generate_dir(rootdir , exe)
     shutil.copy(exe, rootdir)#When the matrixelements are already present.
     os.chdir(rootdir) #When the matrixelements are already present.
-    #create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (0,1) , moltype = 'linear', package = 'psi' , units = 'angstrom', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = 'c1', hdf5 = False, guess = 'sad', extrapar = 104.479848, ref = 'rhf')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
+    #create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (1,1) , moltype = 'dimer', package = 'psi' , units = 'au', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = 'c1', hdf5 = False, guess = 'sad', extrapar = 104.479848, ref = 'rhf')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
 
     outputfile = open(ciflowoutputfile , 'w')
     fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?out' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'.*-[\w\d]*([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)orthon\.h5' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.out' , x).group(1))
     hamfiles = {}
-    search = r'psi.+%s.+mout' 
-    #search = r'ham.+%s.+out' 
+    #search = r'psi.+%s.+mout' 
+    search = r'ham.+%s.+out' 
     #search = r'psi.+%s.+orthon.h5'
     for basis in basissets:
         hamfiles[basis] = fc.File_Collector(elemdir , search = search %basis ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1 and fileinfo(x) < 1000. )
@@ -472,18 +472,18 @@ def main_opt(*args , **kwargs):
         fname = name + "_" +basis + ".dat"
         psir = rp.PsiReader(hamfiles[basis].plotfiles[0], isbig = False, numorbs = -1 , read_ints = False) #just to get number of electrons and orbitals
         #reflist = dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'], [1] , [] , pairex = True)
-        dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] , []], [] ,fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
-        dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] ,[0]], [] ,fname = detfile2 ,ref = [lambda x , y , z : dw.get_hf_det(x,y,z)]) #CISDDOCI
-        #dw.cimain(7,7,10,[[1,2] ,[]], [0] ,fname = detfile2 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISDDOCI
-        #dw.cimain(7,7,10,[[1,2] ,[]], [] ,fname = detfile1 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISD
-        #dw.cimain(7,7,10,[[] ,[]], [0,2] ,fname = detfile5 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISD
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] , []], [] ,fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] ,[0]], [] ,fname = detfile2 ,ref = [lambda x , y , z : dw.get_hf_det(x,y,z)]) #CISDDOCI
+        dw.cimain(7,7,10,[[1,2] ,[]], [0] ,fname = detfile2 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISDDOCI
+        dw.cimain(7,7,10,[[1,2] ,[]], [] ,fname = detfile1 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISD
+        dw.cimain(7,7,10,[[] ,[]], [0,2] ,fname = detfile5 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [[1,2] ,[2,3]], [] , fname = detfile12 ,ref = [ lambda x , y , z : psir.get_hf_orbs()]) #CISDDOCI
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], [[], [1]], [] , fname = detfile3 ,ref =[ lambda x , y , z : psir.get_hf_orbs()] ) #CIS(P)
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[[],[1,2]], [] , fname = detfile4 ,ref =[  lambda x , y , z : psir.get_hf_orbs()] ) #CISD(P)
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[], [0,2] , fname = detfile5 ,ref = [ lambda x , y , z : psir.get_hf_orbs()] ) #SEN0-2
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[1,2], [] , fname = detfile4 ,ref = [ lambda x , y , z : psir.get_hf_orbs() ]) #
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[[1,2],[2]], [] , fname = detfile11 ,ref = [ lambda x , y , z : psir.get_hf_orbs() ]) #hyb_lin
-        #dw.cimain(7,7, 10,[[1,2],[2]], [] , fname = detfile11 ,ref = [ lambda x , y , z : dw.get_hf_det(x,y ,z)]) #hyb_lin
+        dw.cimain(7,7, 10,[[1,2],[2]], [] , fname = detfile11 ,ref = [ lambda x , y , z : dw.get_hf_det(x,y ,z)]) #hyb_lin
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[1,2], [] , fname = detfile12 ,ref = [ lambda x , y , z : psir.get_hf_orbs(), lambda x,y,z : (psir.get_hf_orbs()[0][::-1], psir.get_hf_orbs()[1][::-1] ) ], pairex = True, both = False) #hyb_lin
         #dw.cimain(3,3, 12,[], [0] , fname = detfile7 , ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0) #FROZENDOCI
         with open(fname , 'w') as f:

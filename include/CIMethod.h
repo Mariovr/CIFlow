@@ -132,6 +132,10 @@ class DOCI: public CIMethod{
 		int get_dim(){ return gUpDim(); } 
 		std::string get_name() {return "DOCI";}
         std::unique_ptr<CIDens> get_density();
+
+    private:
+        unsigned int determine_weight(TYPE string , const std::vector<std::vector<int> > & vw);
+        void setup_vertex_weights(std::vector<std::vector<int>> & vw);
 };
 
 class FCI: public CIMethod{
@@ -164,7 +168,6 @@ class CI_Big: public CIMethod{
 		CI_Big(Hamiltonian*  ham, std::string permfile);
 		void construct_CI_matrix(SparseMatrix_CRS & mat , int startl , int endl);
 		void build_ci(){build_parallel() ; }
-		void construct_dict();
 		void solve(int neigval = 1);
 		void arpackDiagonalize(int nve , matrix & eigval , matrix & eigvec);
 		int get_dim();
@@ -173,11 +176,21 @@ class CI_Big: public CIMethod{
 		std::string get_name() ;
         std::unique_ptr<CIDens> get_density();
         void print_dets();
-
-	private:
-		std::vector<std::vector<int> > _map;
-
-
-
 };
+
+
+/*  
+class CI_BigDOCI: public CI_Big{
+	public :
+		CI_Big(Hamiltonian*  ham, std::string permfile);
+		void construct_CI_matrix(SparseMatrix_CRS & mat , int startl , int endl);
+		void build_ci(){build_parallel() ; }
+		void construct_dict();
+		void solve(int neigval = 1);
+		void arpackDiagonalize(int nve , matrix & eigval , matrix & eigvec);
+		int get_dim();
+		void mvprod(const matrix &xmat, matrix &ymat);
+		void mvprod(const double *x, double *y); 
+		std::string get_name() ;
+};*/
 #endif

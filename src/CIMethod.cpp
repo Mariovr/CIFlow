@@ -541,11 +541,15 @@ CI_Big::CI_Big(Hamiltonian * ham ,  std::string permfile):CIMethod( ham)
 
 void DOCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
     //we make use of the hermicity of the matrix to add off diagonal elements. (we dont use get_ham_element because this implementation is a bit faster (and still short))
+    vector< vector<int> > vw  ( get_l() +1,  vector<int> ( gNup() + 1 , 0));
+    setup_vertex_weights(vw);
+    TYPE shiftbit = 1;
+
     Permutator_Bit my_perm(_ham->getL());
     TYPE up1 = my_perm.get_start_int(gNup());
     for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
         up1 = my_perm.permutate_bit(up1);
-    TYPE up2 = up1;
+    //TYPE up2 = up1;
 
     for( long i = start_l; i < end_l ; i++ ) { //add off diagonal elements.
         mat.NewRow();
@@ -553,18 +557,32 @@ void DOCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
             if( i % 5000 == 0)
                 cout << "line : " << i << " of lines: " << _perm->get_dim() << endl;
         }
-	    for(long j = i ; j <gUpDim(); j++){
-            if (_perm->popcount(up1 ^ up2) == 2){
-               mat.PushToRow(j , two_diff_orbitals(up1 , up2, up1, up2));
-               //printProgBar(100*i/(gUpDim()-1));
-		       }
-             else if (i == j){
-                mat.PushToRow(j , diagonal(up1 , up1)); //with DOCI, ups are always equal to downs
-               }
-            up2 = my_perm.permutate_bit(up2);
-            } // end for columns
-    up1 = my_perm.permutate_bit(up1);
-    up2 = up1;
+        //First add diagonal contribution.
+        mat.PushToRow(i , diagonal(up1 , up1)); //with DOCI, ups are always equal to downs
+
+        // Then test all the single excitations you can think off.
+        for (int j = 0; j < get_l() ; j++) //Loop over the L spatial orbitals.
+            if(up1 & ( shiftbit << j))
+            {
+                TYPE up_interm = up1 ^ (shiftbit << j);
+                for (int k = j + 1; k < get_l() ; k++) 
+                {
+                    if(up1 & ( shiftbit << k))
+                    {
+                        continue;
+                    } 
+                    else //Match is possible so we select all matches.
+                    {
+                        TYPE up2 = up_interm ^ (shiftbit << k);
+                        unsigned int index = determine_weight(up2, vw);
+                        SCPP_TEST_ASSERT(index > i, "We full only upper half of the DOCI Hamiltonian, -> row < col but : row = " << i << "col = " << index);
+                        mat.PushToRow(index , two_diff_orbitals(up1 , up2, up1, up2));
+                    } 
+                }
+            }//End jth orbital is occupied in current determinant.
+
+        up1 = my_perm.permutate_bit(up1);
+        //up2 = up1;
     } //end for rows
     //mat.NewRow(); //not necessary for parallel, we add the last newrow in add_from_list (in sparsematrix_crs)
 
@@ -572,6 +590,49 @@ void DOCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
         cout << "We constructed the DOCI Hamiltonian matrix with "<< mat.datasize() << "nonzero elements. Between line:" << start_l << "and line: "<< end_l << endl;
 } // end DOCI
 
+
+void DOCI::setup_vertex_weights(vector<vector<int>> & vw) 
+{
+    /* Set up the vertex_weight vector */
+    vw[0][0] = 1; /* Set the first element to one. */
+    for (int k = 1; k <= ( get_l()  - gNup()) ; k++) 
+    { /* Go down the first column; at most num_orbs-num_elecs can be set to one (must have N elecs in orbitals) */
+        vw[k][0] = 1;
+    }
+
+    for (int m = 1; m <= gNup(); m++) 
+    { /* Fill the remaining columns */
+        for (int k = m; k <= ( get_l()  - (gNup() - m)); k++) 
+        { /* At the most all previous orbitals are filled */
+            vw[k][m] = vw[k-1][m] + vw[k-1][m-1];
+        }
+    }
+    //for (int i = 0; i < _norb +1; i++) 
+    //{
+        //for (int j = 0; j < _cim->gNup() +1; j++) 
+        //{
+            //cout << vw[i][j] << " " ;
+        //}
+        //cout << std::endl;
+    //}
+}
+
+unsigned int DOCI::determine_weight(TYPE string , const vector<vector<int> > & vw) 
+{
+    unsigned int weight = 1;
+    int num_elecs_interm = 0;
+
+    for (int k = 0; k < get_l(); k++) 
+    {
+        TYPE shiftbit = 1;
+        if(string & ( shiftbit << k))
+        {
+            num_elecs_interm += 1;
+            weight += vw[k][num_elecs_interm];
+        }
+    }
+    return weight-1;
+}
 
 void FCI::construct_CI_matrix(){
     //we make use of the hermicity of the matrix to add off diagonal elements.
@@ -738,9 +799,6 @@ void CI_Big::mvprod(const matrix &xmat, matrix &ymat){
     double *y = ymat.getpointer();
  
     mvprod(x,y);
-}
-
-void CI_Big::construct_dict(){
 }
 
 /**

@@ -730,7 +730,7 @@ void DensDOCI::construct_CI_two_dens()
                 }
 
                 // Then test all the single excitations you can think off.
-                TYPE up_interm = up1 ^ (1 << j);
+                TYPE up_interm = up1 ^ (shiftbit << j);
                 for (int k = j + 1; k < dim() ; k++) 
                 {
                     if(up1 & ( shiftbit << k))
@@ -739,7 +739,7 @@ void DensDOCI::construct_CI_two_dens()
                     } 
                     else 
                     {
-                        TYPE up2 = up_interm ^ (1 << k);
+                        TYPE up2 = up_interm ^ (shiftbit << k);
                         unsigned int index = determine_weight(up2, vw);
                         double contr2 = _cim->get_eigvec(i,0) * _cim->get_eigvec(index,0);
                         add_two_rdm(1,j,j,k,k, contr2);
