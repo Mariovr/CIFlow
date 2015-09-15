@@ -282,10 +282,10 @@ int main ( int argc, char ** argv){
                 DOCI * cim = new DOCI(ham.get());
                 cim->solve();
                 std::cout  << "DOCI energy: " << cim->get_ci_energy() << std::endl;
-                //std::cout << "Spin Squared: " << cim->get_spin_squared() << std::endl;
-                //cim->print_output();
+                std::cout << "Spin Squared: " << cim->get_spin_squared() << std::endl;
+                cim->print_output();
                 //cim->print_ham();
-                //cim->print_rdm();
+                cim->print_rdm();
 
                 //DensDOCI densmat {cim};
                 //densmat.construct_density(true);
@@ -307,9 +307,9 @@ int main ( int argc, char ** argv){
                 cim5->solve();
                 //cim5->check_hermiticity();
                 std::cout  << "FCI energy:" << cim5->get_ci_energy() << " Per site: " << cim5->get_ci_energy() / (double) ham->getL() <<std::endl;
-                //cim5->print_output();
-                //cim5->print_rdm();
-                //std::cout << "Spin Squared: " << cim5->get_spin_squared() << std::endl;
+                cim5->print_output();
+                cim5->print_rdm();
+                std::cout << "Spin Squared: " << cim5->get_spin_squared() << std::endl;
                 //cim5->print_ham();
 
                 DensFCI densmatfci {cim5};
@@ -335,7 +335,7 @@ int main ( int argc, char ** argv){
                 FCI_File *  cim2 = new FCI_File(ham.get(), *cimethod);
                 cim2->solve();
                 std::cout  << "CIenergy " << sort << " of all the dets in " << *cimethod << " :  " << cim2->get_ci_energy() << std::endl;
-                //std::cout << "Spin squared: " << cim2->get_spin_squared() << std::endl;
+                std::cout << "Spin squared: " << cim2->get_spin_squared() << std::endl;
             	//cim2->print_output();
 	            //cim2->print_ham();
 	            //cim2->print_rdm();

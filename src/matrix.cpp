@@ -612,121 +612,72 @@ matrix matrix::matrix_inv_square_root() {
     return prod;
 }
 
-/**
- * Empty cmatrix constructor. Don't use it
- * unless you know what you're doing
- */
-cmatrix::cmatrix()
+Vector2d::Vector2d(size_type num_rows, size_type num_cols) : _rows(num_rows), _cols(num_cols) ,_data(num_elem())
 {
-    this->n = 0;
-    this->m = 0;
+    SCPP_TEST_ASSERT(num_rows > 0, "Number of rows in a matrix must be positive: " << num_rows);
+    SCPP_TEST_ASSERT(num_cols > 0, "Number of columns in a matrix must be positive: " << num_cols);
 }
 
-/**
- * @param n_ number of rows
- * @param m_ number of columns
- */
-cmatrix::cmatrix(int n_, int m_)
-{
-    assert(n_ && m_);
-    this->n = n_;
-    this->m = m_;
-    mat.reset(new std::complex<double> [n*m]());
+Vector2d::Vector2d(size_type num_rows, size_type num_cols, const double & init_value) : _rows(num_rows), _cols(num_cols), _data(num_elem())
+{   
+    SCPP_TEST_ASSERT(num_rows > 0, "Number of rows in a matrix must be positive: " << num_rows);
+    SCPP_TEST_ASSERT(num_cols > 0, "Number of columns in a matrix must be positive: " << num_cols); 
 }
 
-/**
- * @param orig cmatrix to copy
- */
-cmatrix::cmatrix(const cmatrix &orig)
+Vector2d::Vector2d():_rows(0 ), _cols(0) , _data(0){}
+
+Vector2d::Vector2d(const Vector2d & vec):_rows(vec.num_rows() ), _cols(vec.num_cols() )  ,_data(num_elem() )
 {
-    n = orig.n;
-    m = orig.m;
-    mat.reset(new std::complex<double> [n*m]);
-    std::memcpy(mat.get(), orig.getpointer(), n*m*sizeof(std::complex<double>));
+        for(int j = 0 ; j < _cols ; j ++)
+            for(int i = 0 ; i < _rows ; i ++)
+                (*this)(i,j) = vec(i,j);
 }
 
-/**
- * move constructor
- * @param orig cmatrix to copy (descrutive)
- */
-cmatrix::cmatrix(cmatrix &&orig)
+
+/*  
+unsigned Vector2d::index(size_type row, size_type col) const 
 {
-    n = orig.n;
-    m = orig.m;
-    mat = std::move(orig.mat);
+	SCPP_TEST_ASSERT(row < _rows, "Row " << row  << " must be less than " << _rows);
+ 	SCPP_TEST_ASSERT(col < _cols, "Column " << col  << " must be less than " << _cols);
+	return _rows * col + row; //Column major format.
 }
 
-cmatrix& cmatrix::operator=(const cmatrix &orig)
+unsigned Vector2d::num_elem() const
 {
-    n = orig.n;
-    m = orig.m;
-    mat.reset(new std::complex<double> [n*m]);
-    std::memcpy(mat.get(), orig.getpointer(), n*m*sizeof(std::complex<double>));
-    return *this;
+    return num_rows() * num_cols();
+}*/
+
+unsigned Vector2d::index(size_type row, size_type col) const 
+{
+    SCPP_TEST_ASSERT(row < this->num_rows(), "Row " << row  << " must be less than " << this->num_rows());
+    SCPP_TEST_ASSERT(col < this->num_cols(), "Column " << col  << " must be less than " << this->num_cols());
+    if( row > col)
+    {
+        double temp = col;
+        col = row;
+        row = temp;
+    }
+    return this->num_cols() * row + col - row*(row+1)/2; //Column major format.
 }
 
-/**
- * Set all cmatrix elements equal to a value
- * @param val the value to use
- */
-cmatrix& cmatrix::operator=(std::complex<double> val)
+unsigned Vector2d::num_elem() const
 {
-    for(int i=0;i<n*m;i++)
-        mat[i] = val;
-
-    return *this;
+    return this->num_cols()* (this->num_cols()+1)/2;
 }
 
-/**
- * @return number of rows
- */
-int cmatrix::getn() const
+template <typename T>
+inline std::ostream& operator << (std::ostream& os, const Vector2d & m) 
 {
-    return n;
-}
+    for( unsigned r =0; r<m.num_rows(); ++r ) {
+	for( unsigned c=0; c<m.num_cols(); ++c ) {
+            os << m(r,c);
+	    if( c + 1 < m.num_cols() )
+	        os << "\t";
+        }
+        os << "\n";
+    }
+    return os;
+} 
 
-/**
- * @return number of columns
- */
-int cmatrix::getm() const
-{
-    return m;
-}
-
-std::complex<double> cmatrix::operator()(int x,int y) const
-{
-    assert(x<n && y<m);
-    return mat[x+y*n];
-}
-
-std::complex<double>& cmatrix::operator()(int x,int y)
-{
-    assert(x<n && y<m);
-    return mat[x+y*n];
-}
-
-std::complex<double>& cmatrix::operator[](int x)
-{
-    assert(x<n*m);
-    return mat[x];
-}
-
-std::complex<double> cmatrix::operator[](int x) const
-{
-    assert(x<n*m);
-    return mat[x];
-}
-
-std::complex<double>* cmatrix::getpointer() const
-{
-    return mat.get();
-}
-
-void cmatrix::Print() const
-{
-    for(int i=0;i<n;i++)
-        for(int j=0;j<m;j++)
-            std::cout << i << "\t" << j << "\t" << (*this)(i,j) << std::endl;
-}
 
 /* vim: set ts=8 sw=4 tw=0 expandtab :*/

@@ -285,26 +285,25 @@ class CIFlow_Reader(Reader):
                     t4index[0][match[0] % L, match[1] % L, match[2] % L, match[3]% L ] = match[4]
                 if match[0]< L and match[1] >= L and match[2]< L and match[3] >= L:
                     t4index[1][match[0] % L, match[1] % L, match[2] % L, match[3]% L ] = match[4]  
-                if match[0] >= L and match[1] < L and match[2] >= L and match[3] < L:
-                    t4index[2][match[0] % L, match[1] % L, match[2] % L, match[3]% L ] = match[4]
                 if match[0]>= L and match[1] >= L and match[2]>= L and match[3] >= L:
-                    t4index[3][match[0] % L, match[1] % L, match[2] % L, match[3]% L ] = match[4]
+                    t4index[2][match[0] % L, match[1] % L, match[2] % L, match[3]% L ] = match[4]
         return t4index
 
 
 def test_density():
-    cifres = CIFlow_Reader('psi0_output10determinantsoutputci_file.dat')
+    cifres = CIFlow_Reader('psi0_output10outputfci.dat')
     cifres.read_rdm()
     rdmw = cifres.read_ward_rdm('mario2.txt')
     L = cifres.header['norbs']
-    w = 1
-    for i in range(L):
-        for j in range(i,L):
-            for k in range(L):
-                for l in range(k,L):
-                    if abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) > 1e-7:
-                        print abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) 
-                        print i , " " , j, " " , k , " " , l , " " , cifres.trdm[w][i,j,k,l] , ' and ward ' , rdmw[w][i,j,k,l]
+    w = 2
+    for w in range(3):
+        for i in range(L):
+            for j in range(i,L):
+                for k in range(L):
+                    for l in range(k,L):
+                        if abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) > 1e-7:
+                            print abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) 
+                            print w, " " , i , " " , j, " " , k , " " , l , " " , cifres.trdm[w][i,j,k,l] , ' and ward ' , rdmw[w][i,j,k,l]
                     #if cifres.trdm[0][i,j,k,l] > 1e-10:
                         #print i , " " , j, " " , k , " " , l , " " , cifres.trdm[0][i,j,k,l] , ' and ward ' , rdmw[0][i,j,k,l]
 

@@ -47,7 +47,7 @@ class CIDens
 		double get_two_electron_energy();
 		double get_dens_energy();
         CIMethod * get_cim()const{return _cim;};
-        std::vector<matrix>  get_two_dm(){return _two_dens;} 
+        std::vector<Vector2d >  get_two_dm(){return _two_dens;} 
         std::valarray<std::valarray<double> > get_one_dm(){return _one_dens;}
 		void print_one_dens(std::ostream & os) const;
 	    void print_two_dens(std::ostream & os) const;
@@ -62,7 +62,7 @@ class CIDens
 		double get_seniority()const;
         double get_spin_squared()const;
         double get_spin()const;
-        int dim() const;
+        unsigned dim() const;
 
         //Puts in occupations the occupations of the orbitals, and in no the natural orbitals.
 		//Get the NO in decreasing order of occupations.
@@ -72,10 +72,10 @@ class CIDens
 
 
 	protected:
-        int _norb;
+        unsigned _norb;
 		CIMethod * _cim;
         std::valarray<std::valarray<double >> _one_dens;
-        std::vector< matrix >  _two_dens;
+        std::vector< Vector2d >  _two_dens;
         void allocate_one_memory();
         void allocate_two_memory();
 		virtual void construct_CI_one_dens() = 0;

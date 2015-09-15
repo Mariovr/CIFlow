@@ -18,8 +18,10 @@
 #define MATRIX_H
 
 #include <memory>
-#include <complex>
+#include <iostream>
 #include <vector>
+#include <complex>
+#include "scpp_assert.h"
 
 // all kind of BLAS/LAPACK functions
 #ifndef __INTEL_COMPILER__
@@ -177,53 +179,41 @@ class matrix
         int m;
 };
 
-/**
- * Helper class, wrapper around a complex double array. Has methods to get the number of rows
- * and columns. A simple matrix class.
- */
-class cmatrix
+
+// Simple, but general two-dimensional rectangular matrix, for storage and access purposes.
+// Contains information in column major format.
+class Vector2d
 {
     public:
-        cmatrix();
+        typedef unsigned size_type;
 
-        cmatrix(int n_, int m_);
+	Vector2d(size_type num_rows, size_type num_cols);
+	Vector2d(size_type num_rows, size_type num_cols, const double & init_value);
+        Vector2d(const Vector2d & vec);
+        Vector2d();
 
-        cmatrix(const cmatrix &orig);
+	size_type num_rows() const { return _rows; }
+	size_type num_cols() const { return _cols; }
 
-        cmatrix(cmatrix &&orig);
+	// Accessors: return element by row and column.
+	double & operator() ( size_type row, size_type col )
+	{
+		return _data[ index( row, col ) ];
+	}
 
-        virtual ~cmatrix() { }
+	const double & operator() ( size_type row, size_type col ) const
+	{
+		return _data[ index( row, col ) ];
+	}
 
-        cmatrix& operator=(const cmatrix &orig);
+    protected:
+	size_type index(size_type row, size_type col) const ;
+        unsigned num_elem() const;
+        size_type _rows, _cols;
+	std::vector<double > _data;
 
-        cmatrix& operator=(std::complex<double> val);
-
-        int getn() const;
-
-        int getm() const;
-
-        std::complex<double> operator()(int x,int y) const;
-
-        std::complex<double>& operator()(int x,int y);
-
-        std::complex<double>& operator[](int x);
-
-        std::complex<double> operator[](int x) const;
-
-        std::complex<double>* getpointer() const;
-
-        matrix& prod(cmatrix const &A, cmatrix const &B);
-
-        void Print() const;
-
-    private:
-        //!n by m array of complex<double>
-        std::unique_ptr<std::complex<double> []> mat;
-        //! number of rows
-        int n;
-        //! number of columns
-        int m;
 };
+
 
 #endif /* MATRIX_H */
 
