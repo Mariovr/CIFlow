@@ -49,8 +49,10 @@ class CIDens
         CIMethod * get_cim()const{return _cim;};
         std::vector<Vector2d >  get_two_dm(){return _two_dens;} 
         std::valarray<std::valarray<double> > get_one_dm(){return _one_dens;}
-		void print_one_dens(std::ostream & os) const;
-	    void print_two_dens(std::ostream & os) const;
+		void print_one_dens(std::ostream & os, const std::valarray<std::valarray<double>> & onerdm ) const;
+		void print_one_dens(std::ostream & os) const {print_one_dens(os , _one_dens); }
+	    void print_two_dens(std::ostream & os, const std::vector<Vector2d > & twordm ) const;
+	    void print_two_dens(std::ostream & os) const{print_two_dens(os, _two_dens); }
 		void compare_one_dens(CIDens *cid);
 		void compare_two_dens(CIDens *cid);
 		double get_one_rdm(int spin , int orb1 , int orb2, const std::valarray<std::valarray<double>> & onerdm) const;

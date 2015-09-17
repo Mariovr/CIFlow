@@ -312,8 +312,8 @@ int main ( int argc, char ** argv){
                 std::cout << "Spin Squared: " << cim5->get_spin_squared() << std::endl;
                 //cim5->print_ham();
 
-                DensFCI densmatfci {cim5};
-                densmatfci.construct_density();
+                //DensFCI densmatfci {cim5};
+                //densmatfci.construct_density();
                 //densmatfci.print_one_dens(std::cout);
                 //densmatfci.print_two_dens(std::cout);
                 //std::cout << "FCI-DENS one-electron energy: " << densmatfci.get_one_electron_energy() << std::endl;
@@ -336,9 +336,9 @@ int main ( int argc, char ** argv){
                 cim2->solve();
                 std::cout  << "CIenergy " << sort << " of all the dets in " << *cimethod << " :  " << cim2->get_ci_energy() << std::endl;
                 std::cout << "Spin squared: " << cim2->get_spin_squared() << std::endl;
-            	//cim2->print_output();
+            	cim2->print_output();
 	            //cim2->print_ham();
-	            //cim2->print_rdm();
+	            cim2->print_rdm();
 		        //cim2->print_dets();
 
                 //DensFILE densmatfile {cim2};

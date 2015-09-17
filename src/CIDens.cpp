@@ -35,6 +35,18 @@
 
 using namespace std;
 
+inline std::ostream& operator << (std::ostream& os, const Vector2d & m) 
+{
+    for( unsigned r =0; r<m.num_rows(); ++r ) {
+	for( unsigned c=0; c<m.num_cols(); ++c ) {
+            os << m(r,c);
+	    if( c + 1 < m.num_cols() )
+	        os << "\t";
+        }
+        os << "\n";
+    }
+    return os;
+} 
 CIDens::CIDens(CIMethod * cim)
 {
     _cim = cim;
@@ -164,7 +176,7 @@ void CIDens::construct_density(bool twordm)
 {
     build_parallel(twordm);
     #ifdef _DEBUG
-        //test_invariants(twordm);
+        test_invariants(twordm);
     #endif
 }
 
@@ -203,8 +215,8 @@ void CIDens::test_invariants(bool twordm)
     }
     SCPP_TEST_ASSERT(fabs(som -N ) < 1e-11 , "Error in density matrices: Trace of the 1rdm : " << som << " is not equal to the sum of Nup: " << _cim->gNup() << " and Ndown:  " << _cim->gNdown()<< std::endl );
 
-    //print_one_dens(cout);
-    //print_two_dens(cout);
+    print_one_dens(cout);
+    print_two_dens(cout);
 
     if (twordm)
     {
@@ -215,12 +227,12 @@ void CIDens::test_invariants(bool twordm)
         {
             for( int j = 0; j <  dim(); j++)
             {
-                som += get_two_rdm(1,i,j,i,j,_two_dens);
+                som += get_two_rdm(1,i,j,i,j);
             }
             for( int j = i+1; j <  dim(); j++)
             {
-                som += get_two_rdm(0,i,j,i,j,_two_dens);
-                som += get_two_rdm(2,i,j,i,j,_two_dens);
+                som += get_two_rdm(0,i,j,i,j);
+                som += get_two_rdm(2,i,j,i,j);
             }
         }
         SCPP_TEST_ASSERT( fabs(som - 1/2. * N *(N-1)) < 1e-11, "Error in density matrices: Trace of the 2rdm: " << som << " is not equal to the number of possible pair formings: 1/2*N *(N-1),  " << 1/2. * N * (N-1));
@@ -379,16 +391,30 @@ void CIDens::build_parallel(bool twordm)
 
 void CIDens::add_from_vector_one(vector< valarray<valarray<double>> > & parts)
 {
-    for(int i = 1 ; i < parts.size() ; i++ )
+    allocate_one_memory(_one_dens);
+    //We add all the parts of the one rdm to the result in _one_dens
+    for(int i = 0 ; i < parts.size() ; i++ )
     {
-        parts[0] += parts[i];
+        for (int j = 0; j < 2; j++)
+        {
+            for (int k = 0; k < dim(); k++)
+            {
+                for (int l = k; l < dim(); l++)
+                {
+                    double value = get_one_rdm(j,k,l, parts[i]);
+                    add_one_rdm(j,k,l, value , _one_dens );
+                }
+            }
+        }
     }
-    _one_dens = parts[0];
+    //print_one_dens(cout);
 }
 
 void CIDens::add_from_vector_two(vector<vector<Vector2d >  > & parts)
 {
-    for(int p = 1 ; p < parts.size() ; p++ )
+    //We add all the parts of the one rdm to the result in parts[0], after that we use the moveconstructor of vector to move everything in _two_dens.
+    allocate_two_memory(_two_dens);
+    for(int p = 0 ; p < parts.size() ; p++ )
     {
         for (int j = 0; j < 3; j++) {
             for (int i = 0; i < dim(); i++){
@@ -405,33 +431,31 @@ void CIDens::add_from_vector_two(vector<vector<Vector2d >  > & parts)
                         if (j == 1)
                             m = 0;
                         else
-                            m = l;
+                            m = l+1;
                         for (; m < dim(); m++) 
                         {
                             if( j ==1 )
                             {
-                                if( i *dim() +k <=  l*dim() + m)
+                                if( i*dim() + k <=  m*dim() +  l)
                                 {
-                                    double value = get_two_rdm(j,i,k,m,l, parts[p]);
-                                    add_two_rdm(j,i,k,m,l, value , parts[0] );
+                                     double value = get_two_rdm(j,i,k,m,l, parts[p]);
+                                     add_two_rdm(j,i,k,m,l, value , _two_dens );
                                 }
                             }
                             else{
-                                if( i *dim() + k - (i+1) *(i+2)/2  <= l*dim() + m- ( l+1) *( l+2)/2  )
+                                if( i *dim() + k - (i+1) *(i+2)/2.  <= l*dim() + m- ( l+1) *( l+2)/2. )
                                 {
                                     double value = get_two_rdm(j,i,k,m,l, parts[p]);
-                                    add_two_rdm(j,i,k,m,l, value , parts[0] );
+                                    add_two_rdm(j,i,k,m,l, value , _two_dens );
                                 }
 
                             }
-                            //parts[0][j][i][k][m][l] += parts[p][j][i][k][m][l];
                         }//end for m
                     }//End for l
                 }//End for k
             }   
         }
     }
-    _two_dens = parts[0];
 }
 
 
@@ -689,14 +713,15 @@ double CIDens::get_dens_energy() {
     return get_one_electron_energy() + get_two_electron_energy() + _cim->get_econst(); 
 }
 
-void CIDens::print_one_dens(std::ostream & os)const{
+void CIDens::print_one_dens(std::ostream & os, const valarray<valarray<double>> & onerdm)const{
+   SCPP_TEST_ASSERT(_one_dens[0].size() > 0, "Error the size of the onerdm is equal to zero");
    for (int j = 0; j < 2; j++) {
      os <<"#One rdm of the " << j << " spin electrons." <<std::endl;
      int count = 0;
      for (int i = 0; i < dim(); i++) {
-	 for (int k = k; k < dim(); k++) {
-		 if(fabs(get_one_rdm(j,i,k, _one_dens)) >= 1e-12 ){
-			 os << i << " " << k << " " << get_one_rdm(j,i,k, _one_dens) << std::endl;
+	 for (int k = i; k < dim(); k++) {
+		 if(fabs(get_one_rdm(j,i,k,onerdm)) >= 1e-12 ){
+			 os << i << " " << k << " " << get_one_rdm(j,i,k, onerdm) << std::endl;
 			 count ++;
 		  }
 	  }
@@ -705,7 +730,7 @@ void CIDens::print_one_dens(std::ostream & os)const{
    }
 }
 
-void CIDens::print_two_dens(std::ostream & os)const{
+void CIDens::print_two_dens(std::ostream & os,const  vector<Vector2d > & twordm)const{
    for (int j = 0; j < 3; j++) {
      os << "#Two rdm case : " << j << "---------------------------------------------" << std::endl;
      int count = 0;
@@ -724,8 +749,8 @@ void CIDens::print_two_dens(std::ostream & os)const{
                  else
                      m = l+1;
 			     for (; m < dim(); m++) {
-                     if(fabs( get_two_rdm(j,i,k,l,m,_two_dens)) > 1e-12  ){
-                         os << i << " " << k << " " << l << " " << m << " " << get_two_rdm(j,i,k,l,m,_two_dens) << std::endl;
+                     if(fabs( get_two_rdm(j,i,k,l,m,twordm)) > 1e-12  ){
+                         os << i << " " << k << " " << l << " " << m << " " << get_two_rdm(j,i,k,l,m,twordm) << std::endl;
                          count ++;
                      }
 			     }
@@ -784,9 +809,10 @@ void CIDens::compare_two_dens(CIDens *cid){
 void DensDOCI::construct_CI_one_dens(unsigned int start , unsigned int end, valarray<valarray<double>> & onerdm ) 
 {
     int L = dim();
-    TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
+    Permutator_Bit my_perm(dim());
+    TYPE up1 = my_perm.get_start_int(_cim->gNup());
     for(auto idx_begin=0;idx_begin< start;++idx_begin)
-        up1 = _cim->_perm->permutate_bit(up1);
+        up1 = my_perm.permutate_bit(up1);
     for(long i = start; i < end; i++) 
     {
         for (int j = 0; j < L; j++) 
@@ -799,18 +825,19 @@ void DensDOCI::construct_CI_one_dens(unsigned int start , unsigned int end, vala
                 add_one_rdm(1,j,j,contr, onerdm);
             }
         }
-        up1 = _cim->_perm->permutate_bit(up1);
+        up1 = my_perm.permutate_bit(up1);
     } 
 }
 
 void DensDOCI::construct_CI_two_dens(unsigned int start , unsigned int end, vector<Vector2d > & twordm ) 
 {
-    vector< vector<int> > vw  ( _norb +1,  vector<int> ( _cim->gNup() + 1 , 0));
+    vector< vector<int> > vw  ( dim() +1,  vector<int> ( _cim->gNup() + 1 , 0));
     setup_vertex_weights(vw);
 
-    TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
+    Permutator_Bit my_perm(dim());
+    TYPE up1 = my_perm.get_start_int(_cim->gNup());
     for(auto idx_begin=0;idx_begin< start;++idx_begin)
-        up1 = _cim->_perm->permutate_bit(up1);
+        up1 = my_perm.permutate_bit(up1);
 
     for (long i = start; i < end ; i++) 
     {
@@ -853,12 +880,12 @@ void DensDOCI::construct_CI_two_dens(unsigned int start , unsigned int end, vect
                         unsigned int index = determine_weight(up2, vw);
                         double contr2 = _cim->get_eigvec(i,0) * _cim->get_eigvec(index,0);
                         add_two_rdm(1,j,j,k,k, contr2,twordm);
-                        //add_two_rdm(1,k,k,j,j, contr2); //Contribution of transposed.
+                        //add_two_rdm(1,k,k,j,j, contr2, twordm); //Contribution of transposed.
                     } 
                 }
             }//End jth orbital is occupied in current determinant.
         }
-        up1 = _cim->_perm->permutate_bit(up1);
+        up1 = my_perm.permutate_bit(up1);
     }//End for determinants
      
 }
@@ -909,9 +936,10 @@ unsigned int DensDOCI::determine_weight(TYPE string , const vector<vector<int> >
 //---------------------------DensFILE-------------------------------------------------------------//
 //REMARK DensFILE can be used for FCI_File and for CI_Big because they have the same permutator object.
 void DensFILE::construct_CI_one_dens( unsigned int start , unsigned int end, valarray<valarray<double>> & onerdm){
-    TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
+    Permutator_File my_perm(_cim->get_perm()->get_filename(),dim());
+    TYPE up1 = my_perm.get_start_int(_cim->gNup());
     for(auto idx_begin=0;idx_begin< start;++idx_begin)
-        up1 = _cim->_perm->permutate_bit(up1);
+        up1 = my_perm.permutate_bit(up1);
 
     if (CIMethod_debug)
         cout << "Started construct_CI_one_dens in DensFILE" << endl;
@@ -920,7 +948,7 @@ void DensFILE::construct_CI_one_dens( unsigned int start , unsigned int end, val
     for(unsigned long i = start ; i < end ; i ++){
         if (CIMethod_debug){
             if( i % 5000 == 0)
-        	cout << "line : " << i << " of lines: " << _cim->_perm->get_dim() << endl;
+        	cout << "line : " << i << " of lines: " << my_perm.get_dim() << endl;
         }
        	_cim->_perm->permutate_bit(dets_row,i);
        	TYPE up1 = dets_row[0];
@@ -938,9 +966,10 @@ void DensFILE::construct_CI_one_dens( unsigned int start , unsigned int end, val
 }
 
 void DensFILE::construct_CI_two_dens(unsigned int start , unsigned int end, vector<Vector2d > & twordm){
-    TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
+    Permutator_File my_perm(_cim->get_perm()->get_filename(),dim());
+    TYPE up1 = my_perm.get_start_int(_cim->gNup());
     for(auto idx_begin=0;idx_begin< start;++idx_begin)
-        up1 = _cim->_perm->permutate_bit(up1);
+        up1 = my_perm.permutate_bit(up1);
 
     if (CIMethod_debug)
         cout << "Started construct_CI_two_dens in DensFILE" << endl;
@@ -949,7 +978,7 @@ void DensFILE::construct_CI_two_dens(unsigned int start , unsigned int end, vect
     for(unsigned long i = start ; i < end ; i ++){
         if (CIMethod_debug){
             if( i % 5000 == 0)
-        	cout << "line : " << i << " of lines: " << _cim->_perm->get_dim() << endl;
+        	cout << "line : " << i << " of lines: " << my_perm.get_dim() << endl;
         }
        	_cim->_perm->permutate_bit(dets_row,i);
        	TYPE up1 = dets_row[0];
@@ -969,38 +998,64 @@ void DensFILE::construct_CI_two_dens(unsigned int start , unsigned int end, vect
 
 //------------------------------------------DensFCI------------------------------------------
 void DensFCI::construct_CI_one_dens(unsigned int start , unsigned int end, valarray<valarray<double>> & onerdm){
+    #ifdef __OMP__
+    auto num_t = omp_get_max_threads();
+    auto me = omp_get_thread_num();
+    cout << "paralel " << me << endl;
+    #else 
+    auto num_t = 1;
+    auto me = 0;
+    #endif
+    unsigned long long size_part = _cim->gUpDim()/num_t + 1;
+    unsigned long long size_part_d = _cim->gDownDim()/num_t + 1;
+    unsigned long start_l =  me * size_part;
+    unsigned long end_l = start_l + size_part;
+    if( end_l > _cim->gUpDim())
+        end_l = _cim->gUpDim();
+
     if (CIMethod_debug)
         cout << "Started construct_CI_one_dens in DensFCI" << endl;
+
+    Permutator_Bit perm(dim() );
+    TYPE up1 = perm.get_start_int(_cim->gNup());
+    for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
+        up1 = perm.permutate_bit(up1);
     //Contribution of the ups, with the downs equal.
-    TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
-    for(unsigned long i = 0 ; i < _cim->gUpDim() ; i ++){
-	TYPE up2 = up1;
+    for(unsigned long i = start_l ; i < end_l ; i ++){
+        TYPE up2 = up1;
        	for(unsigned long j = i ; j < _cim->gUpDim() ; j ++){
-            TYPE down1 = _cim->_perm->get_start_int(_cim->gNdown());
+            TYPE down1 = perm.get_start_int(_cim->gNdown());
        	    for(unsigned long k = 0 ; k < _cim->gDownDim() ; k++){
 	        double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,0) * _cim->get_eigvec(_cim->gDownDim() * j + k,0);
        	        fill_density_matrix_one(up1,down1, up2, down1,contr, onerdm);
-       	        down1 = _cim->_perm->permutate_bit(down1);
+       	        down1 = perm.permutate_bit(down1);
 	    }
-       	    up2 = _cim->_perm->permutate_bit(up2);
+       	    up2 = perm.permutate_bit(up2);
         } // end cols 
-       	up1 = _cim->_perm->permutate_bit(up1);
+       	up1 = perm.permutate_bit(up1);
     } // end rows 
 
+    start_l =  me * size_part_d;
+    end_l = start_l + size_part_d;
+    if( end_l > _cim->gDownDim()-1)
+        end_l = _cim->gDownDim()-1;
+
+    TYPE down1 = perm.get_start_int(_cim->gNdown());
+    for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
+        down1 = perm.permutate_bit(down1);
     //Now contribution of the downs, with the ups equal, but with no diagonal elements this time because they are already calculated in the loop above.
-    TYPE down1 = _cim->_perm->get_start_int(_cim->gNdown());
-    for(unsigned long i = 0 ; i < _cim->gDownDim() ; i ++){
-	TYPE down2 = _cim->_perm->permutate_bit(down1);
+    for(unsigned long i = start_l ; i < end_l ; i ++){
+	    TYPE down2 = perm.permutate_bit(down1);
        	for(unsigned long j = i+1 ; j < _cim->gDownDim() ; j ++){
-            TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
+            TYPE up1 = perm.get_start_int(_cim->gNup());
        	    for(unsigned long k = 0 ; k < _cim->gUpDim() ; k++){
 	        double contr = _cim->get_eigvec(k*_cim->gDownDim()+i,0) * _cim->get_eigvec(_cim->gDownDim() * k + j,0);
        	        fill_density_matrix_one(up1,down1, up1, down2,contr, onerdm);
-       	        up1 = _cim->_perm->permutate_bit(up1);
+       	        up1 = perm.permutate_bit(up1);
 	    }
-       	    down2 = _cim->_perm->permutate_bit(down2);
+       	    down2 = perm.permutate_bit(down2);
         } // end cols 
-       	down1 = _cim->_perm->permutate_bit(down1);
+       	down1 = perm.permutate_bit(down1);
     } // end rows 
     if (CIMethod_debug)
         cout << "We constructed the density matrix" << endl;
@@ -1018,61 +1073,52 @@ void DensFCI::construct_CI_two_dens(unsigned int start , unsigned int end, vecto
     auto me = 0;
     #endif
     unsigned long long size_part = _cim->gUpDim()/num_t + 1;
-    unsigned long long size_part_d = _cim->gDownDim()/num_t + 1;
     unsigned long start_l =  me * size_part;
     unsigned long end_l = start_l + size_part;
-    if( end_l > _cim->gUpDim())
-        end_l = _cim->gUpDim();
-    Permutator_Bit perm(dim() );
+    if( end_l > _cim->gUpDim()-1)
+        end_l = _cim->gUpDim()-1;
 
+    Permutator_Bit perm(dim() );
     TYPE up1 = perm.get_start_int(_cim->gNup());
     for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
         up1 = perm.permutate_bit(up1);
-    TYPE up2 = up1;
 
     //Handles everything except when the ups are equal.
     for(unsigned long i = start_l ; i < end_l ; i ++){
-	    TYPE up2 = _cim->_perm->permutate_bit(up1);
+	    TYPE up2 = perm.permutate_bit(up1);
        	for(unsigned long j = i+1 ; j < _cim->gUpDim() ; j ++){
-            TYPE down1 = _cim->_perm->get_start_int(_cim->gNdown());
+            TYPE down1 = perm.get_start_int(_cim->gNdown());
        	    for(unsigned long k = 0 ; k < _cim->gDownDim() ; k++){
-                TYPE down2 = _cim->_perm->get_start_int(_cim->gNdown());
+                TYPE down2 = perm.get_start_int(_cim->gNdown());
                 for(unsigned long l = 0 ; l < _cim->gDownDim() ; l++){
                     double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,0) * _cim->get_eigvec(_cim->gDownDim() * j + l,0);
                     fill_density_matrix(up1,down1, up2, down2,contr,twordm);
-                    down2 = _cim->_perm->permutate_bit(down2);
+                    down2 = perm.permutate_bit(down2);
                 }    
-                down1 = _cim->_perm->permutate_bit(down1);
+                down1 = perm.permutate_bit(down1);
 	        }
-       	    up2 = _cim->_perm->permutate_bit(up2);
+       	    up2 = perm.permutate_bit(up2);
         } // end cols 
-       	up1 = _cim->_perm->permutate_bit(up1);
+       	up1 = perm.permutate_bit(up1);
     } // end rows 
 
-    start_l =  me * size_part_d;
-    end_l = start_l + size_part_d;
-    if( end_l > _cim->gDownDim()-1)
-        end_l = _cim->gDownDim()-1;
-
-    TYPE down1 = perm.get_start_int(_cim->gNdown());
+    up1 = perm.get_start_int(_cim->gNup());
     for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
-        down1 = perm.permutate_bit(down1);
+        up1 = perm.permutate_bit(up1);
 
-    TYPE down2 = perm.permutate_bit(down1);
 //This handles the case when the ups are equal.
-    up1 = _cim->_perm->get_start_int(_cim->gNup());
     for(unsigned long i = start_l ; i < end_l ; i ++){
-        TYPE down1 = _cim->_perm->get_start_int(_cim->gNdown());
+        TYPE down1 = perm.get_start_int(_cim->gNup());
         for(unsigned long k = 0 ; k < _cim->gDownDim() ; k++){
             TYPE down2 = down1;
             for(unsigned long l = k; l < _cim->gDownDim() ; l++){
                 double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,0) * _cim->get_eigvec(_cim->gDownDim() * i + l,0);
                 fill_density_matrix(up1,down1, up1, down2,contr,twordm);
-                down2 = _cim->_perm->permutate_bit(down2);
+                down2 = perm.permutate_bit(down2);
             }    
-            down1 = _cim->_perm->permutate_bit(down1);
+            down1 = perm.permutate_bit(down1);
         }
-        up1 = _cim->_perm->permutate_bit(up1);
+        up1 = perm.permutate_bit(up1);
     } 
 
     if (CIMethod_debug)
