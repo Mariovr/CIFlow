@@ -216,6 +216,7 @@ void CIMethod::solve(int neigval){
     else{
         cout << "The system is unchanged after the last call of solve." << endl;
     }
+    _mat.reset_vecs();
 }
 
 double CIMethod::get_ci_energy(int neigval){
