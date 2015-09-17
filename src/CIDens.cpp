@@ -45,10 +45,10 @@ CIDens::CIDens(CIMethod * cim)
 }
 
 
-double CIDens::get_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4) const
+double CIDens::get_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4, const vector<Vector2d > & twordm) const
 {
     if(spin == 1)
-        return _two_dens[1](orb1 *dim() +orb2 , orb3*dim() + orb4);
+        return twordm[1](orb1 *dim() +orb2 , orb3*dim() + orb4);
     else
     {
         if(orb1 == orb2 || orb3 == orb4)
@@ -71,14 +71,14 @@ double CIDens::get_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4) 
             sign *= -1.;
         }
 
-        return sign* _two_dens[spin](orb1 *dim() + orb2 - (orb1 +1) *(orb1+2)/2  , orb3*dim() + orb4 - (orb3 +1) *(orb3+2)/2  );
+        return sign* twordm[spin](orb1 *dim() + orb2 - (orb1 +1) *(orb1+2)/2  , orb3*dim() + orb4 - (orb3 +1) *(orb3+2)/2  );
     }
 }
 
-void CIDens::add_two_rdm(int spin , int orb1 , int orb2 , int orb3 , int orb4, double value) 
+void CIDens::add_two_rdm(int spin , int orb1 , int orb2 , int orb3 , int orb4, double value, vector<Vector2d > & twordm) 
 {
     if(spin == 1)
-        _two_dens[1](orb1 *dim() +orb2 , orb3*dim() + orb4) += value ;
+        twordm[1](orb1 *dim() +orb2 , orb3*dim() + orb4) += value ;
     else
     {
         if(orb1 == orb2 || orb3 == orb4)
@@ -101,13 +101,13 @@ void CIDens::add_two_rdm(int spin , int orb1 , int orb2 , int orb3 , int orb4, d
         }
         //cout << "first " << orb1 *dim() + orb2 - (orb1 +1) *(orb1+2)/2 << std::endl;
         //cout << "second : "<<  orb3*dim() + orb4 - (orb3 +1) *(orb3+2)/2<< std::endl;
-        _two_dens[spin](orb1 *dim() + orb2 - (orb1 +1) *(orb1+2)/2  , orb3*dim() + orb4 - (orb3 +1) *(orb3+2)/2  ) += value;
+        twordm[spin](orb1 *dim() + orb2 - (orb1 +1) *(orb1+2)/2  , orb3*dim() + orb4 - (orb3 +1) *(orb3+2)/2  ) += value;
     }
 
 }
 
 //We only save the unique elements onerdm is symmetric so we keep the upper triangular matrix:
-double CIDens::get_one_rdm(int spin , int orb1 , int orb2)const
+double CIDens::get_one_rdm(int spin , int orb1 , int orb2, const valarray<valarray<double>> & onerdm)const
 {
     if (orb1 > orb2)
     {
@@ -115,10 +115,10 @@ double CIDens::get_one_rdm(int spin , int orb1 , int orb2)const
         orb2 = orb1;
         orb1 = temp;
     }
-    return _one_dens[spin][(orb1 *  dim()) + orb2 - (orb1 * (orb1+1) /2.)];
+    return onerdm[spin][(orb1 *  dim()) + orb2 - (orb1 * (orb1+1) /2.)];
 }
 
-void CIDens::add_one_rdm(int spin , int orb1 , int orb2, double value)
+void CIDens::add_one_rdm(int spin , int orb1 , int orb2, double value, valarray<valarray<double>> & onerdm)
 {
     //Watch out in this implementation it is not necessary because the only contribution to the offdiagonal elements comes from a function that doesn't use the arrange_order function so orb1 and orb2 is always in correct order. If you use this function to fill in a context where this is not the case uncomment the following (also do it when the SCPP test assert fails).
     //if (orb1 > orb2)
@@ -128,50 +128,43 @@ void CIDens::add_one_rdm(int spin , int orb1 , int orb2, double value)
         //orb1 = temp;
     //}
     SCPP_TEST_ASSERT(orb1 <= orb2, "Error in the creation of the one rdm: Make sure orb1 < orb2, orb1 = " << orb1 << " orb2 = " << orb2);
-    _one_dens[spin][(orb1 *  dim()) + orb2 - (orb1 * (orb1+1) /2.)] += value;
+    onerdm[spin][(orb1 *  dim()) + orb2 - (orb1 * (orb1+1) /2.)] += value;
 }
 
-void CIDens::allocate_one_memory()
+void CIDens::allocate_one_memory(valarray<valarray<double>> & onerdm)
 {
     //Two sort of 1rdm, one for the up and one for the down electrons, because for all the relevant determinants in a given part of the Hilbert Space -> the number of up and down electrons stays constant.
-    _one_dens = valarray<valarray<double>>(2);
+    onerdm = valarray<valarray<double>>(2);
     for (int i = 0; i < 2; i++) 
     {
-        _one_dens[i] = valarray<double> (0., dim()* ( dim()+1)/2. );
+        onerdm[i] = valarray<double> (0., dim()* ( dim()+1)/2. );
     }
 }
 
-void CIDens::allocate_two_memory()
+void CIDens::allocate_two_memory(vector<Vector2d > & twordm )
 {
     // Four sorts of relevant 2rdm: 0 -> up, up, up ,up ,1 -> up, down, up, down, 2 -> down, up, down, up,
     // 3-> down, down, down, down (where the first two are for creation and the last two for annihilation.) ALL other combinations are irrelevant because when contracted with the matrixelements they give zero because they integrate down with up spinorbitals or they dont keep the number of ups and downs constant, REMARK a_i+ a_j+ a_k a_l -> 2rdm(ij , lk) because 2rdm corresponds to physicist notation of inproduct.
     // In memory we keep only the 0,1,3 cases , because the 2 is completely equal to the 1. 
     // Because other notation of 2rdm = (pq,rs) with p < q , r < s (this for spin orbitals and we assume up < down for corresponding spatial orbitals (first L ups than L downs) )
     // So for case 1 we keep all elements because p < q and r < s always (u,d,u,d) , and for 0, and 3 we keep only the elements with p<q , r<s and the other ones are generated by changing fermion sign.
-    _two_dens = vector<Vector2d >(3);
-    SCPP_TEST_ASSERT(_two_dens.size() == 3, "Error: _two_dens size is not 3 before allocation of new memory. size " << _two_dens.size());
+    twordm= vector<Vector2d >(3);
+    SCPP_TEST_ASSERT(twordm.size() == 3, "Error: _two_dens size is not 3 before allocation of new memory. size " <<twordm.size());
 
     for (int a = 0; a < 3; a++) 
     {
         if (a != 1)
-            _two_dens[a] = Vector2d((dim() -1/2) * dim() , (dim() -1/2) * dim()) ;
+            twordm[a] = Vector2d((dim() -1/2) * dim() , (dim() -1/2) * dim()) ;
         else
-            _two_dens[a] = Vector2d(dim()* dim() , dim() * dim()) ;
+            twordm[a] = Vector2d(dim()* dim() , dim() * dim()) ;
     }
 }
 
 void CIDens::construct_density(bool twordm)
 {
-    allocate_one_memory();
-    construct_CI_one_dens();
-
-    if (twordm)
-    {
-        allocate_two_memory();
-        construct_CI_two_dens();
-    }
+    build_parallel(twordm);
     #ifdef _DEBUG
-        test_invariants(twordm);
+        //test_invariants(twordm);
     #endif
 }
 
@@ -190,7 +183,7 @@ matrix CIDens::spin_summed_1rdm()const {
     for(int i = 0 ; i < 2 ; i++){
         for(int j = 0 ; j <  dim(); j++){
             for(int k = 0 ; k <  dim(); k++){
-                spinsummed(j , k ) = get_one_rdm(i,j,k);
+                spinsummed(j , k ) = get_one_rdm(i,j,k, _one_dens);
             }
         }    
     }
@@ -205,7 +198,7 @@ void CIDens::test_invariants(bool twordm)
     {
         for( int i = 0; i <  dim(); i++)
         {
-            som += get_one_rdm(a,i,i);
+            som += get_one_rdm(a,i,i, _one_dens);
         }
     }
     SCPP_TEST_ASSERT(fabs(som -N ) < 1e-11 , "Error in density matrices: Trace of the 1rdm : " << som << " is not equal to the sum of Nup: " << _cim->gNup() << " and Ndown:  " << _cim->gNdown()<< std::endl );
@@ -222,12 +215,12 @@ void CIDens::test_invariants(bool twordm)
         {
             for( int j = 0; j <  dim(); j++)
             {
-                som += get_two_rdm(1,i,j,i,j);
+                som += get_two_rdm(1,i,j,i,j,_two_dens);
             }
             for( int j = i+1; j <  dim(); j++)
             {
-                som += get_two_rdm(0,i,j,i,j);
-                som += get_two_rdm(2,i,j,i,j);
+                som += get_two_rdm(0,i,j,i,j,_two_dens);
+                som += get_two_rdm(2,i,j,i,j,_two_dens);
             }
         }
         SCPP_TEST_ASSERT( fabs(som - 1/2. * N *(N-1)) < 1e-11, "Error in density matrices: Trace of the 2rdm: " << som << " is not equal to the number of possible pair formings: 1/2*N *(N-1),  " << 1/2. * N * (N-1));
@@ -255,12 +248,12 @@ double CIDens::get_seniority() const
     {
         for(int j = 0 ; j < dim() ; j++)
 	{
-            som += get_one_rdm(i,j,j);
+            som += get_one_rdm(i,j,j, _one_dens);
 	}
     }
     for (int i = 0; i < dim(); i++)
 	{
-        som -=  2.*get_two_rdm(1,i,i,i,i); //factor 2 because of contr. of u , d, u,d and d,u,d,u
+        som -=  2.*get_two_rdm(1,i,i,i,i,_two_dens); //factor 2 because of contr. of u , d, u,d and d,u,d,u
     }
     return som;
 }
@@ -272,7 +265,7 @@ double CIDens::get_spin_squared() const
     {
         for (int i = 0; i < dim(); i++)
         {
-            spsm -= get_two_rdm(1,k,i,i,k);
+            spsm -= get_two_rdm(1,k,i,i,k,_two_dens);
         }
     }
     //cout << "sz: " << _cim->get_sz()<< std::endl;
@@ -329,7 +322,120 @@ void CIDens::get_no(matrix &occupations, matrix &NO )const
     }
 }
 
-void CIDens::fill_one_dense(TYPE bitstring1 , TYPE bitstring2, TYPE same ,  double contr, int up_or_down){
+void CIDens::build_parallel(bool twordm)
+{
+    #ifdef __OMP__
+        int num_t = omp_get_max_threads();
+    #else
+        int num_t = 1;
+    #endif
+    unsigned long long num_elems = (_cim->get_dim()*1ull*(_cim->get_dim()+1ull))/2.;
+    unsigned long long size_part = num_elems/num_t + 1;
+
+    // every thread should process the lines between i and i+1
+    // with i the thread number
+    std::vector<unsigned int> workload(num_t+1);
+    workload.front() = 0;
+    workload.back() = _cim->get_dim();
+
+    for(int i=1;i<num_t;i++)
+    {
+        auto num_lines = workload[i-1];
+        unsigned long long num_elems = 0;
+
+        while(num_elems < size_part)
+           num_elems += _cim->get_dim() - num_lines++;
+
+        if(num_lines > _cim->get_dim() )
+           num_lines = _cim->get_dim();
+
+        workload[i] = num_lines;
+    }
+    vector< valarray<valarray<double>> > parts_one(num_t);
+    vector<vector<Vector2d >  > parts_two(num_t);
+    if (CIMethod_debug){
+        cout << "Running with " << num_t << " threads." << std::endl;
+    }
+    #pragma omp parallel
+    {
+        #ifdef __OMP__
+            int me = omp_get_thread_num();
+        #else
+            int me = 0;
+        #endif
+        allocate_one_memory(parts_one[me]);
+        if(twordm)
+            allocate_two_memory(parts_two[me]);
+
+		construct_CI_one_dens(workload[me] , workload[me+1], parts_one[me] );
+        if(twordm)
+            construct_CI_two_dens(workload[me] , workload[me+1], parts_two[me] );
+    }// End parallel
+
+    add_from_vector_one(parts_one); //REMARK because we only filled the upper diagonal => _mat should be a SparseMatrix_CRS_Sym type.
+    if (twordm)
+        add_from_vector_two(parts_two); //REMARK because we only filled the upper diagonal => _mat should be a SparseMatrix_CRS_Sym type.
+}
+
+void CIDens::add_from_vector_one(vector< valarray<valarray<double>> > & parts)
+{
+    for(int i = 1 ; i < parts.size() ; i++ )
+    {
+        parts[0] += parts[i];
+    }
+    _one_dens = parts[0];
+}
+
+void CIDens::add_from_vector_two(vector<vector<Vector2d >  > & parts)
+{
+    for(int p = 1 ; p < parts.size() ; p++ )
+    {
+        for (int j = 0; j < 3; j++) {
+            for (int i = 0; i < dim(); i++){
+                int k;
+                if (j == 1)
+                    k = 0;
+                else
+                    k = i+1;
+                    
+                for (; k < dim(); k++){
+                    for (int l = 0; l < dim(); l++) 
+                    {
+                        int m;
+                        if (j == 1)
+                            m = 0;
+                        else
+                            m = l;
+                        for (; m < dim(); m++) 
+                        {
+                            if( j ==1 )
+                            {
+                                if( i *dim() +k <=  l*dim() + m)
+                                {
+                                    double value = get_two_rdm(j,i,k,m,l, parts[p]);
+                                    add_two_rdm(j,i,k,m,l, value , parts[0] );
+                                }
+                            }
+                            else{
+                                if( i *dim() + k - (i+1) *(i+2)/2  <= l*dim() + m- ( l+1) *( l+2)/2  )
+                                {
+                                    double value = get_two_rdm(j,i,k,m,l, parts[p]);
+                                    add_two_rdm(j,i,k,m,l, value , parts[0] );
+                                }
+
+                            }
+                            //parts[0][j][i][k][m][l] += parts[p][j][i][k][m][l];
+                        }//end for m
+                    }//End for l
+                }//End for k
+            }   
+        }
+    }
+    _two_dens = parts[0];
+}
+
+
+void CIDens::fill_one_dense(TYPE bitstring1 , TYPE bitstring2, TYPE same ,  double contr, int up_or_down,valarray<valarray<double>> & onerdm , vector<Vector2d > & twordm ){
     int * orbs = _cim->get_orbs(bitstring1 ^ bitstring2 , 2);
     int * otherorbs;
     int * sameorbs;
@@ -346,7 +452,7 @@ void CIDens::fill_one_dense(TYPE bitstring1 , TYPE bitstring2, TYPE same ,  doub
         contr *= -1;
     if(up_or_down<2)
     {
-        add_one_rdm(up_or_down,orbs[0],orbs[1], contr); //make sure one_dense is initialized to zero. Contribution of transposed is gone.
+        add_one_rdm(up_or_down,orbs[0],orbs[1], contr, onerdm); //make sure one_dense is initialized to zero. Contribution of transposed is gone.
     }
     else
     {
@@ -354,14 +460,14 @@ void CIDens::fill_one_dense(TYPE bitstring1 , TYPE bitstring2, TYPE same ,  doub
         if(up_or_down == 2){
             for(int i = 0 ; i < _cim->gNup()-1 ; i ++)
             {
-                add_two_rdm(0,orbs[0],otherorbs[i],orbs[1],otherorbs[i],  contr); // all ups
+                add_two_rdm(0,orbs[0],otherorbs[i],orbs[1],otherorbs[i],  contr,twordm); // all ups
                 //add_two_rdm(0,otherorbs[i],orbs[0],otherorbs[i],orbs[1] , contr); // all ups
                 //add_two_rdm(0,orbs[0],otherorbs[i],otherorbs[i],orbs[1], -1.*contr); // all ups
                 //add_two_rdm(0,otherorbs[i],orbs[0],orbs[1],otherorbs[i],  -1.*contr ); // all ups
             }    
             for(int i = 0 ; i < _cim->gNdown() ; i ++)
             {
-                add_two_rdm(1,orbs[0] ,sameorbs[i] ,orbs[1] ,sameorbs[i] , contr); //sameorbs[i] are downs.
+                add_two_rdm(1,orbs[0] ,sameorbs[i] ,orbs[1] ,sameorbs[i] , contr,twordm); //sameorbs[i] are downs.
             }
             //CONTRIUBTION of the transposed.
             /*
@@ -380,14 +486,14 @@ void CIDens::fill_one_dense(TYPE bitstring1 , TYPE bitstring2, TYPE same ,  doub
         }
         else{
             for(int i = 0 ; i < _cim->gNdown()-1 ; i ++){
-                add_two_rdm(2,orbs[0],otherorbs[i],orbs[1],otherorbs[i], contr ); // all downs
+                add_two_rdm(2,orbs[0],otherorbs[i],orbs[1],otherorbs[i], contr ,twordm); // all downs
                 //add_two_rdm(2,otherorbs[i],orbs[0],otherorbs[i],orbs[1], contr ); // all downs
                 //add_two_rdm(2,otherorbs[i],orbs[0],orbs[1],otherorbs[i], -1.*contr ); // all downs
                 //add_two_rdm(2,orbs[0],otherorbs[i],otherorbs[i],orbs[1], -1.*contr ); // all downs
             }    
             for(int i = 0 ; i < _cim->gNup() ; i ++){
                 //sameorbs[i] ups.
-                add_two_rdm(1 ,sameorbs[i] ,orbs[0] ,sameorbs[i] ,orbs[1] , contr ); //make sure two_dense is initialized to zero.
+                add_two_rdm(1 ,sameorbs[i] ,orbs[0] ,sameorbs[i] ,orbs[1] , contr ,twordm); //make sure two_dense is initialized to zero.
             }    
             //CONTRIUBTION of the transposed.
             /*
@@ -412,7 +518,7 @@ void CIDens::fill_one_dense(TYPE bitstring1 , TYPE bitstring2, TYPE same ,  doub
     }    
 }
 
-void CIDens::fill_two_dense(TYPE up1 , TYPE up2, double contr, int up_or_down){
+void CIDens::fill_two_dense(TYPE up1 , TYPE up2, double contr, int up_or_down,vector<Vector2d > & twordm){
     int * orbs = _cim->get_orbs(up1^ up2 , 4);
     _cim->arrange_order(orbs , 4 , up1 , up2);
     int checkorbs[2] = {orbs[0] , orbs[1]};
@@ -423,7 +529,7 @@ void CIDens::fill_two_dense(TYPE up1 , TYPE up2, double contr, int up_or_down){
     if (diff % 2 != 0 ){
         contr *= -1;
     }
-    add_two_rdm(up_or_down,orbs[0],orbs[1],orbs[2],orbs[3],  contr ); //make sure two_dense is initialized to zero.
+    add_two_rdm(up_or_down,orbs[0],orbs[1],orbs[2],orbs[3],  contr ,twordm); //make sure two_dense is initialized to zero.
     //add_two_rdm(up_or_down,orbs[0],orbs[1],orbs[3],orbs[2],  -1.*contr ); //make sure two_dense is initialized to zero.
     //add_two_rdm(up_or_down,orbs[1],orbs[0],orbs[2],orbs[3],  -1.*contr ); //make sure two_dense is initialized to zero.
     //add_two_rdm(up_or_down,orbs[1],orbs[0],orbs[3],orbs[2],  contr ); //make sure two_dense is initialized to zero.
@@ -435,7 +541,7 @@ void CIDens::fill_two_dense(TYPE up1 , TYPE up2, double contr, int up_or_down){
     delete [] orbs;
 }
 
-void CIDens::fill_two_dense_upanddown(TYPE up1 , TYPE up2, TYPE down1, TYPE down2, double contr )
+void CIDens::fill_two_dense_upanddown(TYPE up1 , TYPE up2, TYPE down1, TYPE down2, double contr ,vector<Vector2d > & twordm )
 {
     int * orbs = _cim->get_orbs(up1 ^ up2 , 2);
     int * downorbs = _cim->get_orbs(down1 ^ down2 , 2);
@@ -453,7 +559,7 @@ void CIDens::fill_two_dense_upanddown(TYPE up1 , TYPE up2, TYPE down1, TYPE down
     //SCPP_TEST_ASSERT( ( (up1 & (d<<orbs[0] ) )> 0 )&& ( (up2 & (d<<orbs[1] ) )> 0 ) , "Error one of the different orbitals is not associated to the right up, up1:  orbs: " << orbs[0] << " orbs:  " << orbs[1] << " gives values : " << (up2 & (d <<orbs[1] ) ));
     //SCPP_TEST_ASSERT((down1 & (d<<downorbs[0] ) )> 0 && (down2 & (d<<downorbs[1] ) )> 0 , "Error one of the different orbitals is not associated to the right down, down1:  orbs: " << downorbs[0] << " down2: orbs:  " << downorbs[1] );
 
-    add_two_rdm(1,orbs[0],downorbs[0],orbs[1],downorbs[1], contr); //make sure two_dense is initialized to zero.
+    add_two_rdm(1,orbs[0],downorbs[0],orbs[1],downorbs[1], contr, twordm); //make sure two_dense is initialized to zero.
     //Contribution of transposed.,
     //add_two_rdm(1,orbs[1],downorbs[1],orbs[0],downorbs[0], contr); //make sure two_dense is initialized to zero.
 
@@ -461,19 +567,19 @@ void CIDens::fill_two_dense_upanddown(TYPE up1 , TYPE up2, TYPE down1, TYPE down
     delete [] orbs;
 }
 
-void CIDens::fill_diagonal(TYPE up1 , TYPE down1, double contr, bool twordm)
+void CIDens::fill_diagonal(TYPE up1 , TYPE down1, double contr, bool two_rdm,valarray<valarray<double>> & onerdm , vector<Vector2d > & twordm )
 {
     int *  orbsup = _cim->get_orbs(up1,_cim->gNup());
     int * orbsdown = _cim->get_orbs(down1,_cim->gNdown());
     //first part of up,up,up,up of the rdms
     for(int i = 0 ; i < _cim->gNup() ; i++){
-        if(!twordm){
-            add_one_rdm(0,orbsup[i],orbsup[i], contr);
+        if(!two_rdm){
+            add_one_rdm(0,orbsup[i],orbsup[i], contr, onerdm);
         }
         else{
             for(int j = i+1 ; j < _cim->gNup() ; j++){
                 //REMARK: when i =j it is trivially zero
-                add_two_rdm(0,orbsup[i],orbsup[j],orbsup[i],orbsup[j], contr); //make sure two_dense is initialized to zero
+                add_two_rdm(0,orbsup[i],orbsup[j],orbsup[i],orbsup[j], contr, twordm); //make sure two_dense is initialized to zero
                 //add_two_rdm(0,orbsup[j],orbsup[i],orbsup[j],orbsup[i],contr); //make sure two_dense is initialized to zero
                 //add_two_rdm(0,orbsup[i],orbsup[j],orbsup[j],orbsup[i], -1.*contr); //make sure two_dense is initialized to zero
                 //add_two_rdm(0,orbsup[j],orbsup[i],orbsup[i],orbsup[j],-1.*contr); //make sure two_dense is initialized to zero
@@ -483,12 +589,12 @@ void CIDens::fill_diagonal(TYPE up1 , TYPE down1, double contr, bool twordm)
 
     //Contribution to the down,down,down,down part of the rdms 
     for(int i = 0 ; i < _cim->gNdown() ; i++){
-        if(!twordm){
-            add_one_rdm(1,orbsdown[i],orbsdown[i], contr);
+        if(!two_rdm){
+            add_one_rdm(1,orbsdown[i],orbsdown[i], contr, onerdm);
         }
         else{
             for(int j = i+1 ; j < _cim->gNdown() ; j++){
-                add_two_rdm(2,orbsdown[i],orbsdown[j],orbsdown[i],orbsdown[j], contr ); //make sure two_dense is initialized to zero
+                add_two_rdm(2,orbsdown[i],orbsdown[j],orbsdown[i],orbsdown[j], contr , twordm); //make sure two_dense is initialized to zero
                 //add_two_rdm(2,orbsdown[j],orbsdown[i],orbsdown[j],orbsdown[i],contr ); //make sure two_dense is initialized to zero
                 //add_two_rdm(2,orbsdown[i],orbsdown[j],orbsdown[j],orbsdown[i], -1.*contr ); //make sure two_dense is initialized to zero
                 //add_two_rdm(2,orbsdown[j],orbsdown[i],orbsdown[i],orbsdown[j],-1.*contr ); //make sure two_dense is initialized to zero
@@ -497,10 +603,10 @@ void CIDens::fill_diagonal(TYPE up1 , TYPE down1, double contr, bool twordm)
     }
 
     //Contribution to the mixing parts.
-    if(twordm){
+    if(two_rdm){
         for(int i = 0 ; i < _cim->gNup() ; i++){
             for(int j = 0 ; j < _cim->gNdown() ; j++){
-                add_two_rdm(1,orbsup[i],orbsdown[j],orbsup[i],orbsdown[j],  contr); //make sure two_dense is initialized to zero
+                add_two_rdm(1,orbsup[i],orbsdown[j],orbsup[i],orbsdown[j],  contr,twordm); //make sure two_dense is initialized to zero
             }	    
         }
     }	
@@ -508,46 +614,46 @@ void CIDens::fill_diagonal(TYPE up1 , TYPE down1, double contr, bool twordm)
     delete [] orbsdown;
 }
 
-void CIDens::fill_density_matrix(TYPE up1 , TYPE down1 , TYPE up2, TYPE down2, double contr){
+void CIDens::fill_density_matrix(TYPE up1 , TYPE down1 , TYPE up2, TYPE down2, double contr, vector<Vector2d > & twordm){
     if(_cim->_perm->popcount( down1 ^ down2) > 4  || _cim->_perm->popcount(up1 ^ up2) > 4){ 
         return;
     }
     else if (_cim->_perm->popcount( up1 ^ up2) == 4 && _cim->_perm->popcount(down1 ^ down2) == 0){ // two different occupied orbitals
-        fill_two_dense(up1, up2, contr, 0);
+        fill_two_dense(up1, up2, contr, 0, twordm);
     }
     else if(_cim->_perm->popcount(up1 ^ up2) == 2){ // one different occupied orbital-> two posibilities: 1) downs are the same , 2) downs have also one differen occupied orbital.
         if(_cim->_perm->popcount(down1 ^ down2) == 0){
             //1)downs are the same:
-            fill_one_dense(up1,up2 , down1 , contr, 2);
+            fill_one_dense(up1,up2 , down1 , contr, 2, _one_dens , twordm);
         }//end downs are the same
         else if(_cim->_perm->popcount(down1 ^ down2) == 2){
             //2) downs differ also by own orbital.
-            fill_two_dense_upanddown(up1 , up2, down1, down2, contr );
+            fill_two_dense_upanddown(up1 , up2, down1, down2, contr ,twordm);
         } // ends down and ups differ by one
     } // end ups differ by one.
     else if (_cim->_perm->popcount( down1 ^ down2) == 4 && _cim->_perm->popcount(up1 ^ up2) == 0){ // two different occupied orbitals of the downs
-        fill_two_dense(down1, down2, contr, 2);
+        fill_two_dense(down1, down2, contr, 2,twordm);
     } //end downs differ by two.
     else if(_cim->_perm->popcount(down1 ^ down2) == 2 &&_cim->_perm->popcount(up1 ^ up2) == 0 ){ // one different occupied orbital of downs->  ups are the same (downs and up differ by 1 is already taken into acount above)
-        fill_one_dense(down1,down2 , up1 , contr, 3);
+        fill_one_dense(down1,down2 , up1 , contr, 3, _one_dens , twordm);
     } // end down differ by one.
     else if(_cim->_perm->popcount( down1 ^ down2) == 0 && _cim->_perm->popcount(up1 ^ up2) == 0){ // diagonal contribution
-        fill_diagonal(up1 , down1,contr,1); //set 1 for 2rdm
+        fill_diagonal(up1 , down1,contr,1, _one_dens , twordm); //set 1 for 2rdm
     }
 }
 
-void CIDens::fill_density_matrix_one(TYPE up1 , TYPE down1 , TYPE up2 , TYPE down2, double contr){
+void CIDens::fill_density_matrix_one(TYPE up1 , TYPE down1 , TYPE up2 , TYPE down2, double contr,valarray<valarray<double>> & onerdm){
     if(_cim->_perm->popcount( up1 ^ up2) > 2 || _cim->_perm->popcount(down1 ^ down2) > 2){
         return; 
     }
     else if (_cim->_perm->popcount( up1 ^ up2) == 2 && _cim->_perm->popcount(down1 ^ down2) == 0){
-        fill_one_dense(up1,up2 , down1 , contr, 0);
+        fill_one_dense(up1,up2 , down1 , contr, 0, onerdm , _two_dens);
     }
     else if(_cim->_perm->popcount( up1 ^ up2) == 0 && _cim->_perm->popcount(down1 ^ down2) == 2){
-        fill_one_dense(down1,down2 , up1 , contr, 1);
+        fill_one_dense(down1,down2 , up1 , contr, 1, onerdm , _two_dens);
     }
     else if(_cim->_perm->popcount( up1 ^ up2) == 0 && _cim->_perm->popcount(down1 ^ down2) == 0){
-        fill_diagonal(up1, down1, contr,0); //set 0  for 1rdm
+        fill_diagonal(up1, down1, contr,0, onerdm , _two_dens); //set 0  for 1rdm
     }		    
 }
 
@@ -555,8 +661,8 @@ double CIDens::get_one_electron_energy(){
     double energy = 0.0;
     for (int i = 0; i < dim(); i++) {
         for (int j = 0; j < dim(); j++) {
-            energy += _cim->get_ham()->getTmat(i,j) * get_one_rdm(0,i,j);
-            energy += _cim->get_ham()->getTmat(i,j) * get_one_rdm(1,i,j);
+            energy += _cim->get_ham()->getTmat(i,j) * get_one_rdm(0,i,j, _one_dens);
+            energy += _cim->get_ham()->getTmat(i,j) * get_one_rdm(1,i,j, _one_dens);
         }
     }
     return energy;
@@ -569,9 +675,9 @@ double CIDens::get_two_electron_energy() {
             for (int k = 0; k < dim(); k++) {
                 for (int l = 0; l < dim(); l++) {
                     double vmat = _cim->get_ham()->getVmat(i,j,k,l);
-                    energy +=  vmat * get_two_rdm(0,i,j,k,l);
-                    energy +=  2*vmat * get_two_rdm(1,i,j,k,l); //for u,d,u,d and d,u,d,u which are equal.
-                    energy +=  vmat * get_two_rdm(2,i,j,k,l);
+                    energy +=  vmat * get_two_rdm(0,i,j,k,l,_two_dens);
+                    energy +=  2*vmat * get_two_rdm(1,i,j,k,l,_two_dens); //for u,d,u,d and d,u,d,u which are equal.
+                    energy +=  vmat * get_two_rdm(2,i,j,k,l,_two_dens);
                 }
             }
         }
@@ -589,8 +695,8 @@ void CIDens::print_one_dens(std::ostream & os)const{
      int count = 0;
      for (int i = 0; i < dim(); i++) {
 	 for (int k = k; k < dim(); k++) {
-		 if(fabs(get_one_rdm(j,i,k)) >= 1e-12 ){
-			 os << i << " " << k << " " << get_one_rdm(j,i,k) << std::endl;
+		 if(fabs(get_one_rdm(j,i,k, _one_dens)) >= 1e-12 ){
+			 os << i << " " << k << " " << get_one_rdm(j,i,k, _one_dens) << std::endl;
 			 count ++;
 		  }
 	  }
@@ -608,7 +714,7 @@ void CIDens::print_two_dens(std::ostream & os)const{
          if (j == 1)
              k = 0;
          else
-             k = i;
+             k = i+1;
              
 	     for (; k < dim(); k++){
 		     for (int l = 0; l < dim(); l++) {
@@ -616,10 +722,10 @@ void CIDens::print_two_dens(std::ostream & os)const{
                  if (j == 1)
                      m = 0;
                  else
-                     m = l;
+                     m = l+1;
 			     for (; m < dim(); m++) {
-                     if(fabs( get_two_rdm(j,i,k,l,m)) > 1e-12  ){
-                         os << i << " " << k << " " << l << " " << m << " " << get_two_rdm(j,i,k,l,m) << std::endl;
+                     if(fabs( get_two_rdm(j,i,k,l,m,_two_dens)) > 1e-12  ){
+                         os << i << " " << k << " " << l << " " << m << " " << get_two_rdm(j,i,k,l,m,_two_dens) << std::endl;
                          count ++;
                      }
 			     }
@@ -636,10 +742,10 @@ void CIDens::compare_one_dens(CIDens *cid){
        std::cout <<"One rdm of the " << j << " spin electrons." <<std::endl;
        for (int i = 0; i < dim(); i++) {
            for (int k = 0; k < dim(); k++) {
-               if(get_one_rdm(j,i,k) != 0 || cid->get_one_rdm(j,i,k) != 0){
-		   double verschil = get_one_rdm(j,i,k)- cid->get_one_rdm(j,i,k);
+               if(get_one_rdm(j,i,k, _one_dens) != 0 || get_one_rdm(j,i,k, cid->get_one_dm() ) != 0){
+		   double verschil = get_one_rdm(j,i,k, _one_dens)- get_one_rdm(j,i,k, cid->get_one_dm() );
 		   if(abs(verschil) > 1e-10){
-		       std::cout << i << " " << k << " this: " << get_one_rdm(j,i,k) << " other: " << cid->get_one_rdm(j,i,k) << " verschil " << verschil <<std::endl;
+		       std::cout << i << " " << k << " this: " << get_one_rdm(j,i,k, _one_dens) << " other: " << get_one_rdm(j,i,k, cid->get_one_dm() ) << " verschil " << verschil <<std::endl;
                    }
                	   totverschil += pow(verschil,2);
                }
@@ -657,10 +763,10 @@ void CIDens::compare_two_dens(CIDens *cid){
 	     for (int k = 0; k < dim(); k++){
 		     for (int l = 0; l < dim(); l++) {
 			     for (int m = 0; m < dim(); m++) {
-				 if(get_two_rdm(j,i,k,l,m) != 0 || cid->get_two_rdm(j,i,k,l,m) != 0){
-				         double verschil = get_two_rdm(j,i,k,l,m) - cid->get_two_rdm(j,i,k,l,m);
+				 if(get_two_rdm(j,i,k,l,m,_two_dens) != 0 || get_two_rdm(j,i,k,l,m, cid->get_two_dm() ) != 0){
+				         double verschil = get_two_rdm(j,i,k,l,m,_two_dens) - get_two_rdm(j,i,k,l,m,cid->get_two_dm() );
 		                         if(abs(verschil) > 1e-10){
-					     std::cout << i << " " << k << " " << l << " " << m << " this " << get_two_rdm(j,i,k,l,m) << " other " << cid->get_two_rdm(j,i,k,l,m) << " verschil " << verschil <<std::endl;
+					     std::cout << i << " " << k << " " << l << " " << m << " this " << get_two_rdm(j,i,k,l,m,_two_dens) << " other " << cid->get_two_rdm(j,i,k,l,m, cid->get_two_dm() ) << " verschil " << verschil <<std::endl;
 			                 }
 					 totverschil += pow(verschil,2);
 				 }
@@ -675,11 +781,13 @@ void CIDens::compare_two_dens(CIDens *cid){
 //----------------------------SUBCLASSES----------------------------------------------------------
 
 //---------------------------DensDOCI---------------------------------------------------------//
-void DensDOCI::construct_CI_one_dens() 
+void DensDOCI::construct_CI_one_dens(unsigned int start , unsigned int end, valarray<valarray<double>> & onerdm ) 
 {
     int L = dim();
     TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
-    for(long i = 0; i < _cim->gUpDim(); i++) 
+    for(auto idx_begin=0;idx_begin< start;++idx_begin)
+        up1 = _cim->_perm->permutate_bit(up1);
+    for(long i = start; i < end; i++) 
     {
         for (int j = 0; j < L; j++) 
         {
@@ -687,22 +795,24 @@ void DensDOCI::construct_CI_one_dens()
             TYPE shiftbit = 1;
             if(up1 & ( shiftbit << j))
             {
-                add_one_rdm(0,j,j,contr);
-                add_one_rdm(1,j,j,contr);
+                add_one_rdm(0,j,j,contr, onerdm);
+                add_one_rdm(1,j,j,contr, onerdm);
             }
         }
         up1 = _cim->_perm->permutate_bit(up1);
     } 
 }
 
-void DensDOCI::construct_CI_two_dens() 
+void DensDOCI::construct_CI_two_dens(unsigned int start , unsigned int end, vector<Vector2d > & twordm ) 
 {
     vector< vector<int> > vw  ( _norb +1,  vector<int> ( _cim->gNup() + 1 , 0));
     setup_vertex_weights(vw);
 
     TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
+    for(auto idx_begin=0;idx_begin< start;++idx_begin)
+        up1 = _cim->_perm->permutate_bit(up1);
 
-    for (long i = 0; i < _cim->gUpDim(); i++) 
+    for (long i = start; i < end ; i++) 
     {
         double contr = _cim->get_eigvec(i,0) * _cim->get_eigvec(i,0);
         for (int j = 0; j < dim() ; j++) //Loop over the L spatial orbitals.
@@ -717,15 +827,15 @@ void DensDOCI::construct_CI_two_dens()
                     {
                         if (j != k) 
                         {
-                            add_two_rdm(0,j,k,j,k , contr) ;
+                            add_two_rdm(0,j,k,j,k , contr,twordm) ;
                             //add_two_rdm(0,j,k,k,j, -1.*contr);
 
-                            add_two_rdm(2,j,k,j,k, contr) ;
+                            add_two_rdm(2,j,k,j,k, contr,twordm) ;
                             //add_two_rdm(2,j,k,k,j, -1.* contr) ;
 
-                            add_two_rdm(1,k,j,k,j, contr);
+                            add_two_rdm(1,k,j,k,j, contr,twordm);
                         }
-                        add_two_rdm(1,j,k,j,k, contr);
+                        add_two_rdm(1,j,k,j,k, contr,twordm);
                     }
                 }
 
@@ -742,7 +852,7 @@ void DensDOCI::construct_CI_two_dens()
                         TYPE up2 = up_interm ^ (shiftbit << k);
                         unsigned int index = determine_weight(up2, vw);
                         double contr2 = _cim->get_eigvec(i,0) * _cim->get_eigvec(index,0);
-                        add_two_rdm(1,j,j,k,k, contr2);
+                        add_two_rdm(1,j,j,k,k, contr2,twordm);
                         //add_two_rdm(1,k,k,j,j, contr2); //Contribution of transposed.
                     } 
                 }
@@ -798,12 +908,16 @@ unsigned int DensDOCI::determine_weight(TYPE string , const vector<vector<int> >
 
 //---------------------------DensFILE-------------------------------------------------------------//
 //REMARK DensFILE can be used for FCI_File and for CI_Big because they have the same permutator object.
-void DensFILE::construct_CI_one_dens(){
+void DensFILE::construct_CI_one_dens( unsigned int start , unsigned int end, valarray<valarray<double>> & onerdm){
+    TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
+    for(auto idx_begin=0;idx_begin< start;++idx_begin)
+        up1 = _cim->_perm->permutate_bit(up1);
+
     if (CIMethod_debug)
         cout << "Started construct_CI_one_dens in DensFILE" << endl;
     TYPE dets_row[2] = {0};
     TYPE dets_col[2] = {0};
-    for(unsigned long i = 0 ; i < _cim->get_dim() ; i ++){
+    for(unsigned long i = start ; i < end ; i ++){
         if (CIMethod_debug){
             if( i % 5000 == 0)
         	cout << "line : " << i << " of lines: " << _cim->_perm->get_dim() << endl;
@@ -816,19 +930,23 @@ void DensFILE::construct_CI_one_dens(){
        	    TYPE up2 = dets_col[0];
             TYPE down2 = dets_col[1];
 	        double contr = _cim->get_eigvec(i,0) * _cim->get_eigvec(j,0);
-       	    fill_density_matrix_one(up1,down1, up2, down2,contr);
+       	    fill_density_matrix_one(up1,down1, up2, down2,contr, onerdm);
         } // end cols 
     } // end rows 
     if (CIMethod_debug)
         cout << "We constructed the density matrix" << endl;
 }
 
-void DensFILE::construct_CI_two_dens(){
+void DensFILE::construct_CI_two_dens(unsigned int start , unsigned int end, vector<Vector2d > & twordm){
+    TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
+    for(auto idx_begin=0;idx_begin< start;++idx_begin)
+        up1 = _cim->_perm->permutate_bit(up1);
+
     if (CIMethod_debug)
         cout << "Started construct_CI_two_dens in DensFILE" << endl;
     TYPE dets_row[2] = {0};
     TYPE dets_col[2] = {0};
-    for(unsigned long i = 0 ; i < _cim->get_dim() ; i ++){
+    for(unsigned long i = start ; i < end ; i ++){
         if (CIMethod_debug){
             if( i % 5000 == 0)
         	cout << "line : " << i << " of lines: " << _cim->_perm->get_dim() << endl;
@@ -841,7 +959,7 @@ void DensFILE::construct_CI_two_dens(){
        	    TYPE up2 = dets_col[0];
             TYPE down2 = dets_col[1];
 	        double contr = _cim->get_eigvec(i,0) * _cim->get_eigvec(j,0);
-       	    fill_density_matrix(up1,down1, up2, down2,contr);
+       	    fill_density_matrix(up1,down1, up2, down2,contr,twordm);
         } // end cols 
     } // end rows 
     if (CIMethod_debug)
@@ -850,7 +968,7 @@ void DensFILE::construct_CI_two_dens(){
 
 
 //------------------------------------------DensFCI------------------------------------------
-void DensFCI::construct_CI_one_dens(){
+void DensFCI::construct_CI_one_dens(unsigned int start , unsigned int end, valarray<valarray<double>> & onerdm){
     if (CIMethod_debug)
         cout << "Started construct_CI_one_dens in DensFCI" << endl;
     //Contribution of the ups, with the downs equal.
@@ -861,7 +979,7 @@ void DensFCI::construct_CI_one_dens(){
             TYPE down1 = _cim->_perm->get_start_int(_cim->gNdown());
        	    for(unsigned long k = 0 ; k < _cim->gDownDim() ; k++){
 	        double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,0) * _cim->get_eigvec(_cim->gDownDim() * j + k,0);
-       	        fill_density_matrix_one(up1,down1, up2, down1,contr);
+       	        fill_density_matrix_one(up1,down1, up2, down1,contr, onerdm);
        	        down1 = _cim->_perm->permutate_bit(down1);
 	    }
        	    up2 = _cim->_perm->permutate_bit(up2);
@@ -877,7 +995,7 @@ void DensFCI::construct_CI_one_dens(){
             TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
        	    for(unsigned long k = 0 ; k < _cim->gUpDim() ; k++){
 	        double contr = _cim->get_eigvec(k*_cim->gDownDim()+i,0) * _cim->get_eigvec(_cim->gDownDim() * k + j,0);
-       	        fill_density_matrix_one(up1,down1, up1, down2,contr);
+       	        fill_density_matrix_one(up1,down1, up1, down2,contr, onerdm);
        	        up1 = _cim->_perm->permutate_bit(up1);
 	    }
        	    down2 = _cim->_perm->permutate_bit(down2);
@@ -888,13 +1006,32 @@ void DensFCI::construct_CI_one_dens(){
         cout << "We constructed the density matrix" << endl;
 }
 
-void DensFCI::construct_CI_two_dens(){
+void DensFCI::construct_CI_two_dens(unsigned int start , unsigned int end, vector<Vector2d > & twordm ){
     if (CIMethod_debug)
         cout << "Started construct_CI_one_dens in DensFCI" << endl;
 
+    #ifdef __OMP__
+    auto num_t = omp_get_max_threads();
+    auto me = omp_get_thread_num();
+    #else 
+    auto num_t = 1;
+    auto me = 0;
+    #endif
+    unsigned long long size_part = _cim->gUpDim()/num_t + 1;
+    unsigned long long size_part_d = _cim->gDownDim()/num_t + 1;
+    unsigned long start_l =  me * size_part;
+    unsigned long end_l = start_l + size_part;
+    if( end_l > _cim->gUpDim())
+        end_l = _cim->gUpDim();
+    Permutator_Bit perm(dim() );
+
+    TYPE up1 = perm.get_start_int(_cim->gNup());
+    for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
+        up1 = perm.permutate_bit(up1);
+    TYPE up2 = up1;
+
     //Handles everything except when the ups are equal.
-    TYPE up1 = _cim->_perm->get_start_int(_cim->gNup());
-    for(unsigned long i = 0 ; i < _cim->gUpDim() ; i ++){
+    for(unsigned long i = start_l ; i < end_l ; i ++){
 	    TYPE up2 = _cim->_perm->permutate_bit(up1);
        	for(unsigned long j = i+1 ; j < _cim->gUpDim() ; j ++){
             TYPE down1 = _cim->_perm->get_start_int(_cim->gNdown());
@@ -902,7 +1039,7 @@ void DensFCI::construct_CI_two_dens(){
                 TYPE down2 = _cim->_perm->get_start_int(_cim->gNdown());
                 for(unsigned long l = 0 ; l < _cim->gDownDim() ; l++){
                     double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,0) * _cim->get_eigvec(_cim->gDownDim() * j + l,0);
-                    fill_density_matrix(up1,down1, up2, down2,contr);
+                    fill_density_matrix(up1,down1, up2, down2,contr,twordm);
                     down2 = _cim->_perm->permutate_bit(down2);
                 }    
                 down1 = _cim->_perm->permutate_bit(down1);
@@ -912,15 +1049,25 @@ void DensFCI::construct_CI_two_dens(){
        	up1 = _cim->_perm->permutate_bit(up1);
     } // end rows 
 
-    //This handles the case when the ups are equal.
+    start_l =  me * size_part_d;
+    end_l = start_l + size_part_d;
+    if( end_l > _cim->gDownDim()-1)
+        end_l = _cim->gDownDim()-1;
+
+    TYPE down1 = perm.get_start_int(_cim->gNdown());
+    for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
+        down1 = perm.permutate_bit(down1);
+
+    TYPE down2 = perm.permutate_bit(down1);
+//This handles the case when the ups are equal.
     up1 = _cim->_perm->get_start_int(_cim->gNup());
-    for(unsigned long i = 0 ; i < _cim->gUpDim() ; i ++){
+    for(unsigned long i = start_l ; i < end_l ; i ++){
         TYPE down1 = _cim->_perm->get_start_int(_cim->gNdown());
         for(unsigned long k = 0 ; k < _cim->gDownDim() ; k++){
             TYPE down2 = down1;
             for(unsigned long l = k; l < _cim->gDownDim() ; l++){
                 double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,0) * _cim->get_eigvec(_cim->gDownDim() * i + l,0);
-                fill_density_matrix(up1,down1, up1, down2,contr);
+                fill_density_matrix(up1,down1, up1, down2,contr,twordm);
                 down2 = _cim->_perm->permutate_bit(down2);
             }    
             down1 = _cim->_perm->permutate_bit(down1);
