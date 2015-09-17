@@ -588,7 +588,7 @@ void CIDens::print_one_dens(std::ostream & os)const{
      os <<"#One rdm of the " << j << " spin electrons." <<std::endl;
      int count = 0;
      for (int i = 0; i < dim(); i++) {
-	 for (int k = k; k < dim(); k++) {
+	 for (int k = i; k < dim(); k++) {
 		 if(fabs(get_one_rdm(j,i,k)) >= 1e-12 ){
 			 os << i << " " << k << " " << get_one_rdm(j,i,k) << std::endl;
 			 count ++;
