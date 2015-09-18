@@ -215,8 +215,8 @@ void CIDens::test_invariants(bool twordm)
     }
     SCPP_TEST_ASSERT(fabs(som -N ) < 1e-11 , "Error in density matrices: Trace of the 1rdm : " << som << " is not equal to the sum of Nup: " << _cim->gNup() << " and Ndown:  " << _cim->gNdown()<< std::endl );
 
-    print_one_dens(cout);
-    print_two_dens(cout);
+    //print_one_dens(cout);
+    //print_two_dens(cout);
 
     if (twordm)
     {
@@ -235,7 +235,7 @@ void CIDens::test_invariants(bool twordm)
                 som += get_two_rdm(2,i,j,i,j);
             }
         }
-        SCPP_TEST_ASSERT( fabs(som - 1/2. * N *(N-1)) < 1e-11, "Error in density matrices: Trace of the 2rdm: " << som << " is not equal to the number of possible pair formings: 1/2*N *(N-1),  " << 1/2. * N * (N-1));
+        SCPP_TEST_ASSERT( fabs(som - 1/2. * N *(N-1)) < 1e-5, "Error in density matrices: Trace of the 2rdm: " << som << " is not equal to the number of possible pair formings: 1/2*N *(N-1),  " << 1/2. * N * (N-1));
 
         SCPP_TEST_ASSERT(fabs(get_dens_energy() - _cim->get_ci_energy() ) < 1e-11, setprecision(14) << "Error in density matrices: Energy of state: " <<  _cim->get_ci_energy() << " is not equal to energy calculated from the density matrices.: " << get_dens_energy() << std::endl );
 
@@ -341,26 +341,43 @@ void CIDens::build_parallel(bool twordm)
     #else
         int num_t = 1;
     #endif
-    unsigned long long num_elems = (_cim->get_dim()*1ull*(_cim->get_dim()+1ull))/2.;
+    unsigned long long num_elems;
+    if (_cim->get_name() != "FCI")
+        num_elems = (_cim->get_dim()*1ull*(_cim->get_dim()+1ull))/2.;
+    else 
+        num_elems = (_cim->gUpDim()*1ull*(_cim->gUpDim()+1ull))/2.;
     unsigned long long size_part = num_elems/num_t + 1;
 
     // every thread should process the lines between i and i+1
     // with i the thread number
     std::vector<unsigned int> workload(num_t+1);
     workload.front() = 0;
-    workload.back() = _cim->get_dim();
+    if (_cim->get_name() != "FCI")
+        workload.back() = _cim->get_dim();
+    else 
+        workload.back() = _cim->gUpDim();
 
     for(int i=1;i<num_t;i++)
     {
         auto num_lines = workload[i-1];
         unsigned long long num_elems = 0;
 
-        while(num_elems < size_part)
-           num_elems += _cim->get_dim() - num_lines++;
+        if (_cim->get_name() != "FCI")
+        {
+            while(num_elems < size_part)
+               num_elems += _cim->get_dim() - num_lines++;
 
-        if(num_lines > _cim->get_dim() )
-           num_lines = _cim->get_dim();
+            if(num_lines > _cim->get_dim() )
+               num_lines = _cim->get_dim();
+        }
+        else 
+        {
+            while(num_elems < size_part)
+               num_elems += _cim->gUpDim() - num_lines++;
 
+            if(num_lines > _cim->gUpDim() )
+               num_lines = _cim->gUpDim();
+        }
         workload[i] = num_lines;
     }
     vector< valarray<valarray<double>> > parts_one(num_t);
@@ -998,30 +1015,17 @@ void DensFILE::construct_CI_two_dens(unsigned int start , unsigned int end, vect
 
 //------------------------------------------DensFCI------------------------------------------
 void DensFCI::construct_CI_one_dens(unsigned int start , unsigned int end, valarray<valarray<double>> & onerdm){
-    #ifdef __OMP__
-    auto num_t = omp_get_max_threads();
-    auto me = omp_get_thread_num();
-    cout << "paralel " << me << endl;
-    #else 
-    auto num_t = 1;
-    auto me = 0;
-    #endif
-    unsigned long long size_part = _cim->gUpDim()/num_t + 1;
-    unsigned long long size_part_d = _cim->gDownDim()/num_t + 1;
-    unsigned long start_l =  me * size_part;
-    unsigned long end_l = start_l + size_part;
-    if( end_l > _cim->gUpDim())
-        end_l = _cim->gUpDim();
 
     if (CIMethod_debug)
         cout << "Started construct_CI_one_dens in DensFCI" << endl;
 
     Permutator_Bit perm(dim() );
     TYPE up1 = perm.get_start_int(_cim->gNup());
-    for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
+    for(auto idx_begin=0;idx_begin< start;++idx_begin)
         up1 = perm.permutate_bit(up1);
+
     //Contribution of the ups, with the downs equal.
-    for(unsigned long i = start_l ; i < end_l ; i ++){
+    for(unsigned long i = start ; i < end ; i ++){
         TYPE up2 = up1;
        	for(unsigned long j = i ; j < _cim->gUpDim() ; j ++){
             TYPE down1 = perm.get_start_int(_cim->gNdown());
@@ -1035,28 +1039,29 @@ void DensFCI::construct_CI_one_dens(unsigned int start , unsigned int end, valar
        	up1 = perm.permutate_bit(up1);
     } // end rows 
 
-    start_l =  me * size_part_d;
-    end_l = start_l + size_part_d;
-    if( end_l > _cim->gDownDim()-1)
-        end_l = _cim->gDownDim()-1;
+    //start_l =  me * size_part_d;
+    //end_l = start_l + size_part_d;
+    //if( end_l > _cim->gDownDim()-1)
+        //end_l = _cim->gDownDim()-1;
 
-    TYPE down1 = perm.get_start_int(_cim->gNdown());
-    for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
-        down1 = perm.permutate_bit(down1);
+    up1 = perm.get_start_int(_cim->gNup());
+    for(auto idx_begin=0;idx_begin< start;++idx_begin)
+        up1 = perm.permutate_bit(up1);
+
     //Now contribution of the downs, with the ups equal, but with no diagonal elements this time because they are already calculated in the loop above.
-    for(unsigned long i = start_l ; i < end_l ; i ++){
-	    TYPE down2 = perm.permutate_bit(down1);
-       	for(unsigned long j = i+1 ; j < _cim->gDownDim() ; j ++){
-            TYPE up1 = perm.get_start_int(_cim->gNup());
-       	    for(unsigned long k = 0 ; k < _cim->gUpDim() ; k++){
-	        double contr = _cim->get_eigvec(k*_cim->gDownDim()+i,0) * _cim->get_eigvec(_cim->gDownDim() * k + j,0);
+    for(unsigned long i = start ; i < end ; i ++){
+	    TYPE down1 = perm.get_start_int(_cim->gNdown() );
+        for(unsigned long k = 0 ; k < _cim->gDownDim()-1 ; k++){
+            TYPE down2 = perm.permutate_bit(down1 );
+            for(unsigned long j = k+1 ; j < _cim->gDownDim() ; j ++){
+	            double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,0) * _cim->get_eigvec(_cim->gDownDim() * i + j,0);
        	        fill_density_matrix_one(up1,down1, up1, down2,contr, onerdm);
-       	        up1 = perm.permutate_bit(up1);
+       	        down2 = perm.permutate_bit(down2);
 	    }
-       	    down2 = perm.permutate_bit(down2);
-        } // end cols 
        	down1 = perm.permutate_bit(down1);
-    } // end rows 
+        } // end down col 
+        up1 = perm.permutate_bit(up1);
+    } // end down row
     if (CIMethod_debug)
         cout << "We constructed the density matrix" << endl;
 }
@@ -1065,26 +1070,13 @@ void DensFCI::construct_CI_two_dens(unsigned int start , unsigned int end, vecto
     if (CIMethod_debug)
         cout << "Started construct_CI_one_dens in DensFCI" << endl;
 
-    #ifdef __OMP__
-    auto num_t = omp_get_max_threads();
-    auto me = omp_get_thread_num();
-    #else 
-    auto num_t = 1;
-    auto me = 0;
-    #endif
-    unsigned long long size_part = _cim->gUpDim()/num_t + 1;
-    unsigned long start_l =  me * size_part;
-    unsigned long end_l = start_l + size_part;
-    if( end_l > _cim->gUpDim()-1)
-        end_l = _cim->gUpDim()-1;
-
     Permutator_Bit perm(dim() );
     TYPE up1 = perm.get_start_int(_cim->gNup());
-    for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
+    for(auto idx_begin=0;idx_begin< start;++idx_begin)
         up1 = perm.permutate_bit(up1);
 
     //Handles everything except when the ups are equal.
-    for(unsigned long i = start_l ; i < end_l ; i ++){
+    for(unsigned long i = start ; i < end ; i ++){
 	    TYPE up2 = perm.permutate_bit(up1);
        	for(unsigned long j = i+1 ; j < _cim->gUpDim() ; j ++){
             TYPE down1 = perm.get_start_int(_cim->gNdown());
@@ -1103,12 +1095,12 @@ void DensFCI::construct_CI_two_dens(unsigned int start , unsigned int end, vecto
     } // end rows 
 
     up1 = perm.get_start_int(_cim->gNup());
-    for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
+    for(auto idx_begin=0;idx_begin< start;++idx_begin)
         up1 = perm.permutate_bit(up1);
 
-//This handles the case when the ups are equal.
-    for(unsigned long i = start_l ; i < end_l ; i ++){
-        TYPE down1 = perm.get_start_int(_cim->gNup());
+    //This handles the case when the ups are equal.
+    for(unsigned long i = start ; i < end ; i ++){
+        TYPE down1 = perm.get_start_int(_cim->gNdown());
         for(unsigned long k = 0 ; k < _cim->gDownDim() ; k++){
             TYPE down2 = down1;
             for(unsigned long l = k; l < _cim->gDownDim() ; l++){
