@@ -506,10 +506,10 @@ def mulliken():
 
         
 if __name__ == "__main__":
-    main()
+    #main()
     #wavefunction_analysis()
     #wavefunction_analysis_fci()
     #overlap_analysis()
     #overlap_analysis2()
     #mulliken()
-    #test_density()
+    test_density()
