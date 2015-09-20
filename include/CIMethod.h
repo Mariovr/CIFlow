@@ -142,13 +142,16 @@ class FCI: public CIMethod{
 	public :
 		FCI(Hamiltonian*  ham); //Set print False if you are not interested to print FCI data.
         //!REMARK is not used at the moment. It is here for compatibility with the baseclass.
-		void construct_CI_matrix(SparseMatrix_CRS & mat , int startl , int endl){};	
+		void construct_CI_matrix(SparseMatrix_CRS & mat , int startl , int endl);	
         //!REMARK: this function doesn't use a sparse matrix, to fill the Hamiltonian, to maximally benefit from the extra speedup by using spinup and down symmetries for which it is easier to use a normal matrix. So it is very memory constrained use it only to test, debug and for reference data of small systems.
-		void construct_CI_matrix(); 
-		void build_ci(){construct_CI_matrix() ; }
+		void build_ci(){build_parallel() ; }
 		int get_dim(){ return gUpDim() * gDownDim(); } 
 		std::string get_name() {return "FCI";}
 		std::unique_ptr<CIDens> get_density();
+
+    private:
+        unsigned int determine_weight(TYPE string , const std::vector<std::vector<int> > & vw);
+        void setup_vertex_weights(std::vector<std::vector<int>> & vw);
 };
 
 class FCI_File: public CIMethod{

@@ -448,25 +448,43 @@ void CIMethod::build_parallel(){
     #else
     int num_t = 1;
     #endif
-    unsigned long long num_elems = (_mat.getn()*1ul*(_mat.getn()+1ul))/2.;
+    unsigned long long num_elems;
+    if (get_name() != "FCI")
+        num_elems = (get_dim()*1ull*(get_dim()+1ull))/2.;
+    else 
+        num_elems = (gUpDim()*1ull*(gUpDim()+1ull))/2.;
     unsigned long long size_part = num_elems/num_t + 1;
 
     // every thread should process the lines between i and i+1
     // with i the thread number
     std::vector<unsigned int> workload(num_t+1);
     workload.front() = 0;
-    workload.back() = _mat.getn();
+    if (get_name() != "FCI")
+        workload.back() = get_dim();
+    else 
+        workload.back() = gUpDim();
 
     for(int i=1;i<num_t;i++)
     {
         auto num_lines = workload[i-1];
         unsigned long long num_elems = 0;
 
-        while(num_elems < size_part)
-           num_elems += _mat.getn() - num_lines++;
+        if (get_name() != "FCI")
+        {
+            while(num_elems < size_part)
+               num_elems += get_dim() - num_lines++;
 
-        if(num_lines > _mat.getn())
-           num_lines = _mat.getn();
+            if(num_lines > get_dim() )
+               num_lines = get_dim();
+        }
+        else 
+        {
+            while(num_elems < size_part)
+               num_elems += gUpDim() - num_lines++;
+
+            if(num_lines > gUpDim() )
+               num_lines = gUpDim();
+        }
 
         workload[i] = num_lines;
     }
@@ -481,7 +499,11 @@ void CIMethod::build_parallel(){
         #else
         int me = 0;
         #endif
-        parts[me].reset(new SparseMatrix_CRS(workload[me+1] - workload[me], _mat.getn()));
+        if (get_name() != "FCI")
+            parts[me].reset(new SparseMatrix_CRS(workload[me+1] - workload[me], get_dim() ));
+        else
+            parts[me].reset(new SparseMatrix_CRS((workload[me+1] - workload[me]) * gDownDim() , get_dim() ));
+
 
         construct_CI_matrix((*parts[me]), workload[me], workload[me+1]);
     }// End parallel
@@ -508,7 +530,7 @@ FCI::FCI(Hamiltonian * ham ):CIMethod( ham){
     _perm.reset(new Permutator_Bit(ham->getL() ) ) ;
 	_mat = SparseMatrix_CRS_Sym(get_dim(),get_dim());
     _cid = make_pair(false, get_density() );
-    construct_CI_matrix(); //Because of the use of symmetry we have to use different parallelization.
+    build_parallel(); //Because of the use of symmetry we have to use different parallelization.
 }
 
 FCI_File::FCI_File(Hamiltonian * ham ,  std::string permfile):CIMethod( ham){
@@ -635,124 +657,186 @@ unsigned int DOCI::determine_weight(TYPE string , const vector<vector<int> > & v
     return weight-1;
 }
 
-void FCI::construct_CI_matrix(){
+void FCI::setup_vertex_weights(vector<vector<int>> & vw) 
+{
+    /* Set up the vertex_weight vector */
+    vw[0][0] = 1; /* Set the first element to one. */
+    for (int k = 1; k <= ( get_l()  - gNup()) ; k++) 
+    { /* Go down the first column; at most num_orbs-num_elecs can be set to one (must have N elecs in orbitals) */
+        vw[k][0] = 1;
+    }
+
+    for (int m = 1; m <= gNup(); m++) 
+    { /* Fill the remaining columns */
+        for (int k = m; k <= ( get_l()  - (gNup() - m)); k++) 
+        { /* At the most all previous orbitals are filled */
+            vw[k][m] = vw[k-1][m] + vw[k-1][m-1];
+        }
+    }
+    //for (int i = 0; i < _norb +1; i++) 
+    //{
+        //for (int j = 0; j < _cim->gNup() +1; j++) 
+        //{
+            //cout << vw[i][j] << " " ;
+        //}
+        //cout << std::endl;
+    //}
+}
+
+unsigned int FCI::determine_weight(TYPE string , const vector<vector<int> > & vw) 
+{
+    unsigned int weight = 1;
+    int num_elecs_interm = 0;
+
+    for (int k = 0; k < get_l(); k++) 
+    {
+        TYPE shiftbit = 1;
+        if(string & ( shiftbit << k))
+        {
+            num_elecs_interm += 1;
+            weight += vw[k][num_elecs_interm];
+        }
+    }
+    return weight-1;
+}
+
+void FCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
     //we make use of the hermicity of the matrix to add off diagonal elements.
     //and make this function as general as possible (should also work for unrestricted orbitals)
     //the columns and rows of the Hamiltonian matrix are determined such that with a given up, first all the possible downs change and then we change an up again (the downs are fast changing and the ups slow)
     //REMARK: we fill the FCI matrix by using a normal matrix, because we make intensive use of symmetry between up and down spins, and this is difficult to do efficiently for Sparse matrices. Therefore this FCI method is much more constrained by memory (but faster), because this is only intended for small molecules and debugging purposes, for FCI calculations on big systems use: Gaussian, psi4, games, ... 
     //REMARK:we only fill the upper diagonal elements.
-    matrix _matd = matrix(get_dim() , get_dim());
-    #ifdef __OMP__
-    auto num_t = omp_get_max_threads();
-    #else 
-    auto num_t = 1;
-    #endif
-    if (CIMethod_debug)
-        cout << "We run with " << num_t << " threads." << "Total dimension is: " << get_dim() << endl;
-    unsigned long long size_part = gUpDim()/num_t + 1;
-    unsigned long long size_part_d = gDownDim()/num_t + 1;
+    //we make use of the hermicity of the matrix to add off diagonal elements. (we dont use get_ham_element because this implementation is a bit faster (and still short))
+    vector< vector<int> > vw  ( get_l() +1,  vector<int> ( gNup() + 1 , 0));
+    setup_vertex_weights(vw);
+    TYPE shiftbit = 1;
 
-    // every thread should process the lines between i and i+1
-    #pragma omp parallel
-    {
-        #ifdef __OMP__
-        auto me = omp_get_thread_num();
-        #else
-        auto me = 0;
-        #endif
-        unsigned long start_l =  me * size_part;
-        unsigned long end_l = start_l + size_part;
-        if( end_l > gUpDim())
-            end_l = gUpDim();
-        Permutator_Bit perm(_ham->getL());
+    Permutator_Bit my_perm(_ham->getL());
+    TYPE up1 = my_perm.get_start_int(gNup());
+    for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
+        up1 = my_perm.permutate_bit(up1);
 
-        TYPE up1 = perm.get_start_int(gNup());
-        for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
-            up1 = perm.permutate_bit(up1);
-        TYPE up2 = up1;
+    for( long i = start_l; i < end_l ; i++ ) { //ups between start_l and end_l.
+        TYPE down1 = my_perm.get_start_int(gNdown());
+        for(long k = 0; k < gDownDim(); k++){ //runs over rows.
+            mat.NewRow();
+            //First add diagonal contribution.
+            mat.PushToRow(i*gDownDim()+ k , diagonal(up1 , down1)); //add diagonal elements.
 
-        for( long i = start_l; i < end_l ; i++ ) { //add off diagonal elements.
-            for(long j = i ; j <gUpDim(); j++){
+            // Then test all the single excitations of the up you can think off.
+            for (int j = 0; j < get_l() ; j++) //Loop over the L spatial orbitals.
+                if(up1 & ( shiftbit << j))
+                {
+                    TYPE up_interm = up1 ^ (shiftbit << j);
+                    for (int l = j + 1; l < get_l() ; l++) 
+                    {
+                        if(up1 & ( shiftbit << l))
+                        {
+                            continue;
+                        } 
+                        else //Match is possible so we select all matches.
+                        {
+                            TYPE up2 = up_interm ^ (shiftbit << l);
+                            unsigned int index = determine_weight(up2, vw);
+                            SCPP_TEST_ASSERT(index > i, "We full only upper half of the FCI Hamiltonian, -> row < col but : row = " << i << "col = " << index);
+                            mat.PushToRow(index*gDownDim()+ k , one_diff_orbital(up1 , up2, down1)); //Ads single up different.
+                            // Then test all the single excitations of the down you can think off.
+                            for (int m = 0; m < get_l() ; m++) //Loop over the L spatial orbitals.
+                                if(down1 & ( shiftbit << m))
+                                {
+                                    TYPE down_interm = down1 ^ (shiftbit << m);
+                                    for (int w = 0; w < get_l() ; w++) 
+                                    {
+                                        if(down1 & ( shiftbit << w) )
+                                        {
+                                            continue;
+                                        } 
+                                        else //Match is possible so we select all matches.
+                                        {
+                                            TYPE down2 = down_interm ^ (shiftbit << w);
+                                            unsigned int indexd = determine_weight(down2, vw);
+                                            //SCPP_TEST_ASSERT(index > i, "We full only upper half of the FCI Hamiltonian, -> row < col but : row = " << i << "col = " << index);
+                                            mat.PushToRow(index*gDownDim()+ indexd , two_diff_orbitals(up1, up2 , down1, down2)); //Ads single down different and single up different.
+                                        } 
+                                    }
+                                }//End jth orbital is occupied in current determinant.
+                            // Then test all the single excitations of the single excited up, to get double excited up.
+                            for (int m = 0; m < get_l() ; m++) //Loop over the L spatial orbitals.
+                                if(up2 & ( shiftbit << m))
+                                {
+                                    TYPE ups_interm = up2^ (shiftbit << m);
+                                    for (int w = 0; w < get_l() ; w++) 
+                                    {
+                                        if(up2& ( shiftbit << w))
+                                        {
+                                            continue;
+                                        } 
+                                        else //Match is possible so we select all matches.
+                                        {
+                                            TYPE updex = ups_interm ^ (shiftbit << w);
+                                            unsigned int indexdex = determine_weight(updex, vw);
+                                            if(indexdex > i)
+                                            {
+                                                SCPP_TEST_ASSERT(indexdex > i, "We full only upper half of the FCI Hamiltonian, -> row < col but : row = " << i << "col = " << index);
+                                                mat.PushToRow(indexdex*gDownDim()+ down1 , two_diff_orbitals(up1, updex )); //Ads single down different and single up different.
+                                            }
+                                        } 
+                                    }
+                                }//End mth orbital is occupied in current determinant.
 
-                if( i == j){//add diagonal elements.(OK)
-                    TYPE down = perm.get_start_int(gNdown());
-                    for( long k = 0; k <gDownDim() ; k++ ){ 
-                        _matd(i*gDownDim()+ k,i*gDownDim()+ k) = diagonal(up1,down);
-                        down = perm.permutate_bit(down);
-                     } //end loop over down
-                }//end if i==j    
-
-                else if (_perm->popcount(up1 ^ up2) == 4){ // two different occupied orbitals
-                    double elem = two_diff_orbitals(up1, up2);
-                    for(long k = 0; k < gDownDim(); k++){
-                        _matd(i* gDownDim()+ k,j* gDownDim()+ k) = elem ;
+                        } //Finished building on top of singly excited up1, namely singly excited downs, and doubly excited up.
                     }
-                }
-                else if(_perm->popcount(up1 ^ up2) == 2){ // one different occupied orbital-> two posibilities: 1) downs are the same , 2) downs have also one differen occupied orbital. (the current setup is a bit slower then the previous where we made more use of the lexicographic ordering of the determinants)
-                    //1)downs are the same:
-                    TYPE down1 = perm.get_start_int(gNdown());
-                    for(long k = 0; k <gDownDim(); k++){
-                        _matd(i*gDownDim()+ k,j*gDownDim()+ k) =  one_diff_orbital(up1 , up2, down1);
-                        down1 = perm.permutate_bit(down1);
+                }//End jth orbital is occupied in current determinant.
+
+            // Then test all the single excitations of the down you can think off.
+            for (int j = 0; j < get_l() ; j++) //Loop over the L spatial orbitals.
+                if(down1 & ( shiftbit << j))
+                {
+                    TYPE down_interm = down1 ^ (shiftbit << j);
+                    for (int l = j + 1; l < get_l() ; l++) 
+                    {
+                        if(down1 & ( shiftbit << l))
+                        {
+                            continue;
+                        } 
+                        else //Match is possible so we select all matches.
+                        {
+                            TYPE down2 = down_interm ^ (shiftbit << l);
+                            unsigned int index = determine_weight(down2, vw);
+                            //SCPP_TEST_ASSERT(index > i, "We full only upper half of the FCI Hamiltonian, -> row < col but : row = " << i << "col = " << index);
+                            mat.PushToRow(i*gDownDim()+ index , one_diff_orbital(down1 , down2, up1)); //Ads single down different.
+                            //Excite down2 for the second time.
+                            for (int m = 0; m < get_l() ; m++) //Loop over the L spatial orbitals.
+                                if(down2 & ( shiftbit << m))
+                                {
+                                    TYPE downs_interm = down2^ (shiftbit << m);
+                                    for (int w = 0; w < get_l() ; w++) 
+                                    {
+                                        if(down2& ( shiftbit << w) )
+                                        {
+                                            continue;
+                                        } 
+                                        else //Match is possible so we select all matches.
+                                        {
+                                            TYPE downdex = downs_interm ^ (shiftbit << w);
+                                            unsigned int indexddex = determine_weight(downdex , vw);
+                                            if(indexddex> k)
+                                            {
+                                                SCPP_TEST_ASSERT(indexddex > k, "We full only upper half of the FCI Hamiltonian, -> row < col but : row = " << k << "col = " << indexddex);
+                                                mat.PushToRow(i*gDownDim()+ indexddex , two_diff_orbitals(down1, downdex )); //Ads single down different and single up different.
+                                            }
+                                        } 
+                                    }
+                                }//End mth orbital is occupied in current determinant.
+                        } //End single excited down.
                     }
-                    //2) downs differ also by own orbital.
-                    down1 = perm.get_start_int(gNdown());
-                    TYPE down2 = perm.permutate_bit(down1);
-                    for ( unsigned long a = 0; a <gDownDim()-1; a++ ) {
-                        for ( unsigned long b = a+1; b <gDownDim(); b++ ) {
-                            if(_perm->popcount(down1 ^ down2) == 2){
-                                _matd(i*gDownDim()+ a,j*gDownDim()+ b) =  two_diff_orbitals(up1 , up2, down1, down2);
-                                _matd(i*gDownDim()+ b,j*gDownDim()+ a) = _matd(i*gDownDim()+ a,j*gDownDim()+ b);
-                            }
-                            down2 = perm.permutate_bit(down2);
-                        }
-                    down1 = perm.permutate_bit(down1);
-                    down2 = perm.permutate_bit(down1);
-                }
-                } // end ups differ by one.
-            up2 = perm.permutate_bit(up2);
-            } // end for columns
-        up1 = perm.permutate_bit(up1);
-        up2 = up1;
-        } //end for rows
+                }//End jth orbital is occupied in current determinant.
 
-        //now we run over the downs while the ups stay the same (because the above main loops took into account everything with non equal ups).
-        //actually this can sometimes be incorporated in the previous loop of the ups because any combination of downs exist also as a combination of ups, but we want our code also to work for triplets or other unequally distributed numbers of ups and downs
-        start_l =  me * size_part_d;
-        end_l = start_l + size_part_d;
-        if( end_l > gDownDim()-1)
-            end_l = gDownDim()-1;
+            down1 = my_perm.permutate_bit(down1);
+        }
+        up1 = my_perm.permutate_bit(up1);
+    }
 
-        TYPE down1 = perm.get_start_int(gNdown());
-        for(auto idx_begin=0;idx_begin< start_l;++idx_begin)
-            down1 = perm.permutate_bit(down1);
-        TYPE down2 = perm.permutate_bit(down1);
-
-        for( long i = start_l; i < end_l; i++ ) { //add off diagonal elements.
-            for(long j = i+1 ; j <gDownDim(); j++){
-                if (_perm->popcount(down1 ^ down2) == 4){ // two different occupied orbitals
-                    double elem = two_diff_orbitals(down1, down2);
-                    for(long k = 0; k < gDownDim(); k++){
-                        _matd(k*gDownDim()+ i,k*gDownDim()+ j) = elem ;
-                    }
-                }
-                else if(_perm->popcount(down1 ^ down2) == 2){ // one different occupied orbital-> we only have to take into account the same ups because different ups are taken into account in the loop over the ups above.
-
-                    //1)ups are the same:
-                    TYPE up1= perm.get_start_int(gNup());
-                    for(long k = 0; k <gUpDim(); k++){
-                        _matd(k*gDownDim()+ i,k*gDownDim()+ j) =one_diff_orbital(down1 , down2, up1);
-                        up1 = perm.permutate_bit(up1);
-                    }
-                } // end downs differ by one
-                down2 = perm.permutate_bit(down2);
-            } // end for columns
-        down1 = perm.permutate_bit(down1);
-        down2 = perm.permutate_bit(down1);
-        } //end for rows
-    }//end parallel    
-
-    _mat.ConvertFromMatrix(_matd);
     if (CIMethod_debug)
         cout << "We constructed the FCI Hamiltonian matrix with "<< _mat.datasize() << "nonzero elements, of dimension: " << get_dim() << endl;
 }

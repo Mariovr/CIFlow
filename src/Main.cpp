@@ -308,9 +308,9 @@ int main ( int argc, char ** argv){
                 //cim5->check_hermiticity();
                 std::cout  << "FCI energy:" << cim5->get_ci_energy() << " Per site: " << cim5->get_ci_energy() / (double) ham->getL() <<std::endl;
                 cim5->print_output();
-                cim5->print_rdm();
-                std::cout << "Spin Squared: " << cim5->get_spin_squared() << std::endl;
-                //cim5->print_ham();
+                //cim5->print_rdm();
+                //std::cout << "Spin Squared: " << cim5->get_spin_squared() << std::endl;
+                cim5->print_ham();
 
                 //DensFCI densmatfci {cim5};
                 //densmatfci.construct_density();

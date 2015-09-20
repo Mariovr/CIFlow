@@ -292,7 +292,9 @@ class CIFlow_Reader(Reader):
 
 def test_density():
     cifres = CIFlow_Reader('psi0_output10outputfci.dat')
+    cifres2 = CIFlow_Reader('testfci.dat')
     cifres.read_rdm()
+    cifres2.read_rdm()
     rdmw = cifres.read_ward_rdm('mario2.txt')
     L = cifres.header['norbs']
     w = 2
@@ -301,9 +303,11 @@ def test_density():
             for j in range(i,L):
                 for k in range(L):
                     for l in range(k,L):
-                        if abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) > 1e-7:
-                            print abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) 
-                            print w, " " , i , " " , j, " " , k , " " , l , " " , cifres.trdm[w][i,j,k,l] , ' and ward ' , rdmw[w][i,j,k,l]
+                        #if abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) > 1e-8:
+                            #print abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) 
+                        if abs(cifres.trdm[w][i,j,k,l] -cifres2.trdm[w][i,j,k,l]) > 1e-15 :
+                            print abs(cifres.trdm[w][i,j,k,l] - cifres2.trdm[w][i,j,k,l] ) 
+                            print w, " " , i , " " , j, " " , k , " " , l , " " , cifres.trdm[w][i,j,k,l] , ' and nopar' , cifres2.trdm[w][i,j,k,l]
                     #if cifres.trdm[0][i,j,k,l] > 1e-10:
                         #print i , " " , j, " " , k , " " , l , " " , cifres.trdm[0][i,j,k,l] , ' and ward ' , rdmw[0][i,j,k,l]
 
