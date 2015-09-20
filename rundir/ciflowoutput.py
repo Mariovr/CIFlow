@@ -450,22 +450,24 @@ def main():
     Use this function to try out some new functionality of the above classes.
     """
     regexham = r'\s+\((\d+,\s*\d+)\)\s+([\-+]?\d+\.\d+[eEdD]?[\-+]?\d+)' #to extract the Hamiltonian.
-    fname = 'output.dat'
-    root = './results/beh2_sto_3g_symcompc1/'
-    fname = 'output_files/'
-    ciffci = CIFlow_Reader('psi0_sto-3g6.00outputfciloadham.dat', regexp = regexham )
-    cifdoci = CIFlow_Reader( 'psi0_sto-3g6.00outputdocisim.dat', regexp = regexham )
-    print ciffci.calc_overlap(cifdoci)
+    root = '.'
+    #fname = 'output_files/'
+    ciffci = CIFlow_Reader('testfci.dat', regexp = regexham , read_ham= True)
+    ciffcipar = CIFlow_Reader( 'psi0_output10outputfci.dat', regexp = regexham , read_ham = True)
+    #print ciffci.calc_overlap(cifdoci)
     #print e.get_groundstate('00000000000011|00000000000011') 
-    ciffci.get_psi_input(print_string = True)
 
-    psir = rp.PsiReader(fname, isbig = False, numorbs = -1 , read_ints = False)
+    psir = rp.PsiReader('psi0_output10.dat', isbig = False, numorbs = -1 , read_ints = False)
 
-    detlist = dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], range(1,psir.values['norb']+1), [] , fname = 'determinants.dat' ,ref =  [lambda x , y , z : psir.get_hf_orbs()] , pairex = False, add_frozen = 0, write = False) #CISDDOCI
+    detlist = dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [range(1,psir.values['nalpha']+psir.values['nbeta']), []], [] , fname = 'determinants.dat' ,ref =  [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0, write = False) #CISDDOCI
+    count = 0
     for det in detlist:
-        #+ because the eigenvectors have already a different phasefactor of 1.
-        if abs(ciffci.get_groundstate(det[0]+'|'+det[1]) + ciffile.get_groundstate(det[0]+'|'+det[1]) ) > 1e-10 :
-            print 'difference in eigenvector: ' , det[0]+'|'+det[1] , 'fci: ', ciffci.get_groundstate(det[0]+'|'+det[1]) , 'file: ' , ciffile.get_groundstate(det[0]+'|'+det[1]) 
+        for det2 in detlist:
+            #+ because the eigenvectors have already a different phasefactor of 1.
+            if abs(ciffci.get_mat_element(det[0]+'|'+det[1], det2[0]+'|'+det2[1]) - ciffcipar.get_mat_element(det[0]+'|'+det[1], det2[0]+'|'+det2[1]) ) > 1e-10 :
+                print 'difference in hamiltonian row: ' , det[0]+'|'+det[1] , " col: " , det2[0]+'|'+det2[1] , 'fci: ', ciffci.get_mat_element(det[0]+'|'+det[1], det2[0]+'|'+det2[1]) , 'fciaddres: ' , ciffcipar.get_mat_element(det[0]+'|'+det[1],det2[0]+'|'+det2[1]) 
+                count += 1
+    print 'There were ' , count , ' different elements'
 
 
 def mulliken():
@@ -504,10 +506,10 @@ def mulliken():
 
         
 if __name__ == "__main__":
-    #main()
+    main()
     #wavefunction_analysis()
     #wavefunction_analysis_fci()
     #overlap_analysis()
     #overlap_analysis2()
     #mulliken()
-    test_density()
+    #test_density()

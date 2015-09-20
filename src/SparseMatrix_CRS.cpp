@@ -266,6 +266,38 @@ void SparseMatrix_CRS::PushToRow(unsigned int j, double value)
    }
 }
 
+void SparseMatrix_CRS::PushToRownoadd(unsigned int j, double value)
+{
+   if(col.empty() || row.back() == col.size() || col.back() < j)
+   {
+      data.push_back(value);
+      col.push_back(j);
+   }
+   else
+   {
+      unsigned int begin = row.back();
+      for(unsigned int i=begin;i<col.size();i++)
+      {
+         if( col[i] > j )
+         {
+            col.insert(col.begin() + i,j);
+            data.insert(data.begin() + i,value);
+            break;
+         } else if (col[i] == j)
+         {
+            data[i] = value;
+
+            if(fabs(data[i])<1e-14)
+            {
+               data.erase(data.begin() + i);
+               col.erase(col.begin() + i);
+            }
+            break;
+         }
+      }
+   }
+}
+
 /**
  * Resets the data, row and col vectors.
  */

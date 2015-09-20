@@ -755,19 +755,18 @@ void FCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
                                         {
                                             TYPE down2 = down_interm ^ (shiftbit << w);
                                             unsigned int indexd = determine_weight(down2, vw);
-                                            //SCPP_TEST_ASSERT(index > i, "We full only upper half of the FCI Hamiltonian, -> row < col but : row = " << i << "col = " << index);
                                             mat.PushToRow(index*gDownDim()+ indexd , two_diff_orbitals(up1, up2 , down1, down2)); //Ads single down different and single up different.
                                         } 
                                     }
                                 }//End jth orbital is occupied in current determinant.
                             // Then test all the single excitations of the single excited up, to get double excited up.
                             for (int m = 0; m < get_l() ; m++) //Loop over the L spatial orbitals.
-                                if(up2 & ( shiftbit << m))
+                                if(up2 & ( shiftbit << m) && m != l)
                                 {
                                     TYPE ups_interm = up2^ (shiftbit << m);
                                     for (int w = 0; w < get_l() ; w++) 
                                     {
-                                        if(up2& ( shiftbit << w))
+                                        if(up2& ( shiftbit << w) || w == j)
                                         {
                                             continue;
                                         } 
@@ -778,7 +777,7 @@ void FCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
                                             if(indexdex > i)
                                             {
                                                 SCPP_TEST_ASSERT(indexdex > i, "We full only upper half of the FCI Hamiltonian, -> row < col but : row = " << i << "col = " << index);
-                                                mat.PushToRow(indexdex*gDownDim()+ down1 , two_diff_orbitals(up1, updex )); //Ads single down different and single up different.
+                                                mat.PushToRownoadd(indexdex*gDownDim()+ k , two_diff_orbitals(up1, updex )); //Ads single down different and single up different.
                                             }
                                         } 
                                     }
@@ -807,12 +806,12 @@ void FCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
                             mat.PushToRow(i*gDownDim()+ index , one_diff_orbital(down1 , down2, up1)); //Ads single down different.
                             //Excite down2 for the second time.
                             for (int m = 0; m < get_l() ; m++) //Loop over the L spatial orbitals.
-                                if(down2 & ( shiftbit << m))
+                                if(down2 & ( shiftbit << m) && m != l)
                                 {
                                     TYPE downs_interm = down2^ (shiftbit << m);
                                     for (int w = 0; w < get_l() ; w++) 
                                     {
-                                        if(down2& ( shiftbit << w) )
+                                        if(down2& ( shiftbit << w) || w == j)
                                         {
                                             continue;
                                         } 
@@ -823,7 +822,7 @@ void FCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
                                             if(indexddex> k)
                                             {
                                                 SCPP_TEST_ASSERT(indexddex > k, "We full only upper half of the FCI Hamiltonian, -> row < col but : row = " << k << "col = " << indexddex);
-                                                mat.PushToRow(i*gDownDim()+ indexddex , two_diff_orbitals(down1, downdex )); //Ads single down different and single up different.
+                                                mat.PushToRownoadd(i*gDownDim()+ indexddex , two_diff_orbitals(down1, downdex )); //Ads single down different and single up different.
                                             }
                                         } 
                                     }
