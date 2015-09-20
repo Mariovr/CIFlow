@@ -77,6 +77,8 @@ class SparseMatrix_CRS
 
       void PushToRow(unsigned int j, double value);
 
+      void PushToRownoadd(unsigned int j, double value);
+
       int datasize(){return data.size();}
 
       void NewRow();

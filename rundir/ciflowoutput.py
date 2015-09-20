@@ -292,7 +292,9 @@ class CIFlow_Reader(Reader):
 
 def test_density():
     cifres = CIFlow_Reader('psi0_output10outputfci.dat')
+    cifres2 = CIFlow_Reader('testfci.dat')
     cifres.read_rdm()
+    cifres2.read_rdm()
     rdmw = cifres.read_ward_rdm('mario2.txt')
     L = cifres.header['norbs']
     w = 2
@@ -301,9 +303,11 @@ def test_density():
             for j in range(i,L):
                 for k in range(L):
                     for l in range(k,L):
-                        if abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) > 1e-7:
-                            print abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) 
-                            print w, " " , i , " " , j, " " , k , " " , l , " " , cifres.trdm[w][i,j,k,l] , ' and ward ' , rdmw[w][i,j,k,l]
+                        #if abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) > 1e-8:
+                            #print abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) 
+                        if abs(cifres.trdm[w][i,j,k,l] -cifres2.trdm[w][i,j,k,l]) > 1e-15 :
+                            print abs(cifres.trdm[w][i,j,k,l] - cifres2.trdm[w][i,j,k,l] ) 
+                            print w, " " , i , " " , j, " " , k , " " , l , " " , cifres.trdm[w][i,j,k,l] , ' and nopar' , cifres2.trdm[w][i,j,k,l]
                     #if cifres.trdm[0][i,j,k,l] > 1e-10:
                         #print i , " " , j, " " , k , " " , l , " " , cifres.trdm[0][i,j,k,l] , ' and ward ' , rdmw[0][i,j,k,l]
 
@@ -446,22 +450,24 @@ def main():
     Use this function to try out some new functionality of the above classes.
     """
     regexham = r'\s+\((\d+,\s*\d+)\)\s+([\-+]?\d+\.\d+[eEdD]?[\-+]?\d+)' #to extract the Hamiltonian.
-    fname = 'output.dat'
-    root = './results/beh2_sto_3g_symcompc1/'
-    fname = 'output_files/'
-    ciffci = CIFlow_Reader('psi0_sto-3g6.00outputfciloadham.dat', regexp = regexham )
-    cifdoci = CIFlow_Reader( 'psi0_sto-3g6.00outputdocisim.dat', regexp = regexham )
-    print ciffci.calc_overlap(cifdoci)
+    root = '.'
+    #fname = 'output_files/'
+    ciffci = CIFlow_Reader('testfci.dat', regexp = regexham , read_ham= True)
+    ciffcipar = CIFlow_Reader( 'psi0_output10outputfci.dat', regexp = regexham , read_ham = True)
+    #print ciffci.calc_overlap(cifdoci)
     #print e.get_groundstate('00000000000011|00000000000011') 
-    ciffci.get_psi_input(print_string = True)
 
-    psir = rp.PsiReader(fname, isbig = False, numorbs = -1 , read_ints = False)
+    psir = rp.PsiReader('psi0_output10.dat', isbig = False, numorbs = -1 , read_ints = False)
 
-    detlist = dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], range(1,psir.values['norb']+1), [] , fname = 'determinants.dat' ,ref =  [lambda x , y , z : psir.get_hf_orbs()] , pairex = False, add_frozen = 0, write = False) #CISDDOCI
+    detlist = dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [range(1,psir.values['nalpha']+psir.values['nbeta']), []], [] , fname = 'determinants.dat' ,ref =  [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0, write = False) #CISDDOCI
+    count = 0
     for det in detlist:
-        #+ because the eigenvectors have already a different phasefactor of 1.
-        if abs(ciffci.get_groundstate(det[0]+'|'+det[1]) + ciffile.get_groundstate(det[0]+'|'+det[1]) ) > 1e-10 :
-            print 'difference in eigenvector: ' , det[0]+'|'+det[1] , 'fci: ', ciffci.get_groundstate(det[0]+'|'+det[1]) , 'file: ' , ciffile.get_groundstate(det[0]+'|'+det[1]) 
+        for det2 in detlist:
+            #+ because the eigenvectors have already a different phasefactor of 1.
+            if abs(ciffci.get_mat_element(det[0]+'|'+det[1], det2[0]+'|'+det2[1]) - ciffcipar.get_mat_element(det[0]+'|'+det[1], det2[0]+'|'+det2[1]) ) > 1e-10 :
+                print 'difference in hamiltonian row: ' , det[0]+'|'+det[1] , " col: " , det2[0]+'|'+det2[1] , 'fci: ', ciffci.get_mat_element(det[0]+'|'+det[1], det2[0]+'|'+det2[1]) , 'fciaddres: ' , ciffcipar.get_mat_element(det[0]+'|'+det[1],det2[0]+'|'+det2[1]) 
+                count += 1
+    print 'There were ' , count , ' different elements'
 
 
 def mulliken():

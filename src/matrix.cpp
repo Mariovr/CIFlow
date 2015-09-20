@@ -665,7 +665,6 @@ unsigned Vector2d::num_elem() const
     return this->num_cols()* (this->num_cols()+1)/2;
 }
 
-template <typename T>
 inline std::ostream& operator << (std::ostream& os, const Vector2d & m) 
 {
     for( unsigned r =0; r<m.num_rows(); ++r ) {

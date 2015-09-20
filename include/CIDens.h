@@ -49,14 +49,18 @@ class CIDens
         CIMethod * get_cim()const{return _cim;};
         std::vector<Vector2d >  get_two_dm(){return _two_dens;} 
         std::valarray<std::valarray<double> > get_one_dm(){return _one_dens;}
-		void print_one_dens(std::ostream & os) const;
-	    void print_two_dens(std::ostream & os) const;
+		void print_one_dens(std::ostream & os, const std::valarray<std::valarray<double>> & onerdm ) const;
+		void print_one_dens(std::ostream & os) const {print_one_dens(os , _one_dens); }
+	    void print_two_dens(std::ostream & os, const std::vector<Vector2d > & twordm ) const;
+	    void print_two_dens(std::ostream & os) const{print_two_dens(os, _two_dens); }
 		void compare_one_dens(CIDens *cid);
 		void compare_two_dens(CIDens *cid);
-		double get_one_rdm(int spin , int orb1 , int orb2) const;
-        void add_one_rdm(int spin , int orb1 , int orb2 , double val);
-		double get_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4) const ; 
-        void add_two_rdm(int spin, int orb1 , int orb2 , int orb3 , int orb4, double value);
+		double get_one_rdm(int spin , int orb1 , int orb2, const std::valarray<std::valarray<double>> & onerdm) const;
+		double get_one_rdm(int spin , int orb1 , int orb2) const {return get_one_rdm(spin , orb1,orb2 , _one_dens);}
+        void add_one_rdm(int spin , int orb1 , int orb2 , double val, std::valarray<std::valarray<double>> & onerdm);
+		double get_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4,const std::vector<Vector2d > & twordm) const ; 
+		double get_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4) const {return get_two_rdm(spin ,orb1 , orb2 , orb3 , orb4 , _two_dens); } 
+        void add_two_rdm(int spin, int orb1 , int orb2 , int orb3 , int orb4, double value, std::vector<Vector2d > & twordm);
         void reset_1rdm(); //Sets to zero 1rdm.
 		void reset_2rdm(); //Sets to zero 2rdm.
 		double get_seniority()const;
@@ -76,18 +80,22 @@ class CIDens
 		CIMethod * _cim;
         std::valarray<std::valarray<double >> _one_dens;
         std::vector< Vector2d >  _two_dens;
-        void allocate_one_memory();
-        void allocate_two_memory();
-		virtual void construct_CI_one_dens() = 0;
-		virtual void construct_CI_two_dens() = 0;
+        void allocate_one_memory(std::valarray<std::valarray<double>> & onerdm);
+        void allocate_two_memory(std::vector<Vector2d > & twordm);
+		virtual void construct_CI_one_dens(unsigned start, unsigned end, std::valarray<std::valarray<double>> & onerdm) = 0;
+		virtual void construct_CI_two_dens(unsigned start, unsigned end, std::vector<Vector2d > & twordm) = 0;
 		//up_or_down < 2 fill only one_dense , > 2 fill 2rdm (3 = ups, 4 = downs).
-        void fill_one_dense(TYPE bitstring1 , TYPE bitstring2,TYPE same ,  double contr, int up_or_down);
+        void fill_one_dense(TYPE bitstring1 , TYPE bitstring2,TYPE same ,  double contr, int up_or_down, std::valarray<std::valarray<double>> & onerdm, std::vector<Vector2d > & twordm);
 	    //up_and_down -> 0 if up1 and up2 are upstring, 3 if up1 and up2 are downstrings.
-        void fill_two_dense(TYPE up1 , TYPE up2, double contr, int up_or_down);
-        void fill_two_dense_upanddown(TYPE up1 , TYPE up2, TYPE down1, TYPE down2, double contr );
-        void fill_diagonal(TYPE up1 , TYPE down1, double contr, bool twordm);
-		void fill_density_matrix(TYPE up1 , TYPE down1 , TYPE up2, TYPE down2, double contr);
-		void fill_density_matrix_one(TYPE up1 , TYPE down1 , TYPE up2 , TYPE down2, double contr);
+        void fill_two_dense(TYPE up1 , TYPE up2, double contr, int up_or_down, std::vector<Vector2d > & twordm);
+        void fill_two_dense_upanddown(TYPE up1 , TYPE up2, TYPE down1, TYPE down2, double contr, std::vector<Vector2d > & twordm );
+        void fill_diagonal(TYPE up1 , TYPE down1, double contr, bool twordm, std::valarray<std::valarray<double>> & onerdm, std::vector<Vector2d > & two_rdm);
+		void fill_density_matrix(TYPE up1 , TYPE down1 , TYPE up2, TYPE down2, double contr, std::vector<Vector2d > & twordm);
+		void fill_density_matrix_one(TYPE up1 , TYPE down1 , TYPE up2 , TYPE down2, double contr,std::valarray<std::valarray<double>> & onerdm );
+        //Functions for parallel calculation
+        void build_parallel(bool twordm);
+        void add_from_vector_one(std::vector< std::valarray<std::valarray<double>> > & parts);
+        void add_from_vector_two(std::vector<std::vector<Vector2d >  > & parts);
 };
 
 class DensDOCI:public CIDens
@@ -96,8 +104,8 @@ class DensDOCI:public CIDens
 		DensDOCI(CIMethod * cim):CIDens(cim){};
 
     private:
-		void construct_CI_one_dens();
-		void construct_CI_two_dens();
+		void construct_CI_one_dens(unsigned start, unsigned end, std::valarray<std::valarray<double>> & onerdm);
+		void construct_CI_two_dens(unsigned start, unsigned end, std::vector<Vector2d > & twordm);
         //helper functions for the density matrices.
         void setup_vertex_weights(std::vector<std::vector<int> > & vw);
         /** This function determines the weight of a given string.
@@ -116,8 +124,8 @@ class DensFILE:public CIDens
 		DensFILE(CIMethod * cim ): CIDens(cim){};
 
     private:
-		void construct_CI_one_dens();
-		void construct_CI_two_dens();
+		void construct_CI_one_dens(unsigned start, unsigned end, std::valarray<std::valarray<double>> & onerdm);
+		void construct_CI_two_dens(unsigned start, unsigned end, std::vector<Vector2d > & twordm);
 };
 
 class DensFCI:public CIDens
@@ -125,8 +133,8 @@ class DensFCI:public CIDens
 	public:
 		DensFCI(CIMethod * cim): CIDens(cim){};
     private:
-		void construct_CI_one_dens();
-		void construct_CI_two_dens();
+		void construct_CI_one_dens(unsigned start, unsigned end, std::valarray<std::valarray<double>> & onerdm);
+		void construct_CI_two_dens(unsigned start, unsigned end, std::vector<Vector2d > & twordm);
 };
 
 #endif
