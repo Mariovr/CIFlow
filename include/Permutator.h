@@ -53,6 +53,7 @@ class Permutator_Bit:public Permutator{
 		// for compatibility (find a better solution)
 		int get_dim(){return -1;}
 		void  permutate_bit(TYPE * det, int pos );
+		void  print_dets(int nup , int orbs);
 
 		std::string get_filename(){return "permbit";}
 		std::string binary_string(TYPE x);

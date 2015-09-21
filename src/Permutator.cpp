@@ -154,6 +154,19 @@ TYPE Permutator_Bit::get_start_int(int n){
 
 void  Permutator_Bit::permutate_bit(TYPE * det, int pos ){std::cout << "you shouldn't be here" ;} 
 
+void Permutator_Bit::print_dets(int nup , int orbs){
+	cout << "Determinants contained in the permutator Bit object:" <<endl;
+    TYPE start = get_start_int(nup);
+    TYPE shiftbit = 1;
+    int it = 0;
+	while ( !(start & (1<< orbs))  ){
+		cout << binary_string(start)  << endl;
+        start = permutate_bit(start);
+        it += 1;
+	}
+	cout << "Number of determinants: " << it << endl;
+}
+
 //-------------------------class Permutator_File-----------------------------------------------
 
 
@@ -232,7 +245,7 @@ std::string Permutator_File::binary_string(int pos)
 }
 
 void Permutator_File::print_dets(){
-	cout << "Determinants contained in the permutator object:" <<endl;
+	cout << "Determinants contained in the permutator File object:" <<endl;
 	for (int it = 0 ; it != _up_dets.size() ; it++){
 		cout << binary_string(it)  << endl;
 	}
