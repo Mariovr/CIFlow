@@ -208,7 +208,7 @@ void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
     {
         cim->reset_output(sort);
         cim->print_output();
-        //cim->print_rdm();
+        cim->print_rdm();
         //cim->print_ham();
     }
     cim->delete_ham();
@@ -298,8 +298,8 @@ int main ( int argc, char ** argv){
                 //Take care of the orbital optimizations.
                 cimethod++;
                 if( *cimethod != "none")
-                    //orb_opt(*cimethod, cim ,  1,  1);
-                    orb_opt(*cimethod, cim ,  0,  0);
+                    orb_opt(*cimethod, cim ,  1,  1);
+                    //orb_opt(*cimethod, cim ,  0,  0);
                 delete cim;
             }
             if(*cimethod == "fci"){
@@ -322,8 +322,8 @@ int main ( int argc, char ** argv){
 
                 cimethod++;
                 if( *cimethod != "none")
-                    //orb_opt(*cimethod, cim5 , 1, 1);
-                    orb_opt(*cimethod, cim5 , 0,0 );
+                    orb_opt(*cimethod, cim5 , 1, 1);
+                    //orb_opt(*cimethod, cim5 , 0,0 );
                 delete cim5;
             }
 

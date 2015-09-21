@@ -588,9 +588,17 @@ def main():
     #reader.add_diego_mo()
     #reader.add_patrick_mo()
 
+def reverse_repulsion():
+    filename = 'results/hechangerep/matrixelements/psi0_basisset2.00.mout'
+    reader = PsiReader(filename, isbig = False, numorbs = None, read_ints = True)
+    reader.change_repulsion()
+    reader.create_output(fname = 'results/hechangerep/matrixelements/changedrep.dat')
+
+
 if __name__ == "__main__":
+    reverse_repulsion()
     #benzene()
-    test_unitary()
+    #test_unitary()
     #print_unitary('./data/unitary-mo.h5')
     #hdf5_ham()
     #list_test()
