@@ -950,6 +950,207 @@ unsigned int DensDOCI::determine_weight(TYPE string , const vector<vector<int> >
     return weight-1;
 }
 
+/**
+ * Find the minimum with Newton-Raphson for the angle of a jacobi rotation between
+ * orbitals k and l in the DOCI space.
+ * @param k the first orbital
+ * @param l the second orbital
+ * @param start_angle the starting point for the Newton-Raphson (defaults to zero)
+ * @param T function that returns the one-particle matrix elements
+ * @param V function that returns the two-particle matrix elements
+ * @return pair of the angle with the lowest energy and boolean, true => minimum, false => maximum
+ */
+std::pair<double,bool> DensDOCI::find_min_angle(int k, int l, double start_angle, std::function<double(int,int)> &T, std::function<double(int,int,int,int)> &V) const
+{
+   assert(k!=l);
+
+   const int L = dim();
+
+   double theta = start_angle;
+
+   const DensDOCI &rdm = *this;
+
+   const int N = _cim->gNup() + _cim->gNdown();
+
+   double cos2 = 2.0/( N-1.0)*(T(k,k)*rdm(1,k,k,k,k)+T(l,l)*rdm(1,l,l,l,l));
+
+   double sin2 = 2.0/(N-1.0)*(T(l,l)*rdm(1,k,k,k,k)+T(k,k)*rdm(1,l,l,l,l));
+
+   // 2sincos actually
+   double sincos = 2.0/(N-1.0)*T(k,l)*(rdm(1,l,l,l,l)-rdm(1,k,k,k,k));
+
+   for(int a=0;a<L;a++)
+   {
+      if(a==k || a==l)
+         continue;
+
+      cos2 += 2*V(k,k,a,a)*rdm(1,k,k,a,a)+2*V(l,l,a,a)*rdm(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*rdm(0,k,a,k,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*rdm(0,l,a,l,a);
+
+      sin2 += 2*V(l,l,a,a)*rdm(1,k,k,a,a)+2*V(k,k,a,a)*rdm(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*rdm(0,l,a,l,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*rdm(0,k,a,k,a);
+
+      sincos += 2*V(k,l,a,a)*(rdm(1,l,l,a,a)-rdm(1,k,k,a,a))+2*(2*V(k,a,l,a)-V(k,a,a,l)+2.0/(N-1.0)*T(k,l))*(rdm(0,l,a,l,a)-rdm(0,k,a,k,a));
+   }
+
+   const double cos4 = V(k,k,k,k)*rdm(1,k,k,k,k)+V(l,l,l,l)*rdm(1,l,l,l,l)+2*V(k,k,l,l)*rdm(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*rdm(0,k,l,k,l);
+
+   const double sin4 = V(k,k,k,k)*rdm(1,l,l,l,l)+V(l,l,l,l)*rdm(1,k,k,k,k)+2*V(k,k,l,l)*rdm(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*rdm(0,k,l,k,l);
+
+   // 2 x
+   const double cos2sin2 = (2*V(k,k,l,l)+V(k,l,k,l))*(rdm(1,k,k,k,k)+rdm(1,l,l,l,l))+((V(k,k,k,k)+V(l,l,l,l)-2*(V(k,l,k,l)+V(k,k,l,l))))*rdm(1,k,k,l,l)+(V(k,k,k,k)+V(l,l,l,l)-6*V(k,k,l,l)+2*V(k,l,k,l))*rdm(0,k,l,k,l);
+
+   // 4 x
+   const double sin3cos = V(k,l,k,k)*rdm(1,l,l,l,l)-V(k,l,l,l)*rdm(1,k,k,k,k)-(V(k,l,k,k)-V(k,l,l,l))*(rdm(1,k,k,l,l)+rdm(0,k,l,k,l));
+
+   // 4 x
+   const double cos3sin = V(k,l,l,l)*rdm(1,l,l,l,l)-V(k,l,k,k)*rdm(1,k,k,k,k)+(V(k,l,k,k)-V(k,l,l,l))*(rdm(1,k,k,l,l)+rdm(0,k,l,k,l));
+
+   // A*cos(t)^4+B*sin(t)^4+C*cos(t)^2+D*sin(t)^2+2*E*cos(t)*sin(t)+2*F*cos(t)^2*sin(t)^2+4*G*sin(t)*cos(t)^3+4*H*sin(t)^3*cos(t)
+
+   // (16*G-16*H)*cos(t)^4+(-4*A-4*B+8*F)*sin(t)*cos(t)^3+(4*E-12*G+20*H)*cos(t)^2+(4*B-2*C+2*D-4*F)*sin(t)*cos(t)-2*E-4*H
+   auto gradient = [&] (double theta) -> double { 
+      double cos = std::cos(theta);
+      double sin = std::sin(theta);
+
+      double res = 16*(cos3sin-sin3cos)*cos*cos*cos*cos - 4*(cos4+sin4-2*cos2sin2)*sin*cos*cos*cos + 4*(sincos-3*cos3sin+5*sin3cos)*cos*cos + 2*(2*sin4-cos2+sin2-2*cos2sin2)*sin*cos-2*sincos-4*sin3cos;
+
+      return res;
+   };
+
+   // (-16*A-16*B+32*F)*cos(t)^4+(-64*G+64*H)*sin(t)*cos(t)^3+(12*A+20*B-4*C+4*D-32*F)*cos(t)^2+(-8*E+24*G-40*H)*sin(t)*cos(t)-4*B+2*C-2*D+4*F
+   auto hessian = [&] (double theta) -> double { 
+      double cos = std::cos(theta);
+      double sin = std::sin(theta);
+
+      double res = -16*(cos4+sin4-2*cos2sin2)*cos*cos*cos*cos+64*(sin3cos-cos3sin)*sin*cos*cos*cos+4*(3*cos4+5*sin4-cos2+sin2-8*cos2sin2)*cos*cos-8*(sincos-3*cos3sin+5*sin3cos)*sin*cos+2*(cos2-2*sin4-sin2+2*cos2sin2);
+      
+      return res;
+   };
+
+//   int Na = 5000;
+//   for(int i=0;i<Na;i++)
+//   {
+//      double t = 2.0 * M_PI / (1.0*Na) * i;
+//      std::cout << t << "\t" << calc_rotate(k,l,t,T,V)  << "\t" << gradient(t) << "\t" << hessian(t) << std::endl;
+//   }
+
+   const int max_iters = 20;
+   const double convergence = 1e-12;
+
+   double change = gradient(theta)*theta+hessian(theta)*theta*theta/2.0;
+
+   // if it goes uphill, try flipping sign and try again
+   if(change>0)
+      theta *= -1;
+
+   int iter;
+   for(iter=0;iter<max_iters;iter++)
+   {
+      double dx = gradient(theta)/hessian(theta);
+
+      theta -= dx;
+
+      if(fabs(dx) < convergence)
+         break;
+   }
+
+   if(iter>=max_iters)
+      std::cout << "Reached max iters in find_min_angle: " << k << " " << l << std::endl;
+
+   if(hessian(theta)<0)
+      std::cout << "Found max!" << std::endl;
+
+   return std::make_pair(theta, hessian(theta)>0);
+}
+
+/**
+ * Calculate the energy change when you rotate orbital k and l over an angle of theta with
+ * the rotation in the full space of the orbitals.
+ * @param k the first orbital
+ * @param l the second orbital
+ * @param theta the angle to rotate over
+ * @param T function that returns the one-particle matrix elements
+ * @param V function that returns the two-particle matrix elements
+ * @return the new energy
+ */
+double DensDOCI::calc_rotate(int k, int l, double theta, std::function<double(int,int)> &T, std::function<double(int,int,int,int)> &V) const
+{
+   assert(k!=l);
+
+   const int L = dim();
+   const int N = _cim->gNup() + _cim->gNdown();
+
+   const DensDOCI &rdm = *this;
+
+   double energy = 4/(N-1.0)*(T(k,k)+T(l,l)) * rdm(0,k,l,k,l);
+
+   double cos2 = 2.0/(N-1.0)*(T(k,k)*rdm(1,k,k,k,k)+T(l,l)*rdm(1,l,l,l,l));
+
+   double sin2 = 2.0/(N-1.0)*(T(l,l)*rdm(1,k,k,k,k)+T(k,k)*rdm(1,l,l,l,l));
+
+   // 2sincos actually
+   double sincos = 2.0/(N-1.0)*T(k,l)*(rdm(1,l,l,l,l)-rdm(1,k,k,k,k));
+
+   for(int a=0;a<L;a++)
+   {
+      if(a==k || a==l)
+         continue;
+
+      energy += 2.0/(N-1.0) * T(a,a) * (rdm(1,a,a,a,a)+2*rdm(0,a,k,a,k)+2*rdm(0,a,l,a,l));
+
+      for(int b=0;b<L;b++)
+      {
+         if(b==k || b==l)
+            continue;
+
+         energy += 2.0/(N-1.0) * (T(a,a)+T(b,b)) * rdm(0,a,b,a,b);
+
+         energy += V(a,a,b,b) * rdm(1,a,a,b,b);
+
+         energy += (2*V(a,b,a,b)-V(a,b,b,a)) * rdm(0,a,b,a,b);
+      }
+
+      cos2 += 2*V(k,k,a,a)*rdm(1,k,k,a,a)+2*V(l,l,a,a)*rdm(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*rdm(0,k,a,k,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*rdm(0,l,a,l,a);
+
+      sin2 += 2*V(l,l,a,a)*rdm(1,k,k,a,a)+2*V(k,k,a,a)*rdm(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*rdm(0,l,a,l,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*rdm(0,k,a,k,a);
+
+      sincos += 2*V(k,l,a,a)*(rdm(1,l,l,a,a)-rdm(1,k,k,a,a))+2*(2*V(k,a,l,a)-V(k,a,a,l)+2.0/(N-1.0)*T(k,l))*(rdm(0,l,a,l,a)-rdm(0,k,a,k,a));
+   }
+
+   const double cos4 = V(k,k,k,k)*rdm(1,k,k,k,k)+V(l,l,l,l)*rdm(1,l,l,l,l)+2*V(k,k,l,l)*rdm(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*rdm(0,k,l,k,l);
+
+   const double sin4 = V(k,k,k,k)*rdm(1,l,l,l,l)+V(l,l,l,l)*rdm(1,k,k,k,k)+2*V(k,k,l,l)*rdm(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*rdm(0,k,l,k,l);
+
+   // 2 x
+   const double cos2sin2 = (2*V(k,k,l,l)+V(k,l,k,l))*(rdm(1,k,k,k,k)+rdm(1,l,l,l,l))+((V(k,k,k,k)+V(l,l,l,l)-2*(V(k,l,k,l)+V(k,k,l,l))))*rdm(1,k,k,l,l)+(V(k,k,k,k)+V(l,l,l,l)-6*V(k,k,l,l)+2*V(k,l,k,l))*rdm(0,k,l,k,l);
+
+   // 4 x
+   const double sin3cos = V(k,l,k,k)*rdm(1,l,l,l,l)-V(k,l,l,l)*rdm(1,k,k,k,k)-(V(k,l,k,k)-V(k,l,l,l))*(rdm(1,k,k,l,l)+rdm(0,k,l,k,l));
+
+   // 4 x
+   const double cos3sin = V(k,l,l,l)*rdm(1,l,l,l,l)-V(k,l,k,k)*rdm(1,k,k,k,k)+(V(k,l,k,k)-V(k,l,l,l))*(rdm(1,k,k,l,l)+rdm(0,k,l,k,l));
+
+   const double cos = std::cos(theta);
+   const double sin = std::sin(theta);
+
+   energy += cos*cos*cos*cos*cos4;
+
+   energy += sin*sin*sin*sin*sin4;
+
+   energy += cos*cos*cos2;
+
+   energy += sin*sin*sin2;
+
+   energy += 2*sin*cos*sincos;
+
+   energy += 2*cos*cos*sin*sin*cos2sin2;
+
+   energy += 4*cos*sin*sin*sin*sin3cos;
+
+   energy += 4*cos*cos*cos*sin*cos3sin;
+
+   return energy;
+}
+
 //---------------------------DensFILE-------------------------------------------------------------//
 //REMARK DensFILE can be used for FCI_File and for CI_Big because they have the same permutator object.
 void DensFILE::construct_CI_one_dens( unsigned int start , unsigned int end, valarray<valarray<double>> & onerdm){

@@ -61,6 +61,9 @@ class CIDens
 		double get_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4,const std::vector<Vector2d > & twordm) const ; 
 		double get_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4) const {return get_two_rdm(spin ,orb1 , orb2 , orb3 , orb4 , _two_dens); } 
         void add_two_rdm(int spin, int orb1 , int orb2 , int orb3 , int orb4, double value, std::vector<Vector2d > & twordm);
+        double operator()(int spin, int i , int j , int k ,int l) const {return get_two_rdm(spin, i , j , k , l);}
+        double operator()(int spin, int i , int j ) const {return get_one_rdm(spin, i , j );}
+
         void reset_1rdm(); //Sets to zero 1rdm.
 		void reset_2rdm(); //Sets to zero 2rdm.
 		double get_seniority()const;
@@ -102,6 +105,10 @@ class DensDOCI:public CIDens
 {
 	public:
 		DensDOCI(CIMethod * cim):CIDens(cim){};
+
+        //Functions necessary for the local optimizer.
+        std::pair<double,bool> find_min_angle(int k, int l, double start_angle, std::function<double(int,int)> &T, std::function<double(int,int,int,int)> &V) const;
+        double calc_rotate(int k, int l, double theta, std::function<double(int,int)> &T, std::function<double(int,int,int,int)> &V) const;
 
     private:
 		void construct_CI_one_dens(unsigned start, unsigned end, std::valarray<std::valarray<double>> & onerdm);
