@@ -122,6 +122,10 @@ sointegrals(Options &options)
     shared_ptr<MatrixFactory> factory(new MatrixFactory);
     factory->init_with(dimension, dimension);
 
+    //shared_ptr<OneBodyAOInt> aOBI(integral->ao_overlap());
+    //SharedMatrix sMatao(factory->create_matrix("Overlapao"));
+    //aOBI->compute(sMatao);
+    //sMatao->print();
     // Form the one-electron integral objects from the integral factory
     shared_ptr<OneBodySOInt> sOBI(integral->so_overlap());
     shared_ptr<OneBodySOInt> tOBI(integral->so_kinetic());
@@ -173,8 +177,7 @@ sointegrals(Options &options)
     tOBI->compute(tMat);
     vOBI->compute(vMat);
 
-    shared_ptr<Hamiltonian> Ham(new Hamiltonian(nmo, SyGroup, OrbIrreps.data(), nalpha , nbeta));
-    Ham->setEconst(NuclRepulsion);
+    shared_ptr<Hamiltonian> Ham(new Hamiltonian(nmo, SyGroup, OrbIrreps.data(), nalpha , nbeta, NuclRepulsion));
     Ham->_overlap = std::vector<double>(Ham->getL() *Ham->getL() ,0.);
     if(saveoverlap)
     {
