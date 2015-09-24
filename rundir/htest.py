@@ -73,7 +73,7 @@ def convert_au_to_ang(x):
     """
     return x*5.2917720859*10**(-11)/(10**(-10))
 
-def input_psi(fname, basis ,name= ' ' , charge_mult = (0,1) , atomlist = [] , positions = [] , units = 'au' , ref = 'rhf' , userbasis = False , functional = None, path_to_plugin = '../mointegrals/mointegrals.so', DOCC = None, sym = None, energies = None, hdf5 = False, guess = 'sad'):
+def input_psi(fname, basis ,name= ' ' , charge_mult = (0,1) , atomlist = [] , positions = [] , units = 'au' , ref = 'rhf' , userbasis = False , functional = None, path_to_plugin = '../mointegrals/mointegrals.so', DOCC = None, sym = None, energies = None, hdf5 = False, guess = 'sad', su = False, basispath = './'):
     '''
     Generate the input for the psi4 program.
     #set reference can be: rhf , rohf, uhf , rks , uks
@@ -96,7 +96,7 @@ def input_psi(fname, basis ,name= ' ' , charge_mult = (0,1) , atomlist = [] , po
     molecule += ch_mulst + el_list + unitstring + endmolecule
   
     if userbasis:
-        molecule += '\nbasis file ./%s.gbs\n' %(basis)
+        molecule += '\nbasis file ./%s%s.gbs\n' %(basispath, basis)
   
     integraltype = os.path.basename(path_to_plugin) 
     integralname = integraltype[:-3]
@@ -106,6 +106,7 @@ def input_psi(fname, basis ,name= ' ' , charge_mult = (0,1) , atomlist = [] , po
 set basis %(basis)s
 set %(integralname)s print 1
 set %(integralname)s filename %(fout)s
+set %(integralname)s save_unitaries %(su)s
 set reference %(ref)s
 set guess %(guess)s
 """%vars()
@@ -135,7 +136,7 @@ set guess %(guess)s
     f.write(psi_input)
     f.close()
 
-def create_matrix_elements(elemdir, basissets, runlist, atoms, chmult = (0,1) , moltype = 'dimer', package = 'psi' , units = 'angstrom', path_mo = '../../../../mointegrals/mointegrals.so', DOCC = None, energies = None , sym = None, extrapar= 104.479848, only_input = False, hdf5 = False, guess = 'sad', ref = 'rhf'):
+def create_matrix_elements(elemdir, basissets, runlist, atoms, chmult = (0,1) , moltype = 'dimer', package = 'psi' , units = 'angstrom', path_mo = '../../../../mointegrals/mointegrals.so', DOCC = None, energies = None , sym = None, extrapar= 104.479848, only_input = False, hdf5 = False, guess = 'sad', ref = 'rhf', su = 'False', basispath = './', userbasis = False):
     olddir = os.getcwd()
     generate_dir(elemdir,None)
     filenum = 0 #To read in the matrixelement files in the correct order.
@@ -160,7 +161,7 @@ def create_matrix_elements(elemdir, basissets, runlist, atoms, chmult = (0,1) , 
 
             if package == 'psi':    
                 fname = "psi%d_" %filenum +basis + "%.2f" %(r) +  ".dat"
-                input_psi(fname , basis ,name= 'mol' , charge_mult = chmult , atomlist = atoms , positions = positions , units = units , ref = ref, userbasis = False, path_to_plugin = path_mo , DOCC = DOCC, sym = sym, energies = energies, hdf5= hdf5, guess = guess)
+                input_psi(fname , basis ,name= 'mol' , charge_mult = chmult , atomlist = atoms , positions = positions , units = units , ref = ref, userbasis = userbasis, path_to_plugin = path_mo , DOCC = DOCC, sym = sym, energies = energies, hdf5= hdf5, guess = guess, su = su, basispath = basispath)
                 if not only_input:
                     subprocess.call(["psi4", fname])
 
@@ -454,7 +455,7 @@ def main_opt(*args , **kwargs):
     #generate_dir(rootdir , exe)
     shutil.copy(exe, rootdir)#When the matrixelements are already present.
     os.chdir(rootdir) #When the matrixelements are already present.
-    #create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (1,1) , moltype = 'dimer', package = 'psi' , units = 'au', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = 'c1', hdf5 = False, guess = 'sad', extrapar = 104.479848, ref = 'rhf')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
+    #create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (1,1) , moltype = 'dimer', package = 'psi' , units = 'au', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = 'c1', hdf5 = False, guess = 'sad', extrapar = 104.479848, ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
 
     outputfile = open(ciflowoutputfile , 'w')
     fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?out' , x).group(1))
@@ -622,8 +623,80 @@ def test_benzene():
     print LA.norm(np.array(test[1])-np.array(test[2])) , 'has to be approx ' , 1.502
     print LA.norm(np.array(test[0])-np.array(test[1])) , 'has to be approx ' , 1.291
 
+def farnaz(*args , **kwargs):
+    ciflowoutputfile = "ciflowoutput.txt" ; flowname = "flow.dat"; psienergies = [] ;  extra = None
+    methods = ["fci" , "none"]
+    basissets = ['6-31g*']
+    runlist = [2]
+    atoms = [2]
+    name = 'hechangerep'
+    rootdir = './results/hechangerepstar631g/' #relative to the directory that contains this script
+    exe = 'ciflow.x'
+    elemdir = 'matrixelements'
+
+    generate_dir(rootdir , exe)
+    #shutil.copy(exe, rootdir)#When the matrixelements are already present.
+    #os.chdir(rootdir) #When the matrixelements are already present.
+    create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (0,1) , moltype = 'atom', package = 'psi' , units = 'au', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = 'c1', hdf5 = False, guess = 'sad', extrapar = 104.479848, ref = 'rhf', userbasis = False, basispath = '../../../data/basissets/', su = True)#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
+
+    outputfile = open(ciflowoutputfile , 'w')
+    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?out' , x).group(1))
+    hamfiles = {}
+    search = r'psi.+%s.+mout' 
+    for basis in basissets:
+        hamfiles[basis] = fc.File_Collector(elemdir , search = search %basis ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1 and fileinfo(x) < 1000. )
+  
+    afh = 'R'
+    for basis in basissets:
+        fname = name + "_" +basis + ".dat"
+        with open(fname , 'w') as f:
+            header = create_header(afh , methods, psienergies, extra = extra)
+            print header
+            f.write(header)
+            for index , matrixelements in enumerate(hamfiles[basis].plotfiles):
+                print matrixelements
+
+                create_ciflow_input_file(matrixelements , methods , fname = flowname)
+                ci_flow =""
+                if methods:
+                    try:
+                        ci_flow =""
+                        process = subprocess.Popen(["./ciflow.x" ] , stdin =open(flowname , 'r'), stdout = subprocess.PIPE)
+                        for line in iter(process.stdout.readline, ''):
+                            sys.stdout.write(line) #writes intermediate output to screen.
+                            outputfile.write(line)
+                            outputfile.flush()
+                            ci_flow += line
+                    except Exception as e:    
+                        print 'Ciflow gave the following error', e
+                        print ci_flow
+                        pass
+                energies = process_output(ci_flow) 
+
+                print_output(matrixelements, energies , methods)
+                f.write("%.15f\t%s\n" %(runlist[index], '\t'.join(energies )) )
+  
+    
+        if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
+            plotter = pf.Plot_Files(fname)
+            plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
+            plotter.data[0].depvar['xas'] = '$R$'  #is normally set to the column header 0
+            plotter.data[0].units['x'] = r'(\AA)'
+            plotter.data[0].units['y'] = r'(E$_h$)'
+            plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
+ 
+    os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
+    outputfile.close()
+    generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
+    os.chdir('..')
+    generate_dir('unitaries', None, prefix = 'unitary_')
+    os.chdir('..')
+    generate_dir('matrixelements_otherbasis', None, prefix = 'hamp')
+    os.chdir('..')
+
 if __name__ == "__main__":
-    main_opt()
+    #main_opt()
+    farnaz()
     #print benzene(math.pi/3 , 1.398)
     #test_benzene()
     #prepare_dmrg('dmrginput.dat')

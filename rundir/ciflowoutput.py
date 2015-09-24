@@ -134,7 +134,7 @@ class CIFlow_Reader(Reader):
     def read_rdm(self, twordm = True):
         self.ordm = np.zeros((self.header['norbs'] ,self.header['norbs']) , dtype=np.float )
         if twordm:
-            self.trdm = [np.zeros((self.header['norbs'] ,self.header['norbs'], self.header['norbs'] ,self.header['norbs']) , dtype=np.float ) for i in range(4) ] 
+            self.trdm = [np.zeros((self.header['norbs'] ,self.header['norbs'], self.header['norbs'] ,self.header['norbs']) , dtype=np.float ) for i in range(3) ] 
         reg1rdm = r'^(\d+)\s(\d+)\s([\-+]?\d+\.*\d*[eEdD]?[\-+]?\d*)'  #onerdm
         reg2rdm = r'^(\d+)\s(\d+)\s(\d+)\s(\d+)\s([\-+]?\d+\.*\d*[eEdD]?[\-+]?\d*)'  #twordm
         startrdm = 0 
@@ -147,7 +147,8 @@ class CIFlow_Reader(Reader):
                 if startrdm == 1:
                     match = re.search(reg1rdm , line)
                     if match:
-                        self.ordm[int(match.group(1)) , int(match.group(2)) ] += float(match.group(3))
+                        self.ordm[int(match.group(1)) , int(match.group(2)) ] = float(match.group(3))
+                        self.ordm[int(match.group(2)), int(match.group(1)) ] = float(match.group(3))
                 if startrdm >= 2:
                     if twordm:
                         match = re.search(reg2rdm , line)
@@ -163,7 +164,7 @@ class CIFlow_Reader(Reader):
         matrix = []
         with open(filename , 'r') as file:
             for line in file:
-                if line[0] != comment and re.search(reg,line) :
+                if line[0] != comment and re.search(reg,line) and not re.search(r'[a-zA-Z]', line[0]):
                     row = map(float , line.split())
                     matrix.append(row)
 
@@ -245,12 +246,12 @@ class CIFlow_Reader(Reader):
         dim = self.header['norbs']
         t4index = None
         if twordm:
-            t4index = [np.zeros((dim,dim, dim, dim)) for i in range(4)]
+            t4index = [np.zeros((dim,dim, dim, dim)) for i in range(3)]
             temp = np.zeros((dim,dim, dim, dim))
             temp2 = np.zeros((dim,dim, dim, dim))
             temp3 = np.zeros((dim,dim, dim, dim))
 
-            for i in range(4):
+            for i in range(3):
                 for p in range(0,dim):
                     for mu in range(0,dim):
                         temp[p,:,:,:] += unitary[mu,p]*self.trdm[i][mu,:,:,:]
@@ -504,6 +505,20 @@ def mulliken():
         mulliken_o = sum([density[i,i] for i in range(5,10)] ) 
         print 'outputfile: ', outfile, 'mulliken n : ' , mulliken_n  , 'mulliken_o : '  , mulliken_o 
 
+def back_transform():
+    rootdir = './results/hechangerep/'
+    rootdir = './results/hechangerepstar631g/'
+    collector = fc.File_Collector(rootdir , r'[-\w\d.]*output[\w_]*.dat', notsearch = 'rdm_ao' , sortfunction = None)
+    for outfile in collector.plotfiles:
+        cifread = CIFlow_Reader(outfile)
+        cifread.read_rdm(twordm=False)
+        #print cifread.ordm
+        #print len(cifread.ordm)
+        unitary = cifread.read_matrix(os.path.join(rootdir , os.path.join('matrixelements', 'unitary-mounit_ao_to_mo.txt') ) )
+        #print unitary
+        #print len(unitary)
+        t2index , t4index = cifread.transform_rdms(unitary , twordm = False)
+        np.savetxt(outfile +'rdm_ao.dat' , t2index)
         
 if __name__ == "__main__":
     #main()
@@ -512,4 +527,6 @@ if __name__ == "__main__":
     #overlap_analysis()
     #overlap_analysis2()
     #mulliken()
-    test_density()
+    #test_density()
+    back_transform()
+

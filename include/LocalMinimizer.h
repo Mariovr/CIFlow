@@ -16,7 +16,7 @@ class CIDens;
 
 
 /*
- *Kindly provided by ward poelmans
+ *File based on the local optimization for exact DOCI of Ward Poelmans.
  */
 
 class LocalMinimizer: OrbitalOptimization

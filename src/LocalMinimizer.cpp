@@ -14,6 +14,12 @@
 #include "CIDens.h"
 #include "CIMethod.h"
 
+
+
+/*
+ *File based on the Local optimization for exact DOCI of Ward Poelmans. 
+ */
+
 LocalMinimizer::LocalMinimizer(CIMethod * cim): OrbitalOptimization(cim)
 {
    _conv_crit = 1e-6;
