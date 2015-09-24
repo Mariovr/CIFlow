@@ -32,7 +32,9 @@
 #include "SimulatedAnnealing.h"
 #include "UnitaryMatrix.h"
 #include "OrbitalTransform.h"
+#include "LocalMinimizer.h"
 #include "HamConstruct.h"
+#include "scpp_assert.h"
 
 
 using namespace std;
@@ -151,9 +153,13 @@ void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
         orbopt.run_multiple(5, true); //put true when you want to save the optimal unitary transformation.
         std::cout  << "Optimized energy with simulated annealing: " << orbopt.get_opt_ci_energy() << std::endl;
     }
-    else if(sort == "mcscf")
+    else if(sort == "local")
     {
+        SCPP_TEST_ASSERT(cim->get_name() == "DOCI" , "Error: Local optimizer only works for DOCI at the moment, the cim type is: " << cim->get_name() );
         //handles mcscf orbital optimization.
+        LocalMinimizer locmin {cim};
+        double e_min = locmin.optimize();
+        std::cout  << "Optimized energy with Local Minimizer for DOCI: " << e_min << std::endl;
     }
     else if(sort == "line")
     {
@@ -260,11 +266,11 @@ int main ( int argc, char ** argv){
         cout << "Orbital Optimization? " << endl;
         cout << "Wanna do orbital optimization, or select different Hamiltonian?" <<endl;
         while(1){
-            cout << "Possible options are: sim (simmulated annealing), mcscf, none, ... " << endl;
+            cout << "Possible options are: sim (simmulated annealing), local, fno, none, ... " << endl;
             cin >> method;
             transform(method.begin(), method.end(), method.begin(), ::tolower);
             cout << method;
-            if (method == "sim" || method == "mcscf" || method == "none" || method == "line" || method == "fmmin" || method == "fno" || method == "mmind" || method == "hmmin" || method == "loadham" || method == "no" || method == "sdmmin" ){
+            if (method == "sim" || method == "mcscf" || method == "none" || method == "line" || method == "fmmin" || method == "fno" || method == "mmind" || method == "hmmin" || method == "loadham" || method == "no" || method == "sdmmin"  || method == "local" ){
                 methods.push_back(method);
                 break;
             }//end if
