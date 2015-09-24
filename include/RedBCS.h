@@ -58,10 +58,10 @@ class RedBCS
         std::string get_information();
 
     private:
-	std::unique_ptr<DOCI>  _doci;
-	Hamiltonian * _hamrg;
-	std::unique_ptr<CIDens> _cid;
-	std::vector<int> _permarray;
+        std::unique_ptr<DOCI>  _doci;
+        Hamiltonian * _hamrg;
+        std::unique_ptr<CIDens> _cid;
+        std::vector<int> _permarray;
 };
 
 

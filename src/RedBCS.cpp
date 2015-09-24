@@ -39,6 +39,8 @@ RedBCS::RedBCS(Hamiltonian & Ham)
     std::vector<double> epsilon = get_epsilon(Ham);
     _doci.reset(new DOCI(_hamrg )); 
     set_ham(0.0001 , epsilon , 0);
+    _hamrg->set_modham(true);
+    
 }
 
 RedBCS::RedBCS(Hamiltonian & Ham, double g , std::vector<double> epsilon, std::vector<int> permarray)
@@ -47,6 +49,7 @@ RedBCS::RedBCS(Hamiltonian & Ham, double g , std::vector<double> epsilon, std::v
     _permarray = permarray;
     _doci.reset(new DOCI(_hamrg )); 
     set_ham(g , epsilon , 0);
+    _hamrg->set_modham(true);
     //_hamrg->debugcheck();
 }
 

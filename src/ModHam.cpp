@@ -14,14 +14,12 @@ ModHam::ModHam(const int L , const int nup, const int ndown, double Econst, std:
 {
     _params = params;
     _options = options;
-    _modham = true;
 }
 
 ModHam::ModHam(const Hamiltonian & Ham, std::vector<double> params , std::vector<std::string> options  ): Hamiltonian(Ham.getL() , Ham.getNGroup() , Ham.get_orb2irrep() , Ham.getnup() , Ham.getndown(), 0.)
 {
     _params = params;
     _options = options;
-    _modham = true;
 }
 
 ModHam::ModHam(std::string filename):Hamiltonian(filename)
@@ -171,16 +169,19 @@ std::string Hub1d::get_info() const
 RedBCS::RedBCS(const int L , const int nup, const int ndown, double Econst, std::vector<double> params , std::vector<string> options): ModHam( L ,  nup,  ndown, Econst,  params ,  options)
 {
     construct_ham(params , options);
+    _modham = true;
 }
 
 RedBCS::RedBCS(std::string filename) : ModHam(filename)
 {
     construct_ham(_params , _options);
+    _modham = true;
 }
 
 RedBCS::RedBCS(const Hamiltonian & Ham, std::vector<double> params , std::vector<string> options  ): ModHam(Ham, params , options  )
 {
     construct_ham(params , options);
+    _modham = true;
 }
 
 //Params: First the L epsilon , then g
@@ -222,16 +223,19 @@ std::string RedBCS::get_info() const
 FacInt::FacInt(const int L , const int nup, const int ndown, double Econst, std::vector<double> params , std::vector<string> options): ModHam( L ,  nup,  ndown, Econst,  params ,  options)
 {
     construct_ham(params , options);
+    _modham = true;
 }
 
 FacInt::FacInt(std::string filename) : ModHam(filename)
 {
     construct_ham(_params , _options);
+    _modham = true;
 }
 
 FacInt::FacInt(const Hamiltonian & Ham, std::vector<double> params , std::vector<string> options  ): ModHam(Ham, params , options  )
 {
     construct_ham(params , options);
+    _modham = true;
 }
 
 //First the L epsilon, then Chi, then eta

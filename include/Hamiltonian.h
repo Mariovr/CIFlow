@@ -85,7 +85,7 @@ class Hamiltonian{
              \return The irrep of orbital nOrb */
          int getOrbitalIrrep(const int nOrb) const;
 
-	 //!returns information about the Hamiltonian
+	     //!returns information about the Hamiltonian
          std::string get_ex_info();
          
          //! Set the constant energy
@@ -188,6 +188,9 @@ class Hamiltonian{
      	 void set_filename(std::string file ){_filename = file;}
      	 std::string get_short_filename() const;
      	 virtual std::string get_info() const;
+
+         bool get_modham(){return _modham;}
+         void set_modham(bool mod){_modham = mod;}
 
     protected:
          //keyword that indicates if this instance is a model hamiltonian.
