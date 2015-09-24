@@ -967,42 +967,40 @@ std::pair<double,bool> DensDOCI::find_min_angle(int k, int l, double start_angle
    const int L = dim();
 
    double theta = start_angle;
-
-   const DensDOCI &rdm = *this;
-
+   
    const int N = _cim->gNup() + _cim->gNdown();
 
-   double cos2 = 2.0/( N-1.0)*(T(k,k)*rdm(1,k,k,k,k)+T(l,l)*rdm(1,l,l,l,l));
+   double cos2 = 2.0/( N-1.0)*(T(k,k)*(*this)(1,k,k,k,k)+T(l,l)*(*this)(1,l,l,l,l));
 
-   double sin2 = 2.0/(N-1.0)*(T(l,l)*rdm(1,k,k,k,k)+T(k,k)*rdm(1,l,l,l,l));
+   double sin2 = 2.0/(N-1.0)*(T(l,l)*(*this)(1,k,k,k,k)+T(k,k)*(*this)(1,l,l,l,l));
 
    // 2sincos actually
-   double sincos = 2.0/(N-1.0)*T(k,l)*(rdm(1,l,l,l,l)-rdm(1,k,k,k,k));
+   double sincos = 2.0/(N-1.0)*T(k,l)*((*this)(1,l,l,l,l)-(*this)(1,k,k,k,k));
 
    for(int a=0;a<L;a++)
    {
       if(a==k || a==l)
          continue;
 
-      cos2 += 2*V(k,k,a,a)*rdm(1,k,k,a,a)+2*V(l,l,a,a)*rdm(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*rdm(0,k,a,k,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*rdm(0,l,a,l,a);
+      cos2 += 2*V(k,k,a,a)*(*this)(1,k,k,a,a)+2*V(l,l,a,a)*(*this)(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*(*this)(0,k,a,k,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*(*this)(0,l,a,l,a);
 
-      sin2 += 2*V(l,l,a,a)*rdm(1,k,k,a,a)+2*V(k,k,a,a)*rdm(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*rdm(0,l,a,l,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*rdm(0,k,a,k,a);
+      sin2 += 2*V(l,l,a,a)*(*this)(1,k,k,a,a)+2*V(k,k,a,a)*(*this)(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*(*this)(0,l,a,l,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*(*this)(0,k,a,k,a);
 
-      sincos += 2*V(k,l,a,a)*(rdm(1,l,l,a,a)-rdm(1,k,k,a,a))+2*(2*V(k,a,l,a)-V(k,a,a,l)+2.0/(N-1.0)*T(k,l))*(rdm(0,l,a,l,a)-rdm(0,k,a,k,a));
+      sincos += 2*V(k,l,a,a)*((*this)(1,l,l,a,a)-(*this)(1,k,k,a,a))+2*(2*V(k,a,l,a)-V(k,a,a,l)+2.0/(N-1.0)*T(k,l))*((*this)(0,l,a,l,a)-(*this)(0,k,a,k,a));
    }
 
-   const double cos4 = V(k,k,k,k)*rdm(1,k,k,k,k)+V(l,l,l,l)*rdm(1,l,l,l,l)+2*V(k,k,l,l)*rdm(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*rdm(0,k,l,k,l);
+   const double cos4 = V(k,k,k,k)*(*this)(1,k,k,k,k)+V(l,l,l,l)*(*this)(1,l,l,l,l)+2*V(k,k,l,l)*(*this)(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*(*this)(0,k,l,k,l);
 
-   const double sin4 = V(k,k,k,k)*rdm(1,l,l,l,l)+V(l,l,l,l)*rdm(1,k,k,k,k)+2*V(k,k,l,l)*rdm(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*rdm(0,k,l,k,l);
+   const double sin4 = V(k,k,k,k)*(*this)(1,l,l,l,l)+V(l,l,l,l)*(*this)(1,k,k,k,k)+2*V(k,k,l,l)*(*this)(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*(*this)(0,k,l,k,l);
 
    // 2 x
-   const double cos2sin2 = (2*V(k,k,l,l)+V(k,l,k,l))*(rdm(1,k,k,k,k)+rdm(1,l,l,l,l))+((V(k,k,k,k)+V(l,l,l,l)-2*(V(k,l,k,l)+V(k,k,l,l))))*rdm(1,k,k,l,l)+(V(k,k,k,k)+V(l,l,l,l)-6*V(k,k,l,l)+2*V(k,l,k,l))*rdm(0,k,l,k,l);
+   const double cos2sin2 = (2*V(k,k,l,l)+V(k,l,k,l))*((*this)(1,k,k,k,k)+(*this)(1,l,l,l,l))+((V(k,k,k,k)+V(l,l,l,l)-2*(V(k,l,k,l)+V(k,k,l,l))))*(*this)(1,k,k,l,l)+(V(k,k,k,k)+V(l,l,l,l)-6*V(k,k,l,l)+2*V(k,l,k,l))*(*this)(0,k,l,k,l);
 
    // 4 x
-   const double sin3cos = V(k,l,k,k)*rdm(1,l,l,l,l)-V(k,l,l,l)*rdm(1,k,k,k,k)-(V(k,l,k,k)-V(k,l,l,l))*(rdm(1,k,k,l,l)+rdm(0,k,l,k,l));
+   const double sin3cos = V(k,l,k,k)*(*this)(1,l,l,l,l)-V(k,l,l,l)*(*this)(1,k,k,k,k)-(V(k,l,k,k)-V(k,l,l,l))*((*this)(1,k,k,l,l)+(*this)(0,k,l,k,l));
 
    // 4 x
-   const double cos3sin = V(k,l,l,l)*rdm(1,l,l,l,l)-V(k,l,k,k)*rdm(1,k,k,k,k)+(V(k,l,k,k)-V(k,l,l,l))*(rdm(1,k,k,l,l)+rdm(0,k,l,k,l));
+   const double cos3sin = V(k,l,l,l)*(*this)(1,l,l,l,l)-V(k,l,k,k)*(*this)(1,k,k,k,k)+(V(k,l,k,k)-V(k,l,l,l))*((*this)(1,k,k,l,l)+(*this)(0,k,l,k,l));
 
    // A*cos(t)^4+B*sin(t)^4+C*cos(t)^2+D*sin(t)^2+2*E*cos(t)*sin(t)+2*F*cos(t)^2*sin(t)^2+4*G*sin(t)*cos(t)^3+4*H*sin(t)^3*cos(t)
 
@@ -1079,55 +1077,53 @@ double DensDOCI::calc_rotate(int k, int l, double theta, std::function<double(in
    const int L = dim();
    const int N = _cim->gNup() + _cim->gNdown();
 
-   const DensDOCI &rdm = *this;
+   double energy = 4/(N-1.0)*(T(k,k)+T(l,l)) *(*this)(0,k,l,k,l);
 
-   double energy = 4/(N-1.0)*(T(k,k)+T(l,l)) * rdm(0,k,l,k,l);
+   double cos2 = 2.0/(N-1.0)*(T(k,k)*(*this)(1,k,k,k,k)+T(l,l)*(*this)(1,l,l,l,l));
 
-   double cos2 = 2.0/(N-1.0)*(T(k,k)*rdm(1,k,k,k,k)+T(l,l)*rdm(1,l,l,l,l));
-
-   double sin2 = 2.0/(N-1.0)*(T(l,l)*rdm(1,k,k,k,k)+T(k,k)*rdm(1,l,l,l,l));
+   double sin2 = 2.0/(N-1.0)*(T(l,l)*(*this)(1,k,k,k,k)+T(k,k)*(*this)(1,l,l,l,l));
 
    // 2sincos actually
-   double sincos = 2.0/(N-1.0)*T(k,l)*(rdm(1,l,l,l,l)-rdm(1,k,k,k,k));
+   double sincos = 2.0/(N-1.0)*T(k,l)*((*this)(1,l,l,l,l)-(*this)(1,k,k,k,k));
 
    for(int a=0;a<L;a++)
    {
       if(a==k || a==l)
          continue;
 
-      energy += 2.0/(N-1.0) * T(a,a) * (rdm(1,a,a,a,a)+2*rdm(0,a,k,a,k)+2*rdm(0,a,l,a,l));
+      energy += 2.0/(N-1.0) * T(a,a) * ((*this)(1,a,a,a,a)+2*(*this)(0,a,k,a,k)+2*(*this)(0,a,l,a,l));
 
       for(int b=0;b<L;b++)
       {
          if(b==k || b==l)
             continue;
 
-         energy += 2.0/(N-1.0) * (T(a,a)+T(b,b)) * rdm(0,a,b,a,b);
+         energy += 2.0/(N-1.0) * (T(a,a)+T(b,b)) *(*this)(0,a,b,a,b);
 
-         energy += V(a,a,b,b) * rdm(1,a,a,b,b);
+         energy += V(a,a,b,b) *(*this)(1,a,a,b,b);
 
-         energy += (2*V(a,b,a,b)-V(a,b,b,a)) * rdm(0,a,b,a,b);
+         energy += (2*V(a,b,a,b)-V(a,b,b,a)) *(*this)(0,a,b,a,b);
       }
 
-      cos2 += 2*V(k,k,a,a)*rdm(1,k,k,a,a)+2*V(l,l,a,a)*rdm(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*rdm(0,k,a,k,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*rdm(0,l,a,l,a);
+      cos2 += 2*V(k,k,a,a)*(*this)(1,k,k,a,a)+2*V(l,l,a,a)*(*this)(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*(*this)(0,k,a,k,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*(*this)(0,l,a,l,a);
 
-      sin2 += 2*V(l,l,a,a)*rdm(1,k,k,a,a)+2*V(k,k,a,a)*rdm(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*rdm(0,l,a,l,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*rdm(0,k,a,k,a);
+      sin2 += 2*V(l,l,a,a)*(*this)(1,k,k,a,a)+2*V(k,k,a,a)*(*this)(1,l,l,a,a)+2*(2*V(k,a,k,a)-V(k,a,a,k)+2.0/(N-1.0)*T(k,k))*(*this)(0,l,a,l,a)+2*(2*V(l,a,l,a)-V(l,a,a,l)+2.0/(N-1.0)*T(l,l))*(*this)(0,k,a,k,a);
 
-      sincos += 2*V(k,l,a,a)*(rdm(1,l,l,a,a)-rdm(1,k,k,a,a))+2*(2*V(k,a,l,a)-V(k,a,a,l)+2.0/(N-1.0)*T(k,l))*(rdm(0,l,a,l,a)-rdm(0,k,a,k,a));
+      sincos += 2*V(k,l,a,a)*((*this)(1,l,l,a,a)-(*this)(1,k,k,a,a))+2*(2*V(k,a,l,a)-V(k,a,a,l)+2.0/(N-1.0)*T(k,l))*((*this)(0,l,a,l,a)-(*this)(0,k,a,k,a));
    }
 
-   const double cos4 = V(k,k,k,k)*rdm(1,k,k,k,k)+V(l,l,l,l)*rdm(1,l,l,l,l)+2*V(k,k,l,l)*rdm(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*rdm(0,k,l,k,l);
+   const double cos4 = V(k,k,k,k)*(*this)(1,k,k,k,k)+V(l,l,l,l)*(*this)(1,l,l,l,l)+2*V(k,k,l,l)*(*this)(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*(*this)(0,k,l,k,l);
 
-   const double sin4 = V(k,k,k,k)*rdm(1,l,l,l,l)+V(l,l,l,l)*rdm(1,k,k,k,k)+2*V(k,k,l,l)*rdm(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*rdm(0,k,l,k,l);
+   const double sin4 = V(k,k,k,k)*(*this)(1,l,l,l,l)+V(l,l,l,l)*(*this)(1,k,k,k,k)+2*V(k,k,l,l)*(*this)(1,k,k,l,l)+2*(2*V(k,l,k,l)-V(k,k,l,l))*(*this)(0,k,l,k,l);
 
    // 2 x
-   const double cos2sin2 = (2*V(k,k,l,l)+V(k,l,k,l))*(rdm(1,k,k,k,k)+rdm(1,l,l,l,l))+((V(k,k,k,k)+V(l,l,l,l)-2*(V(k,l,k,l)+V(k,k,l,l))))*rdm(1,k,k,l,l)+(V(k,k,k,k)+V(l,l,l,l)-6*V(k,k,l,l)+2*V(k,l,k,l))*rdm(0,k,l,k,l);
+   const double cos2sin2 = (2*V(k,k,l,l)+V(k,l,k,l))*((*this)(1,k,k,k,k)+(*this)(1,l,l,l,l))+((V(k,k,k,k)+V(l,l,l,l)-2*(V(k,l,k,l)+V(k,k,l,l))))*(*this)(1,k,k,l,l)+(V(k,k,k,k)+V(l,l,l,l)-6*V(k,k,l,l)+2*V(k,l,k,l))*(*this)(0,k,l,k,l);
 
    // 4 x
-   const double sin3cos = V(k,l,k,k)*rdm(1,l,l,l,l)-V(k,l,l,l)*rdm(1,k,k,k,k)-(V(k,l,k,k)-V(k,l,l,l))*(rdm(1,k,k,l,l)+rdm(0,k,l,k,l));
+   const double sin3cos = V(k,l,k,k)*(*this)(1,l,l,l,l)-V(k,l,l,l)*(*this)(1,k,k,k,k)-(V(k,l,k,k)-V(k,l,l,l))*((*this)(1,k,k,l,l)+(*this)(0,k,l,k,l));
 
    // 4 x
-   const double cos3sin = V(k,l,l,l)*rdm(1,l,l,l,l)-V(k,l,k,k)*rdm(1,k,k,k,k)+(V(k,l,k,k)-V(k,l,l,l))*(rdm(1,k,k,l,l)+rdm(0,k,l,k,l));
+   const double cos3sin = V(k,l,l,l)*(*this)(1,l,l,l,l)-V(k,l,k,k)*(*this)(1,k,k,k,k)+(V(k,l,k,k)-V(k,l,l,l))*((*this)(1,k,k,l,l)+(*this)(0,k,l,k,l));
 
    const double cos = std::cos(theta);
    const double sin = std::sin(theta);

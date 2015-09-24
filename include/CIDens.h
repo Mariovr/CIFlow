@@ -77,6 +77,8 @@ class CIDens
 		void get_no(matrix & occupations , matrix & no) const;
 		matrix spin_summed_1rdm()const ;
 
+        virtual std::pair<double,bool> find_min_angle(int k, int l, double start_angle, std::function<double(int,int)> &T, std::function<double(int,int,int,int)> &V) const {return std::pair<double, bool> {-1000. , true} ; }
+        virtual double calc_rotate(int k, int l, double theta, std::function<double(int,int)> &T, std::function<double(int,int,int,int)> &V) const {return -1000. ;}
 
 	protected:
         unsigned _norb;
