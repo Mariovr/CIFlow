@@ -22,12 +22,13 @@
 #include <vector>
 #include <string>
 
+#include "matrix.h"
+
 class Hamiltonian;
 class UnitaryMatrix;
 class OrbitalTransform;
 class CIMethod;
 class CIDens;
-class matrix;
 class DIIS;
 
 class OrbitalOptimization
@@ -51,14 +52,12 @@ class OrbitalOptimization
 
         //!get hamiltonian pointer
         Hamiltonian * get_ham(){return _optham ;}
+        UnitaryMatrix * get_opt_unitary();
 
         void save_ham(std::string name);
         //Saves the unitary matrix that rotates the start Hamiltonian, to the Hamiltonian with 
         //the desired properties (if hdf5 is true in hdf5 format else in textfile format)
         void save_unitary(std::string name = "" , bool hdf5 = 0);
-
-        UnitaryMatrix * get_opt_unitary();
-
         //virtual void reset_values() = 0;
 
     protected:
