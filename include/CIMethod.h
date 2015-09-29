@@ -79,6 +79,7 @@ class CIMethod{
         double get_sz(){return (_nup - _ndown) / 2.;}
         double get_spin_squared();
         double get_spin();
+        void set_sparsity(double zero);
 
 		//helper functions to construct CI matrices and density matrices.
 		int * get_orbs(TYPE, int nset);

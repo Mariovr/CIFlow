@@ -69,6 +69,10 @@ class SparseMatrix_CRS
 
       int getm() const;
 
+      void set_zero(double zero) {_zero = zero;}
+
+      double get_zero(){return _zero;}
+
       void ConvertFromMatrix(const matrix &dense);
 
       void ConvertToMatrix(matrix &dense) const;
@@ -110,13 +114,14 @@ class SparseMatrix_CRS
       unsigned int n;
       //!dimension of the matrix (number of columns)
       unsigned int m;
+      double _zero;
 };
 
 class SparseMatrix_CRS_Sym:public SparseMatrix_CRS{
    public:
       //constructor
       SparseMatrix_CRS_Sym(unsigned int n , unsigned int m ):SparseMatrix_CRS(n, m){}
-      SparseMatrix_CRS_Sym();
+      SparseMatrix_CRS_Sym(): SparseMatrix_CRS(){}
 
       void mvprod(const double *x, double *y) const;
       double operator()(unsigned int i,unsigned int j) const;

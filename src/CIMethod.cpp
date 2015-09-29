@@ -108,6 +108,11 @@ double CIMethod::get_mat(int i , int j ){
     return _mat(i,j);
 }
 
+void CIMethod::set_sparsity(double zero)
+{
+    return _mat.set_zero(zero);
+}
+
 void CIMethod::set_ham(Hamiltonian * ham, bool build){
     _ham = ham; //actually not necessary because ham and _ham point to the same adres in the orbital optimization routines, but we keep it because in the future this function could also be used for applications where they differ.
     reset_mat();
@@ -442,7 +447,8 @@ double CIMethod::get_ham_element(TYPE up1 , TYPE down1 , TYPE up2 , TYPE down2){
 	return 0.; // when there are two orbitals different in up and one in down or the other way around.
 }
 
-void CIMethod::build_parallel(){
+void CIMethod::build_parallel()
+{
     #ifdef __OMP__
     int num_t = omp_get_max_threads();
     #else
@@ -510,9 +516,9 @@ void CIMethod::build_parallel(){
 
     _mat.add_from_list(parts); //REMARK because we only filled the upper diagonal => _mat should be a SparseMatrix_CRS_Sym type.
 
-    if (CIMethod_debug){
-        cout << "Number of nonzero elements: " << _mat.datasize() << endl ;
-    }
+    //if (CIMethod_debug){
+        cout << "Number of nonzero elements: " << _mat.datasize() << " dimension :  " << get_dim() << " number uppperdiagonal elements: " << get_dim() * (get_dim() +1) /2. << " sparsity : " << _mat.datasize() / ( get_dim() * (get_dim() +1) /2. )<<endl ;
+    //}
 }
 
 //---------------------------------SUBCLASSES-------------------------------------------------
@@ -708,7 +714,9 @@ void FCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
     //REMARK:we only fill the upper diagonal elements.
     //we make use of the hermicity of the matrix to add off diagonal elements. (we dont use get_ham_element because this implementation is a bit faster (and still short))
     vector< vector<int> > vw  ( get_l() +1,  vector<int> ( gNup() + 1 , 0));
+    vector< vector<int> > vwd  ( get_l() +1,  vector<int> ( gNdown() + 1 , 0));
     setup_vertex_weights(vw);
+    setup_vertex_weights(vwd);
     TYPE shiftbit = 1;
 
     Permutator_Bit my_perm(_ham->getL());
@@ -754,7 +762,7 @@ void FCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
                                         else //Match is possible so we select all matches.
                                         {
                                             TYPE down2 = down_interm ^ (shiftbit << w);
-                                            unsigned int indexd = determine_weight(down2, vw);
+                                            unsigned int indexd = determine_weight(down2, vwd);
                                             mat.PushToRow(index*gDownDim()+ indexd , two_diff_orbitals(up1, up2 , down1, down2)); //Ads single down different and single up different.
                                         } 
                                     }
@@ -801,7 +809,7 @@ void FCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
                         else //Match is possible so we select all matches.
                         {
                             TYPE down2 = down_interm ^ (shiftbit << l);
-                            unsigned int index = determine_weight(down2, vw);
+                            unsigned int index = determine_weight(down2, vwd);
                             //SCPP_TEST_ASSERT(index > i, "We full only upper half of the FCI Hamiltonian, -> row < col but : row = " << i << "col = " << index);
                             mat.PushToRow(i*gDownDim()+ index , one_diff_orbital(down1 , down2, up1)); //Ads single down different.
                             //Excite down2 for the second time.
@@ -818,7 +826,7 @@ void FCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
                                         else //Match is possible so we select all matches.
                                         {
                                             TYPE downdex = downs_interm ^ (shiftbit << w);
-                                            unsigned int indexddex = determine_weight(downdex , vw);
+                                            unsigned int indexddex = determine_weight(downdex , vwd);
                                             if(indexddex> k)
                                             {
                                                 SCPP_TEST_ASSERT(indexddex > k, "We full only upper half of the FCI Hamiltonian, -> row < col but : row = " << k << "col = " << indexddex);

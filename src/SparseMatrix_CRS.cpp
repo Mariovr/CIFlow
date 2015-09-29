@@ -38,9 +38,10 @@ SparseMatrix_CRS::SparseMatrix_CRS(unsigned int n, unsigned int m)
     data.resize(0);
     col.resize(0);
     row.resize(0);
-    data.reserve(n*500);
-    col.reserve(n*500);
+    data.reserve(n*2);
+    col.reserve(n*2);
     row.reserve(n);
+    _zero = 1e-14;
 }
 
 SparseMatrix_CRS::SparseMatrix_CRS()
@@ -50,6 +51,7 @@ SparseMatrix_CRS::SparseMatrix_CRS()
     data.resize(0);
     col.resize(0);
     row.resize(0);
+    _zero = 1e-14;
 }
 
 /**
@@ -92,6 +94,7 @@ SparseMatrix_CRS::SparseMatrix_CRS(const SparseMatrix_CCS &ccs)
     NewRow();
 }
 */
+
 SparseMatrix_CRS::~SparseMatrix_CRS()
 {
 
@@ -161,7 +164,7 @@ void SparseMatrix_CRS::ConvertFromMatrix(const matrix &dense)
    for(unsigned int i=0;i<n;i++)
    {
       for(unsigned int j=0;j<m;j++)
-         if( fabs(dense(i,j)) > 1e-14 )
+         if( fabs(dense(i,j)) > _zero )
          {
             data.push_back(dense(i,j));
             col.push_back(j);
@@ -236,66 +239,66 @@ ostream &operator<<(ostream &output,SparseMatrix_CRS &matrix_p)
  */
 void SparseMatrix_CRS::PushToRow(unsigned int j, double value)
 {
-   if(col.empty() || row.back() == col.size() || col.back() < j)
-   {
-      data.push_back(value);
-      col.push_back(j);
-   }
-   else
-   {
-      unsigned int begin = row.back();
-      for(unsigned int i=begin;i<col.size();i++)
-      {
-         if( col[i] > j )
-         {
-            col.insert(col.begin() + i,j);
-            data.insert(data.begin() + i,value);
-            break;
-         } else if (col[i] == j)
-         {
-            data[i] += value;
-
-            if(fabs(data[i])<1e-14)
+    if( fabs(value ) > _zero)
+    {
+        if(col.empty() || row.back() == col.size() || col.back() < j)
+        {
+            data.push_back(value);
+            col.push_back(j);
+        }
+        else
+        {
+            unsigned int begin = row.back();
+            for(unsigned int i=begin;i<col.size();i++)
             {
-               data.erase(data.begin() + i);
-               col.erase(col.begin() + i);
+               if( col[i] > j )
+               {
+                   col.insert(col.begin() + i,j);
+                   data.insert(data.begin() + i,value);
+                   break;
+               } else if (col[i] == j)
+               {
+                   data[i] += value;
+                   if(fabs(data[i])< _zero)//Check if we didn't cancel the previous value so this, has become zero and needs to be removed.
+                   {
+                      data.erase(data.begin() + i);
+                      col.erase(col.begin() + i);
+                   }
+                   break;
+               }
             }
-            break;
-         }
-      }
-   }
+        }
+    }
 }
 
 void SparseMatrix_CRS::PushToRownoadd(unsigned int j, double value)
 {
-   if(col.empty() || row.back() == col.size() || col.back() < j)
-   {
-      data.push_back(value);
-      col.push_back(j);
-   }
-   else
-   {
-      unsigned int begin = row.back();
-      for(unsigned int i=begin;i<col.size();i++)
-      {
-         if( col[i] > j )
-         {
-            col.insert(col.begin() + i,j);
-            data.insert(data.begin() + i,value);
-            break;
-         } else if (col[i] == j)
-         {
-            data[i] = value;
+    if( fabs(value ) > _zero)
+    {
+        if(col.empty() || row.back() == col.size() || col.back() < j)
+        {
+           data.push_back(value);
+           col.push_back(j);
+        }
+        else
+        {
+           unsigned int begin = row.back();
+           for(unsigned int i=begin;i<col.size();i++)
+           {
+              if( col[i] > j )
+              {
+                  col.insert(col.begin() + i,j);
+                  data.insert(data.begin() + i,value);
+                  break;
+              } else if (col[i] == j)
+              {
+                 data[i] = value;
 
-            if(fabs(data[i])<1e-14)
-            {
-               data.erase(data.begin() + i);
-               col.erase(col.begin() + i);
-            }
-            break;
-         }
-      }
-   }
+                 break;
+              }
+           }
+        }
+    }
 }
 
 /**
@@ -733,19 +736,6 @@ double SparseMatrix_CRS_Sym::operator()(unsigned int i,unsigned int j) const
 }
 
 /**
- * Empty matrix constructor. Don't use it
- * unless you know what you're doing
- */
-SparseMatrix_CRS_Sym::SparseMatrix_CRS_Sym()
-{
-    this->n = 0;
-    this->m = 0;
-    this->col.clear();
-    this->row.clear();
-    this->data.clear();
-}
-
-/**
  * Convert this CRS_Sym matrix to a dense matrix (only works for square matrices)
  * @param dense the matrix to fill
  */
@@ -784,7 +774,7 @@ void SparseMatrix_CRS_Sym::ConvertFromMatrix(const matrix &dense)
    for(unsigned int i=0;i<n;i++)
    {
       for(unsigned int j=i;j<m;j++)
-         if( fabs(dense(i,j)) > 1e-14 )
+         if( fabs(dense(i,j)) >  _zero )
          {
             data.push_back(dense(i,j));
             col.push_back(j);

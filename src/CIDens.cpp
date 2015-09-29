@@ -176,7 +176,7 @@ void CIDens::construct_density(bool twordm)
 {
     build_parallel(twordm);
     #ifdef _DEBUG
-        test_invariants(twordm);
+        //test_invariants(twordm);
     #endif
 }
 
