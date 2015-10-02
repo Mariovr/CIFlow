@@ -42,7 +42,7 @@ INIT_PLUGIN
 // macro to help check return status of HDF5 functions
 #define HDF5_STATUS_CHECK(status) { \
     if(status < 0) \
-    fprintf(outfile, "%s:%d: Error with HDF5. status code=%d\n", __FILE__, __LINE__, status); \
+    outfile->Printf("%s:%d: Error with HDF5. status code=%d\n", __FILE__, __LINE__, status); \
 } 
 
 namespace psi{ namespace mointegrals{
@@ -120,7 +120,7 @@ mointegrals(Options &options)
     int nTriMo = nmo * (nmo + 1) / 2;
     double *temp = new double[nTriMo];
     Matrix moOei("MO OEI", nIrreps, orbspi, orbspi);
-    IWL::read_one(psio.get(), PSIF_OEI, PSIF_MO_OEI, temp, nTriMo, 0, 0, outfile);
+    IWL::read_one(psio.get(), PSIF_OEI, PSIF_MO_OEI, temp, nTriMo, 0, 0, filename);
     moOei.set(temp);
     
     moOei.print();

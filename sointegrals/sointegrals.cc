@@ -23,7 +23,7 @@ INIT_PLUGIN
 // macro to help check return status of HDF5 functions
 #define HDF5_STATUS_CHECK(status) { \
     if(status < 0) \
-    fprintf(outfile, "%s:%d: Error with HDF5. status code=%d\n", __FILE__, __LINE__, status); \
+    outfile->Printf("%s:%d: Error with HDF5. status code=%d\n", __FILE__, __LINE__, status); \
 } 
 
 using namespace boost;
@@ -68,7 +68,7 @@ public:
                      int sirrep, int sso,
                      double value)
     {
-        fprintf(outfile, "%1d %1d %1d %1d %16.48f \n", 
+        outfile->Printf("%1d %1d %1d %1d %16.48f \n", 
 			pabs, qabs, rabs, sabs, value);
         Ham->setVmat(pabs, rabs, qabs, sabs, value);
 
@@ -89,7 +89,7 @@ sointegrals(Options &options)
 
     if(options.get_str("S_ORTHOGONALIZATION") != "SYMMETRIC")
     {
-        fprintf(outfile, "This will only work with symmetric orthogonalisation: AO == OSO\n");
+        outfile->Printf("This will only work with symmetric orthogonalisation: AO == OSO\n");
         return Failure;
     }
 
@@ -163,7 +163,7 @@ sointegrals(Options &options)
     } 
     while ((!stopFindGN) && (SyGroup<42));
 
-    fprintf(outfile, "If anything went wrong: Is %s equal to %s?\n", SymmLabel.c_str(), (Irreps::getGroupName(SyGroup)).c_str());
+    outfile->Printf("If anything went wrong: Is %s equal to %s?\n", SymmLabel.c_str(), (Irreps::getGroupName(SyGroup)).c_str());
     
     std::vector<int> OrbIrreps;
     OrbIrreps.reserve(nmo);
@@ -210,25 +210,25 @@ sointegrals(Options &options)
     }
 
     //Here we print the pure SO integrals which are not orthonormal, (but pointgroup symmetry adapted).
-    fprintf(outfile, "****  Molecular Integrals For DOCI Start Here \n");
-    fprintf(outfile, "Nalpha = %1d \n", nalpha);
-    fprintf(outfile, "Nbeta = %1d \n", nbeta);
-    fprintf(outfile, "Symmetry Label = %s \n", SymmLabel.c_str());
-    fprintf(outfile, "Nirreps = %1d \n", nirrep);
-    fprintf(outfile, "Nuclear Repulsion Energy = %16.48f \n", NuclRepulsion);
+    outfile->Printf("****  Molecular Integrals For DOCI Start Here \n");
+    outfile->Printf("Nalpha = %1d \n", nalpha);
+    outfile->Printf("Nbeta = %1d \n", nbeta);
+    outfile->Printf("Symmetry Label = %s \n", SymmLabel.c_str());
+    outfile->Printf("Nirreps = %1d \n", nirrep);
+    outfile->Printf("Nuclear Repulsion Energy = %16.48f \n", NuclRepulsion);
     /*  
-    fprintf(outfile, "Dimension of Irreps = ");
+    outfile->Printf("Dimension of Irreps = ");
     for (int h=0; h<nirrep; ++h)
-        fprintf(outfile, "%2d ", dimension[h]);
-    fprintf(outfile, "\n");*/
-    fprintf(outfile, "Number Of SO Orbitals = %2d \n", nmo);
-    fprintf(outfile, "Irreps Of SO Orbitals = \n");
+        outfile->Printf("%2d ", dimension[h]);
+    outfile->Printf("\n");*/
+    outfile->Printf("Number Of SO Orbitals = %2d \n", nmo);
+    outfile->Printf("Irreps Of SO Orbitals = \n");
     for (int h=0; h<nirrep; ++h)
         for (int i=0; i<dimension[h]; ++i)
-            fprintf(outfile, "%2d ", h);
-    fprintf(outfile, "\n");
-    fprintf(outfile, "\n");//there is no DOCC line in SOintegrals.
-    fprintf(outfile, "\n"); //There is no SOCC line in SO integrals.
+            outfile->Printf("%2d ", h);
+    outfile->Printf("\n");
+    outfile->Printf("\n");//there is no DOCC line in SOintegrals.
+    outfile->Printf("\n"); //There is no SOCC line in SO integrals.
 
     // Form h = T + V by first cloning T and then adding V
     hMat->copy(tMat);
@@ -241,7 +241,7 @@ sointegrals(Options &options)
         //vMat->print();
         //hMat->print();
     }
-    fprintf(outfile, "*** OEI SO\n");
+    outfile->Printf("*** OEI SO\n");
 
     int count = 0;
     for (int h=0; h<nirrep; ++h)
@@ -249,7 +249,7 @@ sointegrals(Options &options)
         for (int i=0; i<dimension[h]; ++i)
             for (int j=i; j<dimension[h]; ++j)
             {
-                fprintf(outfile, "%1d %1d %16.48f \n", count+i, count+j, hMat->get(h,i,j));
+                outfile->Printf("%1d %1d %16.48f \n", count+i, count+j, hMat->get(h,i,j));
                 Ham->setTmat(count+i, count+j, hMat->get(h,i,j));
             }
 
@@ -270,7 +270,7 @@ sointegrals(Options &options)
     ERIPrinter printer;
     printer.Ham = Ham;
 
-    fprintf(outfile, "*** TEI\n");
+    outfile->Printf("*** TEI\n");
     
     // 5. Create an SOShellCombintationsIterator to step through the
     // necessary combinations
@@ -281,9 +281,9 @@ sointegrals(Options &options)
         // instance to our functor.
         eri->compute_shell(shellIter, printer);
     }
-    fprintf(outfile , "****  HF Energy = -10000000000000 \n"); 
-    fprintf(outfile , "****  SO Integrals For DOCI End Here \n");
-    fprintf(outfile, "number of TEI: %d\n", printer.count);
+    outfile->Printf("****  HF Energy = -10000000000000 \n"); 
+    outfile->Printf("****  SO Integrals For DOCI End Here \n");
+    outfile->Printf("number of TEI: %d\n", printer.count);
     if(savehdf5)
         Ham->save(filename);
 
@@ -310,10 +310,10 @@ sointegrals(Options &options)
             eigval->set(h, i, scale);
         }
 
-    fprintf(outfile, "Lowest eigenvalue of overlap S = %14.10E\n", min_S);
+    outfile->Printf("Lowest eigenvalue of overlap S = %14.10E\n", min_S);
 
     if(min_S < options.get_double("S_TOLERANCE") )
-        fprintf(outfile, "WARNING: Min value of overlap below treshold!!!!\n");
+        outfile->Printf("WARNING: Min value of overlap below treshold!!!!\n");
 
 
     // Create a vector matrix from the converted eigenvalues
@@ -333,7 +333,7 @@ sointegrals(Options &options)
         for (int i=0; i<dimension[h]; ++i)
             for (int j=i; j<dimension[h]; ++j)
             {
-                fprintf(outfile, "%1d %1d %16.48f \n", count+i, count+j, hMat->get(h,i,j));
+                outfile->Printf("%1d %1d %16.48f \n", count+i, count+j, hMat->get(h,i,j));
                 Ham->setTmat(count+i, count+j, hMat->get(h,i,j));
             }
 

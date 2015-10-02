@@ -516,9 +516,9 @@ void CIMethod::build_parallel()
 
     _mat.add_from_list(parts); //REMARK because we only filled the upper diagonal => _mat should be a SparseMatrix_CRS_Sym type.
 
-    //if (CIMethod_debug){
+    if (CIMethod_debug){
         cout << "Number of nonzero elements: " << _mat.datasize() << " dimension :  " << get_dim() << " number uppperdiagonal elements: " << get_dim() * (get_dim() +1) /2. << " sparsity : " << _mat.datasize() / ( get_dim() * (get_dim() +1) /2. )<<endl ;
-    //}
+    }
 }
 
 //---------------------------------SUBCLASSES-------------------------------------------------
