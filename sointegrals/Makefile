@@ -39,14 +39,18 @@ CXX = icpc
 CXXDEFS = -DHAVE_PCMSOLVER -DHAVE_DKH -DENABLE_CHEMPS2=1 -DHAVE_MKL_LAPACK -DHAVE_MKL_BLAS -DHAS_CXX11_VARIADIC_TEMPLATES -DHAS_CXX11_STATIC_ASSERT -DHAS_CXX11_SIZEOF_MEMBER -DHAS_CXX11_RVALUE_REFERENCES -DHAS_CXX11_NULLPTR -DHAS_CXX11_LONG_LONG -DHAS_CXX11_LAMBDA -DHAS_CXX11_INITIALIZER_LIST -DHAS_CXX11_DECLTYPE -DHAS_CXX11_CSTDINT_H -DHAS_CXX11_CONSTEXPR -DHAS_CXX11_AUTO_RET_TYPE -DHAS_CXX11_AUTO -DHAS_CXX11_FUNC -DHAS_CXX11 -DSYS_LINUX -DUSE_FCMANGLE_H
 CXXFLAGS = -DRESTRICT=__restrict__ -Xlinker -export-dynamic -fPIC -std=c++11 -fopenmp -O3 -DNDEBUG -Wno-unused
 CIFLOWPATH = -L../lib 
-CIFLOWLIBS = $(CIFLOWPATH) -lciflow -lm -L/usr/lib -lmpi -lmpi_cxx -larpack -lhdf5
+CIFLOWLIBS = $(CIFLOWPATH) -lciflow -lm -L/usr/lib -larpack -lmpi -lmpi_cxx -lhdf5
 LDFLAGS = 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Linux)
 	INCLUDES = -I/home/mario/Downloads/psi4public/objdir/src/lib -I/home/mario/Downloads/psi4public/include -I/home/mario/Downloads/psi4public/objdir/include -I/home/mario/Downloads/psi4public/objdir/boost/include -I/usr/include -I../include  -I/home/mario/Downloads/psi4public/src/lib -I/usr/include/python2.7
 endif
 ifeq ($(UNAME_S), Darwin)
-	INCLUDES = -I/Users/mariovr/Downloads/psi4public/objdir/src/lib -I/Users/mariovr/Downloads/psi4public/include -I/Users/mariovr/Downloads/psi4public/objdir/include -I/Users/mariovr/Downloads/psi4public/objdir/boost/include -I/usr/include -I../include  -I/Users/mariovr/Downloads/psi4public/src/lib
+	CXX = /usr/bin/g++
+	CXXDEFS = -DENABLE_CHEMPS2=1 -DFC_SYMBOL=2 -DHAVE_SYSTEM_NATIVE_LAPACK -DHAVE_SYSTEM_NATIVE_BLAS -DHAS_CXX11_VARIADIC_TEMPLATES -DHAS_CXX11_STATIC_ASSERT -DHAS_CXX11_SIZEOF_MEMBER -DHAS_CXX11_RVALUE_REFERENCES -DHAS_CXX11_LIB_REGEX -DHAS_CXX11_NULLPTR -DHAS_CXX11_LONG_LONG -DHAS_CXX11_LAMBDA -DHAS_CXX11_INITIALIZER_LIST -DHAS_CXX11_DECLTYPE -DHAS_CXX11_CSTDINT_H -DHAS_CXX11_CONSTEXPR -DHAS_CXX11_AUTO_RET_TYPE -DHAS_CXX11_AUTO -DHAS_CXX11_FUNC -DHAS_CXX11 -DVAR_MFDS -DSYS_DARWIN
+	CXXFLAGS = -DRESTRICT=__restrict__ -fPIC -std=c++11 -O3 -DNDEBUG -Wno-unused
+	LDFLAGS = -Wl,-search_paths_first -Wl,-headerpad_max_install_names
+	INCLUDES = -I/Users/mariovr/Downloads/psi4public/objdir/src/lib -I/Users/mariovr/Downloads/psi4public/src/lib -I/Users/mariovr/Downloads/psi4public/include -I/Users/mariovr/Downloads/psi4public/objdir/include -I/Users/mariovr/Downloads/psi4public/objdir/boost/include -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -I/usr/include
 endif
 
 # Used to determine linking flags.
