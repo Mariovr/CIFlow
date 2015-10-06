@@ -92,7 +92,7 @@ Hamiltonian * get_mmin_ham( CIMethod* cimmin, bool diis)
     if(diis)
         min_sen = new Iterative_Subotnik_DIIS(cimmin  , 1e-7, 0);
     else
-        min_sen = new Iterative_Subotnik( cimmin, 1e-8, 0);
+        min_sen = new Iterative_Subotnik( cimmin, 1e-7, 0);
     min_sen->optimize();
     min_sen->save_unitary();
     Hamiltonian * ham = min_sen->get_ham();
@@ -104,7 +104,8 @@ Hamiltonian * get_mmin_ham( CIMethod* cimmin, bool diis)
 double get_fci_mmin_energy(CIMethod * cim , bool diis)
 {
     FCI fci{cim->get_ham() };
-    Hamiltonian * mminham = get_mmin_ham(&fci,  diis);
+    //fci.set_sparsity(1e-14);
+    Hamiltonian * mminham = get_mmin_ham(&fci, diis);
     double fcimmine = e_in_ham(mminham , cim );
     std::cout  << "E in fci mmin basis is : " << fcimmine << std::endl;
     return fcimmine;
@@ -310,12 +311,16 @@ int main ( int argc, char ** argv){
             }
             if(*cimethod == "fci"){
                 FCI *  cim5 = new FCI(ham.get());
-                cim5->solve();
+                int neigval = 10;
+                cim5->solve(neigval);
                 //cim5->check_hermiticity();
                 std::cout  << "FCI energy:" << cim5->get_ci_energy() << " Per site: " << cim5->get_ci_energy() / (double) ham->getL() <<std::endl;
                 cim5->print_output();
-                cim5->print_rdm();
-                std::cout << "Spin Squared: " << cim5->get_spin_squared() << std::endl;
+                //cim5->print_rdm();
+                for(int i = 0 ; i < neigval ; i ++)
+                {
+                    std::cout << "Spin Squared: " << cim5->get_spin_squared(i) << std::endl;
+                }
                 //cim5->print_ham();
 
                 //DensFCI densmatfci {cim5};

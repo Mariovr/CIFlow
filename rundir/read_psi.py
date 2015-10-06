@@ -26,7 +26,7 @@ import copy
 import shutil
 from math import sqrt
 
-#sys.path.append('/home/mario/Dropbox/Doctoraat/CIFlow/rundir')
+#sys.path.append('/home/mario/ownCloud/Doctoraat/CIFlowImproved/rundir')
 import detwrite as dw
 
 if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):

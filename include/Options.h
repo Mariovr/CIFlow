@@ -18,6 +18,7 @@
 #define OPTIONS
 
 #include <string>
+#include <bitset>
 
 //#define _HPC_ //Define this if the compiler has c++11 support and the random headers. Otherwise you need boost. (as the hpc)
 
@@ -44,6 +45,8 @@ namespace mp = boost::multiprecision;     // Reduce the typing a bit later...
 
 #if defined TL
 	typedef unsigned long TYPE;
+//#if defined TL
+	//typedef std::bitset<64> TYPE;
 #elif defined TLL
 	typedef mp::uint128_t TYPE;
 #elif defined TLLL
