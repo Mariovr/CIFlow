@@ -156,37 +156,40 @@ void CIMethod::print_ham()
     _output->print_ham();
 }
 
-void CIMethod::construct_density()
+void CIMethod::construct_density(unsigned state)
 {
-    if( !_cid.first)
+    if(state != _cid->get_state())//The standard value = 0
     {
-        _cid.second->construct_density();
-        _cid.first = true;
+        _cid->set_state(state);
+        _cid->construct_density();
+    }
+    else if( !_cid->is_constructed() )
+    {
+        _cid->construct_density();
     }
 }
 
 void CIMethod::reset_density()
 {
-    _cid.second.reset(nullptr);
-    _cid.first = false;
+    _cid.reset(nullptr);
 }
 
-void CIMethod::print_rdm()
+void CIMethod::print_rdm(unsigned state)
 {
-    construct_density();
-    _output->print_rdm(*_cid.second);
+    construct_density(state);
+    _output->print_rdm(*_cid);
 }
 
-double CIMethod::get_spin_squared()
+double CIMethod::get_spin_squared(unsigned state)
 {
-    construct_density();
-    return _cid.second->get_spin_squared();
+    construct_density(state);
+    return _cid->get_spin_squared();
 }
 
-double CIMethod::get_spin()
+double CIMethod::get_spin(unsigned state)
 {
-    construct_density();
-    return _cid.second->get_spin_squared();
+    construct_density(state);
+    return _cid->get_spin();
 }
 
 void CIMethod::reset_output(std::string sort, bool partial)
@@ -527,7 +530,7 @@ DOCI::DOCI(Hamiltonian * ham ) : CIMethod(ham){
     _output.reset(new OutputSFDOCI(this, ham->get_short_filename() + "outputdoci.dat") );
     _perm.reset(new Permutator_Bit(ham->getL() ) );
     _mat = SparseMatrix_CRS_Sym(get_dim(),get_dim());
-    _cid = make_pair(false, get_density() );
+    _cid = get_density() ;
     build_parallel();
 }
 
@@ -535,7 +538,7 @@ FCI::FCI(Hamiltonian * ham ):CIMethod( ham){
     _output.reset( new OutputSFFCI(this, ham->get_short_filename() + "outputfci.dat" ) );
     _perm.reset(new Permutator_Bit(ham->getL() ) ) ;
 	_mat = SparseMatrix_CRS_Sym(get_dim(),get_dim());
-    _cid = make_pair(false, get_density() );
+    _cid = get_density() ;
     build_parallel(); //Because of the use of symmetry we have to use different parallelization.
 }
 
@@ -543,7 +546,7 @@ FCI_File::FCI_File(Hamiltonian * ham ,  std::string permfile):CIMethod( ham){
     _perm.reset(new Permutator_File(permfile , ham->getL() ) ) ;
     _output.reset( new OutputSFFCI_File(this ,ham->get_short_filename() + _perm->get_clean_detfile() +"outputci_file.dat" ) );
 	_mat = SparseMatrix_CRS_Sym(get_dim(),get_dim());
-    _cid = make_pair(false, get_density() );
+    _cid = get_density() ;
 	cout << ham->get_short_filename() + _perm->get_clean_detfile() +"outputci_file.dat" << endl;
     build_parallel();
 }
@@ -552,7 +555,7 @@ CI_Big::CI_Big(Hamiltonian * ham ,  std::string permfile):CIMethod( ham)
 { 
     _perm.reset(new Permutator_File(permfile, ham->getL() ) );
     _output.reset( new OutputSFFCI_File(this ,ham->get_short_filename() + _perm->get_clean_detfile() +"outputcibig_file.dat") );
-    _cid = make_pair(false, get_density() );
+    _cid = get_density() ;
     //CISIZE is defined in options and gives the size in the gigabytes of available storage for the CI matrix.
     long numelements = CISIZE*1024.*1024.*1024.*3/(64.*5)*10./2.; //We keep 4/5 of the available memory for the CI matrix, the extra factor 10 is because we assume a sparsity of less than 10 percent. So we have 10 times as much as possible spots of nonzero elements to obtain numelements nonzero elements.
     unsigned long dim = get_dim();
@@ -707,10 +710,9 @@ unsigned int FCI::determine_weight(TYPE string , const vector<vector<int> > & vw
 }
 
 void FCI::construct_CI_matrix(SparseMatrix_CRS & mat, int start_l , int end_l){
-    //we make use of the hermicity of the matrix to add off diagonal elements.
     //and make this function as general as possible (should also work for unrestricted orbitals)
     //the columns and rows of the Hamiltonian matrix are determined such that with a given up, first all the possible downs change and then we change an up again (the downs are fast changing and the ups slow)
-    //REMARK: we fill the FCI matrix by using a normal matrix, because we make intensive use of symmetry between up and down spins, and this is difficult to do efficiently for Sparse matrices. Therefore this FCI method is much more constrained by memory (but faster), because this is only intended for small molecules and debugging purposes, for FCI calculations on big systems use: Gaussian, psi4, games, ... 
+    //REMARK: this is only intended for small molecules and debugging purposes, for FCI calculations on big systems use: Gaussian, psi4, games, ... 
     //REMARK:we only fill the upper diagonal elements.
     //we make use of the hermicity of the matrix to add off diagonal elements. (we dont use get_ham_element because this implementation is a bit faster (and still short))
     vector< vector<int> > vw  ( get_l() +1,  vector<int> ( gNup() + 1 , 0));

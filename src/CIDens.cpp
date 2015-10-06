@@ -35,25 +35,14 @@
 
 using namespace std;
 
-inline std::ostream& operator << (std::ostream& os, const Vector2d & m) 
-{
-    for( unsigned r =0; r<m.num_rows(); ++r ) {
-	for( unsigned c=0; c<m.num_cols(); ++c ) {
-            os << m(r,c);
-	    if( c + 1 < m.num_cols() )
-	        os << "\t";
-        }
-        os << "\n";
-    }
-    return os;
-} 
-CIDens::CIDens(CIMethod * cim)
+CIDens::CIDens(CIMethod * cim, unsigned state)
 {
     _cim = cim;
     _norb = _cim->get_l();
     //Only allocate memory when explicitely asked to construct the density matrices.
     _one_dens.resize(0);
     _two_dens.resize(0);
+    _state = state;
 }
 
 
@@ -176,7 +165,7 @@ void CIDens::construct_density(bool twordm)
 {
     build_parallel(twordm);
     #ifdef _DEBUG
-        //test_invariants(twordm);
+        test_invariants(twordm);
     #endif
 }
 
@@ -237,12 +226,12 @@ void CIDens::test_invariants(bool twordm)
         }
         SCPP_TEST_ASSERT( fabs(som - 1/2. * N *(N-1)) < 1e-5, "Error in density matrices: Trace of the 2rdm: " << som << " is not equal to the number of possible pair formings: 1/2*N *(N-1),  " << 1/2. * N * (N-1));
 
-        SCPP_TEST_ASSERT(fabs(get_dens_energy() - _cim->get_ci_energy() ) < 1e-11, setprecision(14) << "Error in density matrices: Energy of state: " <<  _cim->get_ci_energy() << " is not equal to energy calculated from the density matrices.: " << get_dens_energy() << std::endl );
+        SCPP_TEST_ASSERT(fabs(get_dens_energy() - _cim->get_ci_energy(_state) ) < 1e-11, setprecision(14) << "Error in density matrices: Energy of state: " <<  _cim->get_ci_energy(_state) << " is not equal to energy calculated from the density matrices.: " << get_dens_energy() << std::endl );
 
         if(_cim->get_name() == "FCI")
         {
             double spinsq = get_spin_squared();
-            SCPP_TEST_ASSERT(spinsq - floor(fabs(spinsq))  < 1e-9 || fabs(4*(spinsq - floor(fabs(spinsq)) ) - 3) < 1e-9, setprecision(14) << "Error in density matrices: Spin squared is not an integer number, or has .75 as decimal numbers:  spin squared: " <<  spinsq << std::endl );
+            SCPP_TEST_ASSERT(spinsq -round(fabs(spinsq))  < 1e-9 || fabs(4*(spinsq -round(fabs(spinsq)) ) - 3) < 1e-9, setprecision(14) << "Error in density matrices: Spin squared is not an integer number, or has .75 as decimal numbers:  spin squared: " <<  spinsq << std::endl );
         }
     }
 
@@ -834,7 +823,7 @@ void DensDOCI::construct_CI_one_dens(unsigned int start , unsigned int end, vala
     {
         for (int j = 0; j < L; j++) 
         {
-            double contr = _cim->get_eigvec(i,0) * _cim->get_eigvec(i,0);
+            double contr = _cim->get_eigvec(i,_state) * _cim->get_eigvec(i,_state);
             TYPE shiftbit = 1;
             if(up1 & ( shiftbit << j))
             {
@@ -858,7 +847,7 @@ void DensDOCI::construct_CI_two_dens(unsigned int start , unsigned int end, vect
 
     for (long i = start; i < end ; i++) 
     {
-        double contr = _cim->get_eigvec(i,0) * _cim->get_eigvec(i,0);
+        double contr = _cim->get_eigvec(i,_state) * _cim->get_eigvec(i,_state);
         for (int j = 0; j < dim() ; j++) //Loop over the L spatial orbitals.
         {
             // first test the string with itself.
@@ -895,7 +884,7 @@ void DensDOCI::construct_CI_two_dens(unsigned int start , unsigned int end, vect
                     {
                         TYPE up2 = up_interm ^ (shiftbit << k);
                         unsigned int index = determine_weight(up2, vw);
-                        double contr2 = _cim->get_eigvec(i,0) * _cim->get_eigvec(index,0);
+                        double contr2 = _cim->get_eigvec(i,_state) * _cim->get_eigvec(index,_state);
                         add_two_rdm(1,j,j,k,k, contr2,twordm);
                         //add_two_rdm(1,k,k,j,j, contr2, twordm); //Contribution of transposed.
                     } 
@@ -1171,7 +1160,7 @@ void DensFILE::construct_CI_one_dens( unsigned int start , unsigned int end, val
        	    _cim->_perm->permutate_bit(dets_col,j);
        	    TYPE up2 = dets_col[0];
             TYPE down2 = dets_col[1];
-	        double contr = _cim->get_eigvec(i,0) * _cim->get_eigvec(j,0);
+	        double contr = _cim->get_eigvec(i,_state) * _cim->get_eigvec(j,_state);
        	    fill_density_matrix_one(up1,down1, up2, down2,contr, onerdm);
         } // end cols 
     } // end rows 
@@ -1201,7 +1190,7 @@ void DensFILE::construct_CI_two_dens(unsigned int start , unsigned int end, vect
        	    _cim->_perm->permutate_bit(dets_col,j);
        	    TYPE up2 = dets_col[0];
             TYPE down2 = dets_col[1];
-	        double contr = _cim->get_eigvec(i,0) * _cim->get_eigvec(j,0);
+	        double contr = _cim->get_eigvec(i,_state) * _cim->get_eigvec(j,_state);
        	    fill_density_matrix(up1,down1, up2, down2,contr,twordm);
         } // end cols 
     } // end rows 
@@ -1227,7 +1216,7 @@ void DensFCI::construct_CI_one_dens(unsigned int start , unsigned int end, valar
        	for(unsigned long j = i ; j < _cim->gUpDim() ; j ++){
             TYPE down1 = perm.get_start_int(_cim->gNdown());
        	    for(unsigned long k = 0 ; k < _cim->gDownDim() ; k++){
-	        double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,0) * _cim->get_eigvec(_cim->gDownDim() * j + k,0);
+	        double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,_state) * _cim->get_eigvec(_cim->gDownDim() * j + k,_state);
        	        fill_density_matrix_one(up1,down1, up2, down1,contr, onerdm);
        	        down1 = perm.permutate_bit(down1);
 	    }
@@ -1251,7 +1240,7 @@ void DensFCI::construct_CI_one_dens(unsigned int start , unsigned int end, valar
         for(unsigned long k = 0 ; k < _cim->gDownDim()-1 ; k++){
             TYPE down2 = perm.permutate_bit(down1 );
             for(unsigned long j = k+1 ; j < _cim->gDownDim() ; j ++){
-	            double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,0) * _cim->get_eigvec(_cim->gDownDim() * i + j,0);
+	            double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,_state) * _cim->get_eigvec(_cim->gDownDim() * i + j,_state);
        	        fill_density_matrix_one(up1,down1, up1, down2,contr, onerdm);
        	        down2 = perm.permutate_bit(down2);
 	    }
@@ -1280,7 +1269,7 @@ void DensFCI::construct_CI_two_dens(unsigned int start , unsigned int end, vecto
        	    for(unsigned long k = 0 ; k < _cim->gDownDim() ; k++){
                 TYPE down2 = perm.get_start_int(_cim->gNdown());
                 for(unsigned long l = 0 ; l < _cim->gDownDim() ; l++){
-                    double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,0) * _cim->get_eigvec(_cim->gDownDim() * j + l,0);
+                    double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,_state) * _cim->get_eigvec(_cim->gDownDim() * j + l,_state);
                     fill_density_matrix(up1,down1, up2, down2,contr,twordm);
                     down2 = perm.permutate_bit(down2);
                 }    
@@ -1301,7 +1290,7 @@ void DensFCI::construct_CI_two_dens(unsigned int start , unsigned int end, vecto
         for(unsigned long k = 0 ; k < _cim->gDownDim() ; k++){
             TYPE down2 = down1;
             for(unsigned long l = k; l < _cim->gDownDim() ; l++){
-                double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,0) * _cim->get_eigvec(_cim->gDownDim() * i + l,0);
+                double contr = _cim->get_eigvec(i*_cim->gDownDim()+k,_state) * _cim->get_eigvec(_cim->gDownDim() * i + l,_state);
                 fill_density_matrix(up1,down1, up1, down2,contr,twordm);
                 down2 = perm.permutate_bit(down2);
             }    

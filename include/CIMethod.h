@@ -44,7 +44,7 @@ class CIMethod{
 		virtual int get_dim() = 0;
 		virtual std::string get_name() = 0;
 		virtual std::unique_ptr<CIDens> get_density() = 0;
-        void construct_density();
+        void construct_density(unsigned state = 0);
         void reset_density();
 
 
@@ -77,8 +77,8 @@ class CIMethod{
 		void delete_ham(); //Needs to be called when load_ham is used.
 		void new_ham_pointer(); //Needs to be called when load_ham is used.
         double get_sz(){return (_nup - _ndown) / 2.;}
-        double get_spin_squared();
-        double get_spin();
+        double get_spin_squared(unsigned state = 0);
+        double get_spin(unsigned state = 0);
         void set_sparsity(double zero);
 
 		//helper functions to construct CI matrices and density matrices.
@@ -93,7 +93,7 @@ class CIMethod{
 		std::string get_ex_info();
 		void print_output();
 		void print_ham();
-		void print_rdm();
+		void print_rdm(unsigned state = 0);
         void reset_output(std::string sort, bool partial = true);
 
 		//test and check functions
@@ -111,7 +111,7 @@ class CIMethod{
 		int _ndown;
 		int _updim;
 		int _downdim;
-        std::pair<bool ,std::unique_ptr<CIDens>> _cid;
+        std::unique_ptr<CIDens> _cid; //The density of an eigenstate .
 		double _oneOverNMinusOne;
 		Hamiltonian * _ham;
 		SparseMatrix_CRS_Sym _mat;

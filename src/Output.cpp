@@ -108,6 +108,7 @@ void OutputSingleFile::print_solutions()
 void OutputSingleFile::print_rdm(const CIDens & cid)
 {
 	_file.precision(16);
+    _file << "#The eigenstate from which the density matrix is constructed: " << cid.get_state() << endl;
     _file << "#THE 1RDM:"<<  endl;
 	cid.print_one_dens(_file);
 	_file << "#THE 2RDM:" << endl;
