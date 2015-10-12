@@ -234,7 +234,23 @@ sointegrals(Options &options)
     hMat->copy(tMat);
     hMat->add(vMat);
 
-    sMat->print();
+     outfile->Printf("CIFlowOverlap: \n");
+     int nTot = 0;
+     for (int irrep=0; irrep< nirrep; irrep++)
+     {
+         int norb = dimension[irrep];
+         if(norb > 0)
+         {
+             for(int ll = 0 ; ll < norb ; ll++)
+             {
+                 for(int aa = 0 ; aa < norb ; aa++)
+                 {
+     		         outfile->Printf("%1d %1d %16.48f \n",nTot+ll , nTot+aa  , sMat->get(irrep,  ll, aa )) ; 
+                 }
+             }
+             nTot += norb;
+         }
+     }
     if(print)
     {
         //tMat->print();
@@ -429,6 +445,23 @@ sointegrals(Options &options)
             }// end run irrep3
         } // end run irrep2
 
+    //Set overlap
+     int nTot = 0;
+     for (int irrep=0; irrep< nirrep; irrep++)
+     {
+         int norb = dimension[irrep];
+         if(norb > 0)
+         {
+             for(int ll = 0 ; ll < norb ; ll++)
+             {
+                 for(int aa = 0 ; aa < norb ; aa++)
+                 {
+     		         Ham2->set_overlap(irrep,ll , aa  , sMat->get(irrep,  ll, aa )) ; 
+                 }
+             }
+             nTot += norb;
+         }
+     }
 
 
         int lastindex = filename.find_last_of("."); 

@@ -311,16 +311,16 @@ int main ( int argc, char ** argv){
             }
             if(*cimethod == "fci"){
                 FCI *  cim5 = new FCI(ham.get());
-                int neigval = 10;
+                int neigval = 1;
                 cim5->solve(neigval);
                 //cim5->check_hermiticity();
                 std::cout  << "FCI energy:" << cim5->get_ci_energy() << " Per site: " << cim5->get_ci_energy() / (double) ham->getL() <<std::endl;
-                cim5->print_output();
+                //cim5->print_output();
                 //cim5->print_rdm();
-                for(int i = 0 ; i < neigval ; i ++)
-                {
-                    std::cout << "Spin Squared: " << cim5->get_spin_squared(i) << std::endl;
-                }
+                //for(int i = 0 ; i < neigval ; i ++)
+                //{
+                    std::cout << "Spin Squared: " << cim5->get_spin_squared() << std::endl;
+                //}
                 //cim5->print_ham();
 
                 //DensFCI densmatfci {cim5};

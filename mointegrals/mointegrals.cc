@@ -200,16 +200,55 @@ mointegrals(Options &options)
      * We resort to this because the Hamiltonian objects can only save orthogonal orbitals. 
      */
      // contains the transformation from Symmetrized atomic Orbitals -> MO (THIS IS NOT FROM Symmetric orthogonalized orbitals to MO)
-     SharedMatrix ca = Process::environment.wavefunction()->Ca();
+     boost::shared_ptr<MatrixFactory> factory = Process::environment.wavefunction()->matrix_factory();
+     const Dimension &dimension = moOei.rowspi();
+     SharedMatrix ca = factory->create_shared_matrix("Transformationao->mo: ");
+     ca = Process::environment.wavefunction()->Ca();
+     fprintf(integralfile, "CIFlowTransformation: \n");
+     //saves transformation from symmetric orthogonal orbitals to MO in HDF5 format.
+     for (int irrep=0; irrep< nirrep; irrep++)
+     {
+         int norb = dimension[irrep];
+         std::stringstream irrepname;
+         irrepname << "irrep_" << irrep;
+
+         fprintf(integralfile ,"%s\n" , irrepname.str().c_str() );
+         if(norb > 0)
+         {
+             for(int ll = 0 ; ll < norb ; ll++)
+             {
+                 for(int aa = 0 ; aa < norb ; aa++)
+                 {
+     		         fprintf(integralfile , "%.15f    " , ca->get(irrep,  aa, ll )) ; //We transpose because psi4 saves in columns and unitarymatrix saves in rows.
+                 }
+     		         fprintf(integralfile , "\n" ) ; //We transpose because psi4 saves in columns and unitarymatrix saves in rows.
+             }
+         }
+     }
      ca->print();
      
-     SharedMatrix S = Process::environment.wavefunction()->S();
+     SharedMatrix S= factory->create_shared_matrix("OverlapMatrixCIFlow: ");
+     S = Process::environment.wavefunction()->S();
+     fprintf(integralfile, "CIFlowOverlap: \n");
+     int nTot = 0;
+     for (int irrep=0; irrep< nirrep; irrep++)
+     {
+         int norb = dimension[irrep];
+         if(norb > 0)
+         {
+             for(int ll = 0 ; ll < norb ; ll++)
+             {
+                 for(int aa = 0 ; aa < norb ; aa++)
+                 {
+     		         fprintf(integralfile , "%1d %1d %16.48f \n",nTot+ll , nTot+aa  , S->get(irrep,  ll, aa )) ; 
+                 }
+             }
+             nTot += norb;
+         }
+     }
      S->print();
     if(save_unitaries)
     {
-
-        boost::shared_ptr<MatrixFactory> factory = Process::environment.wavefunction()->matrix_factory();
-
         // Construct Shalf
         SharedMatrix eigvec= factory->create_shared_matrix("L");
         SharedMatrix temp= factory->create_shared_matrix("Temp");
@@ -260,7 +299,7 @@ mointegrals(Options &options)
         const Dimension &ca_dims = ca->rowspi();
 
 
-	//saves transformation from symmetric orthogonal orbitals to MO in HDF5 format.
+	    //saves transformation from symmetric orthogonal orbitals to MO in HDF5 format.
         for (int irrep=0; irrep< nirrep; irrep++)
         {
             int norb = ca_dims[irrep];
@@ -299,7 +338,7 @@ mointegrals(Options &options)
     
     fprintf(integralfile, "****  MO OEI \n");
     
-    int nTot = 0;
+    nTot = 0;
     for(int h = 0; h < nirrep; ++h){
        for(int cnt = 0; cnt < moOei.rowspi(h); ++cnt){
           for (int cnt2 = 0; cnt2 < moOei.colspi(h); ++cnt2){
