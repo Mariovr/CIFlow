@@ -45,7 +45,7 @@ public:
 
 	virtual void print_ci_vec(int num = 0 , double nauw = -1.);
 	void print_energy();
-	void print_rdm(const CIDens & cid);
+	void print_rdm(const CIDens & cid, bool twordm = true);
 	void print_solutions();
 	void print_ham();
 	void print_output();

@@ -16,11 +16,11 @@
 //--
 
 #include <string>
-#include <memory>
 
 #ifndef HAMCONSTRUCT_H
 #define HAMCONSTRUCT_H
 
+#include <memory>
 
 class Hamiltonian;
 

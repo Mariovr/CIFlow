@@ -52,7 +52,6 @@ ModHam::ModHam(std::string filename):Hamiltonian(filename)
        _params.push_back(atof( line.substr(0, std::string::npos).c_str()) );
     }
     inputfile.close();
-    _modham = true;
 }
 
 std::string ModHam::get_info() const
@@ -90,16 +89,19 @@ void ModHam::save_file(const std::string & filename)
 Hub1d::Hub1d(const int L , const int nup, const int ndown, double Econst, std::vector<double> params , std::vector<string> options): ModHam( L ,  nup,  ndown, Econst,  params ,  options)
 {
     construct_ham(params , options);
+    _modham = false;
 }
 
 Hub1d::Hub1d(std::string filename) : ModHam(filename)
 {
     construct_ham(_params , _options);
+    _modham = false;
 }
 
 Hub1d::Hub1d(const Hamiltonian & Ham, std::vector<double> params , std::vector<string> options  ): ModHam(Ham, params , options  )
 {
     construct_ham(params , options);
+    _modham = false;
 }
 
 
@@ -269,4 +271,40 @@ std::string FacInt::get_info() const
     info += ModHam::get_info();
     return info;
 }
+
+
+Constrained_DM::Constrained_DM(const int L , const int nup, const int ndown, double Econst, std::vector<double> params , std::vector<string> options): ModHam( L ,  nup,  ndown, Econst,  params ,  options)
+{
+    construct_ham(params , options);
+    _modham = false;
+}
+
+Constrained_DM::Constrained_DM(std::string filename) : ModHam(filename)
+{
+    construct_ham(_params , _options);
+    _modham = false;
+}
+
+Constrained_DM::Constrained_DM(const Hamiltonian & Ham, std::vector<double> params , std::vector<string> options  ): ModHam(Ham, params , options  )
+{
+    construct_ham(params , options);
+    _modham =false;
+}
+
+
+std::string Constrained_DM::get_info() const
+{
+    std::string info = Hamiltonian::get_info();
+    info += "###Model Hamiltonian Type: Constrained_DM\n";
+    info += ModHam::get_info();
+    return info;
+}
+
+void Constrained_DM::construct_ham(std::vector<double> params, std::vector<std::string> info)
+{
+    cout << "start " ;
+}
+
+
+
 

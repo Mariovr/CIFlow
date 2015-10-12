@@ -469,6 +469,7 @@ void UnitaryMatrix::deleteStoredUnitary(std::string name) const
 void UnitaryMatrix::print_unitary(std::ostream & out ) const
 {
     out << std::setprecision(12);
+    out << "CIFlowTransformation" << std::endl; 
     for( int irrep = 0 ; irrep < _index->getNirreps() ; irrep ++)
     {
         int linsize = _index->getNORB(irrep);
@@ -489,10 +490,15 @@ void UnitaryMatrix::print_unitary(std::ostream & out ) const
 void UnitaryMatrix::load_unitary(const std::string filename)
 {
     std::ifstream file(filename.c_str()); 
+    std::string line;
+    //Wind the file forward to the relevant part.
+    while(line.find("CIFlowTransformation") == std::string::npos )
+    {
+        std::getline(file, line);
+    }
     for( int irrep = 0 ; irrep < _index->getNirreps() ; irrep ++)
     {
         int linsize = _index->getNORB(irrep);
-        std::string line;
         if(linsize > 0)
         {
             while(line.find("irrep") == std::string::npos && line.find("Irrep") == std::string::npos)

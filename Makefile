@@ -13,7 +13,7 @@ ifeq ($(UNAME_S), Linux)
 		CXX=icpc
 		#CXX = g++
 		MPIOPT=-I/usr/lib/openmpi/include -pthread 
-		LIBS=  -lm -L/usr/lib -lhdf5 -lmpi -lmpi_cxx -larpack
+		LIBS=  -lm -lhdf5 -L/usr/lib -lmpi -lmpi_cxx -larpack
 	endif
 endif
 
