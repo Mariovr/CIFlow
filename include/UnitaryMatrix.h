@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <vector>
+#include <iostream>
 
 class matrix;
 class OptIndex;
@@ -39,6 +40,9 @@ class UnitaryMatrix
         UnitaryMatrix(const UnitaryMatrix & unit);
 
         UnitaryMatrix(UnitaryMatrix && unit);
+
+        UnitaryMatrix(OptIndex & index , std::istream & file);
+        UnitaryMatrix(OptIndex & index , const std::string & file);
 
         //! Destructor
         virtual ~UnitaryMatrix() = default;
@@ -85,6 +89,8 @@ class UnitaryMatrix
 
         //! Load the unitary from a textfile
         void load_unitary(const std::string filename);
+
+        void load_unitary(std::istream & file );
         
         //! Delete the stored unitary (on disk)
         void deleteStoredUnitary(std::string name) const;

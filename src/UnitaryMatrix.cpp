@@ -77,6 +77,16 @@ UnitaryMatrix::UnitaryMatrix(const UnitaryMatrix & unit)
     }
 }
 
+UnitaryMatrix::UnitaryMatrix(OptIndex & index, std::istream & file):UnitaryMatrix(index)
+{
+  load_unitary(file);
+}
+
+UnitaryMatrix::UnitaryMatrix(OptIndex & index, const std::string & file):UnitaryMatrix(index)
+{
+  load_unitary(file);
+}
+
 UnitaryMatrix UnitaryMatrix::get_inverse() const{
     UnitaryMatrix unit = UnitaryMatrix(*_index);
     for (int irrep=0; irrep< _index->getNirreps(); irrep++)
@@ -410,7 +420,7 @@ void UnitaryMatrix::multiply_left_with(UnitaryMatrix & unit2) const
 void UnitaryMatrix::saveU(const string savename) const
 {
     hid_t file_id = H5Fcreate(savename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-    hid_t group_id = H5Gcreate(file_id, "/Data", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t group_id = H5Gcreate(file_id, "/UnitaryMatrix", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); //New format for unitarymatrices, compatible with Hamiltonian hdf5 format.
 
     for (int irrep=0; irrep<_index->getNirreps(); irrep++)
     {
@@ -438,7 +448,25 @@ void UnitaryMatrix::saveU(const string savename) const
 void UnitaryMatrix::loadU(const string unitname)
 {
     hid_t file_id = H5Fopen(unitname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-    hid_t group_id = H5Gopen(file_id, "/Data", H5P_DEFAULT);
+    herr_t  status;
+    status =H5Lexists(file_id, "/UnitaryMatrix", 0);
+    //try{
+    //}
+    //catch(...)
+    ////{
+
+    //}
+    hid_t group_id;
+    if(status == 1)
+    {
+        cout << "new format of Unitary matrices " <<std::endl;
+        group_id = H5Gopen(file_id, "/UnitaryMatrix", H5P_DEFAULT);
+    }
+    else
+    {
+        cout << "old format of Unitary matrices " <<std::endl;
+        group_id = H5Gopen(file_id, "/Data", H5P_DEFAULT);
+    }
 
     for (int irrep=0; irrep<_index->getNirreps(); irrep++)
     {
@@ -489,9 +517,26 @@ void UnitaryMatrix::print_unitary(std::ostream & out ) const
 
 void UnitaryMatrix::load_unitary(const std::string filename)
 {
-    std::ifstream file(filename.c_str()); 
+    int last_index = filename.find_last_of('.');
+    //Check if inputfile is in hdf5 format.
+    if("h5" == filename.substr(last_index+1 , string::npos))
+    {
+        loadU(filename);
+    }
+    else
+    {
+        std::ifstream file(filename.c_str()); 
+        load_unitary(file);
+        file.close();
+    }
+
+}
+
+void UnitaryMatrix::load_unitary(std::istream & file)
+{
     std::string line;
     //Wind the file forward to the relevant part.
+    int position = file.tellg();
     while(line.find("CIFlowTransformation") == std::string::npos )
     {
         std::getline(file, line);
@@ -518,7 +563,7 @@ void UnitaryMatrix::load_unitary(const std::string filename)
             }
         }
     }
-    file.close();
+    file.seekg(position);
 }
 
 UnitaryMatrix::UnitaryMatrix(matrix & mat, OptIndex &opt){

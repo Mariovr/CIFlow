@@ -18,7 +18,9 @@
 #define HAMILTONIAN_H
 
 #include<vector>
+#include <memory>
 #include <string>
+#include <iostream>
 
 //Includes
 #include "Irreps.h"
@@ -27,6 +29,7 @@
 class OptIndex;
 class FourIndex;
 class TwoIndex;
+class UnitaryMatrix;
 
 /** Hamiltonian class.
     Container class for the Hamiltonian matrix elements.
@@ -136,7 +139,7 @@ class Hamiltonian{
          void save(const string filename = "") const;
          
          //! Load the Hamiltonian
-         void read(const string filename);
+         void read(const string filename, bool newoverlap = false);
          
          //! Load the Hamiltonian
          void read_file(const string filename);
@@ -155,9 +158,9 @@ class Hamiltonian{
              \return \f$ h_{\alpha \beta ; \gamma \delta} = \left(\alpha \beta \mid V \mid \gamma \delta \right) + \frac{1}{N-1} \left( \left( \alpha \mid T \mid \gamma \right) \delta_{\beta \delta} + \delta_{\alpha \gamma} \left( \beta \mid T \mid \delta \right) \right) \f$ */
          double gMxElement(const int alpha, const int beta, const int gamma, const int delta) const;
 
-	     int getNORB(int irrep){ return irrep2num_orb[irrep]; }
+	     int getNORB(int irrep) const { return irrep2num_orb[irrep]; }
 	     int getNirreps() const{ return  SymmInfo.getNumberOfIrreps(); }
-	     int getNstart(int irrep){ return _norbcum[irrep]; }
+	     int getNstart(int irrep)const { return _norbcum[irrep]; }
 	     int * get_orb2irrep()const { return orb2irrep; }
 	     void set_cum();
 
@@ -175,21 +178,24 @@ class Hamiltonian{
 	     OptIndex get_index_object();
 
 	     TwoIndex get_tmat_pointer()const; 
-	     FourIndex get_vmat_pointer()const;
+	     FourIndex get_vmat_pointer()const; 
 
-	     std::vector<double> get_overlap();
+	     std::vector<double> get_overlap() const;
+         double get_overlap(int irrep , int i , int j )const; //in irrep ordering
+         double get_overlap( int i , int j )const; //in orbital index
 
-	     void load_overlap(std::string overlapname);
+         void load_overlap( const std::string & filename);
+	     void load_overlap(std::istream & file);
+	     void print_overlap( std::ostream & file);
 	     void set_overlap(int irrep, int i, int j , double val);
-         //Overlap matrix (relevant for atomic orbitals), is public because it is not an important variable.
-         std::vector<double>  _overlap;
-
+	     void set_overlap(int i, int j , double val);
+         UnitaryMatrix * get_unitary() const {return _unit.get();};
      	 std::string get_filename() const{return _filename;}
      	 void set_filename(std::string file ){_filename = file;}
      	 std::string get_short_filename() const;
      	 virtual std::string get_info() const;
 
-         bool get_modham(){return _modham;}
+         bool get_modham()const {return _modham;}
          void set_modham(bool mod){_modham = mod;}
 
     protected:
@@ -200,6 +206,13 @@ class Hamiltonian{
 
         //number of orbitals
         int L;
+
+         //Overlap matrix (relevant for atomic orbitals), is public because it is not an important variable. Experimental
+         std::vector<double>  _overlap;
+
+         //Transformation that defines the transformation of the atomic orbitals defined by the basisset to the orbitals from which the current matrix elements are formed. Experimental
+         std::unique_ptr<UnitaryMatrix>  _unit;
+         //UnitaryMatrix *  _unit;
 
         //symmetry info
         Irreps SymmInfo;
