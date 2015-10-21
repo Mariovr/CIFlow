@@ -36,6 +36,8 @@ class UnitaryMatrix
         //! creates a UnitaryMatrix object from a matrix with dimension (L,L), where L is the number of orbitals. REMARK: if the unitary matrix behaves according to a particular point group symmetry. mat should be block diagonal with the nonzero irreps ranked in ascending order.
         UnitaryMatrix(matrix & mat, OptIndex & opt);
 
+        UnitaryMatrix(const std::vector<double> &, OptIndex & opt);
+
      	//!Copy constructor
         UnitaryMatrix(const UnitaryMatrix & unit);
 
@@ -107,6 +109,8 @@ class UnitaryMatrix
         void reset_unitary(bool allzero=0);
 
         void print_unitary(std::ostream & out) const;
+
+        void print_unitary(const std::string & filename) const;
 
         void build_skew_symm_x(const int irrep, double * xblock , const double * Xelem) const;
 

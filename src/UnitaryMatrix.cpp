@@ -455,7 +455,7 @@ void UnitaryMatrix::multiply_left_with(UnitaryMatrix & unit2) const
 void UnitaryMatrix::saveU(const string savename) const
 {
     hid_t file_id = H5Fcreate(savename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-    hid_t group_id = H5Gcreate(file_id, "/UnitaryMatrix", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); //New format for unitarymatrices, compatible with Hamiltonian hdf5 format.
+    hid_t group_id = H5Gcreate(file_id, "/Data", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT); //New format for unitarymatrices, compatible with Hamiltonian hdf5 format.
 
     for (int irrep=0; irrep<_index->getNirreps(); irrep++)
     {
@@ -483,25 +483,7 @@ void UnitaryMatrix::saveU(const string savename) const
 void UnitaryMatrix::loadU(const string unitname)
 {
     hid_t file_id = H5Fopen(unitname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-    herr_t  status;
-    status =H5Lexists(file_id, "/UnitaryMatrix", 0);
-    //try{
-    //}
-    //catch(...)
-    ////{
-
-    //}
-    hid_t group_id;
-    if(status == 1)
-    {
-        cout << "new format of Unitary matrices " <<std::endl;
-        group_id = H5Gopen(file_id, "/UnitaryMatrix", H5P_DEFAULT);
-    }
-    else
-    {
-        cout << "old format of Unitary matrices " <<std::endl;
-        group_id = H5Gopen(file_id, "/Data", H5P_DEFAULT);
-    }
+    hid_t group_id = H5Gopen(file_id, "/Data", H5P_DEFAULT);
 
     for (int irrep=0; irrep<_index->getNirreps(); irrep++)
     {
@@ -548,6 +530,13 @@ void UnitaryMatrix::print_unitary(std::ostream & out ) const
             out << std::endl;
         }
     }
+}
+
+void UnitaryMatrix::print_unitary(const std::string & filename) const
+{
+    std::ofstream file(filename.c_str()); 
+    print_unitary(file);
+    file.close();
 }
 
 void UnitaryMatrix::load_unitary(const std::string filename)
@@ -618,6 +607,29 @@ UnitaryMatrix::UnitaryMatrix(matrix & mat, OptIndex &opt){
             {
                 for( int l = 0 ; l < linsize ; l ++)
                     unitary[irrep][j + linsize* l] = mat(l+nstart,j+nstart);//mat contains new basis in columns but unitary contains them in the rows. (Both are in column major representation.)
+
+            }
+        }//end linsize > 1
+    }
+}    
+
+UnitaryMatrix::UnitaryMatrix(const std::vector<double> & mat , OptIndex &opt){
+    //const int norbin[1] = {mat.getn()};
+    //_index.reset(new OptIndex(mat.getn() , 0, norbin)); //sets explicitly c1 symmetry.
+    _index.reset(new OptIndex(opt)); 
+    //Allocate the unitary
+    unitary.resize(_index->getNirreps());
+    for( int irrep = 0 ; irrep < _index->getNirreps() ; irrep ++)
+    {
+        int linsize = _index->getNORB(irrep);
+        if (linsize > 0)
+        {
+            int nstart = _index->getNstart(irrep);
+            unitary[irrep].reset(new double[linsize*linsize]);
+            for( int j = 0 ; j < linsize ; j ++)
+            {
+                for( int l = 0 ; l < linsize ; l ++)
+                    unitary[irrep][j + linsize* l] = mat[l+j*linsize];//mat contains new basis in columns but unitary contains them in the rows. (Both are in column major representation.)
 
             }
         }//end linsize > 1

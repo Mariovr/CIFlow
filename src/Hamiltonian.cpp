@@ -354,6 +354,12 @@ void Hamiltonian::save(const string filename) const{
          hid_t dataset_id6      = H5Dcreate(group_id, "ndown", H5T_STD_I32LE, dataspace_id2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
          H5Dwrite(dataset_id6, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &_ndown);
     
+         //overlap
+         hsize_t dimarray7      = _overlap.size();
+         hid_t dataspace_id7    = H5Screate_simple(1, &dimarray7, NULL);
+         hid_t dataset_id7      = H5Dcreate(group_id, "overlap", H5T_IEEE_F64LE, dataspace_id7, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+         H5Dwrite(dataset_id7, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &_overlap[0]);
+
          H5Dclose(dataset_id);
          H5Sclose(dataspace_id);
          H5Dclose(dataset_id2);
@@ -366,6 +372,8 @@ void Hamiltonian::save(const string filename) const{
          H5Sclose(dataspace_id5);
          H5Dclose(dataset_id6);
          H5Sclose(dataspace_id6);
+         H5Dclose(dataset_id7);
+         H5Sclose(dataspace_id7);
 
       H5Gclose(group_id);
       
@@ -375,10 +383,13 @@ void Hamiltonian::save(const string filename) const{
    Vmat->save(filenames);
 
    if(_unit)
-       _unit->saveU(filenames);
+   {
+       _unit->saveU(filenames+"unitary"); 
+       //_unit->print_unitary(filenames+"unitary"); 
+   }
 }
 
-void Hamiltonian::read(const string filename, bool newoverlap ){
+void Hamiltonian::read(const string filename){
 
    //The hdf5 file
    hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -421,15 +432,15 @@ void Hamiltonian::read(const string filename, bool newoverlap ){
          H5Dread(dataset_id6, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &_ndown);
          _oneOverNMinusOne = 1.0/((_ndown+_nup)-1);
     
-        if(newoverlap)
+        try
         {
              //overlap
              hid_t dataset_id7 = H5Dopen(group_id, "overlap", H5P_DEFAULT);
              _overlap = std::vector<double>( L*L, 0. );
-             H5Dread(dataset_id3, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &_overlap[0]);//orb2irrep is already address
+             H5Dread(dataset_id7, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &_overlap[0]);//orb2irrep is already address
              H5Dclose(dataset_id7);
          }
-         else
+        catch(...)
          {
              _overlap = std::vector<double>( 0 );
          }
@@ -457,13 +468,13 @@ void Hamiltonian::read(const string filename, bool newoverlap ){
    
    _filename = filename;
 
-   if(newoverlap)
+   try
    {
        OptIndex opt = OptIndex(L, nGroup ,irrep2num_orb);
        _unit.reset(new UnitaryMatrix(opt, filename ));
-       _unit->loadU(filename);
+       _unit->loadU(filename+"unitary");
    }
-   else
+   catch(...)
    {
        _unit = nullptr;
    }
@@ -492,6 +503,12 @@ void Hamiltonian::load_unitary(const std::string & filename)
     {
     	_unit->load_unitary(filename);
     }
+}
+
+void Hamiltonian::set_unitary(const std::vector<double> & unit)
+{
+    OptIndex opt = get_index_object();
+    _unit.reset(new UnitaryMatrix(unit,opt ));
 }
 
 void Hamiltonian::load_overlap(std::istream & file)
@@ -536,30 +553,42 @@ void Hamiltonian::load_overlap(std::istream & file)
 
 void Hamiltonian::print_overlap(std::ostream & file)
 {
-    file << "CIFlowOverlap:   "<< std::endl;
-    int tot = 0;
-    for( int irrep = 0 ; irrep < getNirreps() ; irrep ++)
+    if(_overlap.size() > 0)
     {
-        int linsize = getNORB(irrep);
-        if(linsize > 0)
+        file << "CIFlowOverlap:   "<< std::endl;
+        int tot = 0;
+        for( int irrep = 0 ; irrep < getNirreps() ; irrep ++)
         {
-            file << "#irrep : " << irrep << std::endl;
-            for( int j = 0 ; j < linsize ; j ++)
+            int linsize = getNORB(irrep);
+            if(linsize > 0)
             {
-                for( int l = 0 ; l < linsize ; l ++)
+                file << "#irrep : " << irrep << std::endl;
+                for( int j = 0 ; j < linsize ; j ++)
                 {
-                    file << get_overlap( (j+tot) ,  (l+tot) ) << " ";
+                    for( int l = 0 ; l < linsize ; l ++)
+                    {
+                        file << get_overlap( (j+tot) ,  (l+tot) ) << " ";
+                    }
+                    file << std::endl;
                 }
-                file << std::endl;
-            }
-            tot += linsize;
-        } //End linsize > 0
+                tot += linsize;
+            } //End linsize > 0
+        }
+    }
+    else
+    {
+        file << "#### There is no overlap.   "<< std::endl;
     }
 }
 
 std::vector<double> Hamiltonian::get_overlap() const
 {
     return _overlap;
+}
+
+void Hamiltonian::set_overlap(std::vector<double> overlap)
+{
+    _overlap = overlap;
 }
 
 void Hamiltonian::set_overlap(int irrep, int i , int j , double val)

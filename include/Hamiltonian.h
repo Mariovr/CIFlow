@@ -139,7 +139,7 @@ class Hamiltonian{
          void save(const string filename = "") const;
          
          //! Load the Hamiltonian
-         void read(const string filename, bool newoverlap = false);
+         void read(const string filename);
          
          //! Load the Hamiltonian
          void read_file(const string filename);
@@ -183,14 +183,17 @@ class Hamiltonian{
 	     std::vector<double> get_overlap() const;
          double get_overlap(int irrep , int i , int j )const; //in irrep ordering
          double get_overlap( int i , int j )const; //in orbital index
-
          void load_overlap( const std::string & filename);
 	     void load_overlap(std::istream & file);
 	     void print_overlap( std::ostream & file);
+         void set_overlap(std::vector<double> overlap);
 	     void set_overlap(int irrep, int i, int j , double val);
 	     void set_overlap(int i, int j , double val);
+         
          UnitaryMatrix * get_unitary() const {return _unit.get();};
          void load_unitary(const std::string & filename);
+         void set_unitary(const std::vector<double> & mat);
+
      	 std::string get_filename() const{return _filename;}
      	 void set_filename(std::string file ){_filename = file;}
      	 std::string get_short_filename() const;
