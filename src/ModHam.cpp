@@ -7,6 +7,8 @@
 
 #include "Hamiltonian.h"
 #include "ModHam.h"
+#include "matrix.h"
+#include "UnitaryMatrix.h"
 
 using namespace std;
 
@@ -300,9 +302,29 @@ std::string Constrained_DM::get_info() const
     return info;
 }
 
+//params contains first the indices of the orbitals that define an atom (A), and then the C to which we want to constrain the mulliken charge and then the lambda (lagrangian multiplier).
 void Constrained_DM::construct_ham(std::vector<double> params, std::vector<std::string> info)
 {
     cout << "start " ;
+    matrix partdiag(this->getL() ,this->getL() );
+    for (std::vector<double>::iterator it = params.begin() ; it != params.end()-2; ++it)        
+        partdiag((int) *it , (int) *it ) = 1.;
+
+    setEconst(getEconst() - params[params.size()-1] * params[params.size()-2]);
+    matrix trans(get_unitary()->get_full_transformation(), this->getL() , this->getL());
+    matrix overlap(get_overlap() , this->getL() , this->getL() ) ; 
+    matrix prod(this->getL() ,this->getL() );
+    prod.prod(trans , overlap);
+    overlap.prod(prod , partdiag);
+    prod.transpose(trans);//Contains now transposed of _unit.
+    trans.prod(overlap,prod);
+    for(int i = 0 ; i < this->getL() ; i ++)
+    {
+        for(int j = i ; j < this->getL() ; j ++)
+        {
+            setTmat(i,j, getTmat(i,j) + trans(i,j)) ; //augment one body part with the constrained.
+        }
+    }
 }
 
 

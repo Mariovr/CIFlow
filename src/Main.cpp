@@ -315,8 +315,12 @@ int main ( int argc, char ** argv){
                 cim5->solve(neigval);
                 //cim5->check_hermiticity();
                 std::cout  << "FCI energy:" << cim5->get_ci_energy() << " Per site: " << cim5->get_ci_energy() / (double) ham->getL() <<std::endl;
-                //cim5->print_output();
-                //cim5->print_rdm();
+                cim5->print_output();
+                cim5->print_rdm();
+                //cim5->get_ham()->print_overlap(std::cout);
+                //cim5->get_ham()->get_unitary()->print_unitary(std::cout);
+                std::vector<int> orbs {0,1,2,3,4};
+                std::cout << "Mulliken charges first atom: " << cim5->get_mulliken(orbs) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
                 //for(int i = 0 ; i < neigval ; i ++)
                 //{
                     std::cout << "Spin Squared: " << cim5->get_spin_squared() << std::endl;

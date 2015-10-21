@@ -55,6 +55,11 @@ std::shared_ptr<Hamiltonian> HamConstruct::generate_ham(std::string filename)
         ham.reset(new FacInt(filename) );
         cout << "Generated FacInt Hamiltonian" <<endl;
     }
+    else if (type.find("Constrained_DM") != std::string::npos)
+    {
+        ham.reset(new Constrained_DM(filename) );
+        cout << "Generated Constrained_DM Hamiltonian" <<endl;
+    }
     else
     {
         cerr << "Type was not found." << endl;
