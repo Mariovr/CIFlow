@@ -45,6 +45,120 @@ CIDens::CIDens(CIMethod * cim, unsigned state)
     _state = state;
 }
 
+/**
+ * Calculates the rotation of the 1-body matrix
+ * T' = U^T * T * U (U and T should be in column major format and the new basis defined by U should be in columns)
+ */
+void CIDens::transform_ordm(const matrix & unitary)
+{
+    for(int spin = 0 ; spin < 2 ; spin++ )
+    {
+        matrix  mattransform(_norb , _norb);
+        matrix  mat = get_oblock(spin);
+        mattransform.transform(mat, unitary);
+        set_oblock(spin, mattransform);
+    }
+}
+
+matrix CIDens::get_oblock(int spin)
+{
+    matrix  mat(_norb , _norb);
+    for (int l =0; l< _norb; l++)
+    {
+        for (int m =l; m< _norb; m++)
+        {
+            mat(l,m) = (*this)(spin,l,m);
+            if(l!= m)
+                mat(m,l) = (*this)(spin,m,l);
+        }
+    }
+    return mat;
+}
+
+void CIDens::set_oblock(int spin, const matrix & dens)
+{
+    for (int l =0; l< _norb; l++)
+    {
+        for (int m =l; m< _norb; m++)
+        {
+            add_one_rdm(spin,l,m , -1.*((*this)(spin, l,m))+ dens(l,m),  _one_dens   );
+        }
+    }
+}
+
+void CIDens::transform_trdm(const matrix & unitary)
+{
+    std::vector<std::vector< vector<vector<double> > > > temp (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
+    std::vector<std::vector< vector<vector<double> > > > temp2 (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
+    std::vector<std::vector< vector<vector<double> > > > temp3 (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
+    std::vector<std::vector< vector<vector<double> > > > temp4 (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
+
+    for(int spin = 0 ; spin < 3 ; spin++ )
+    {
+        for(int p = 0 ; p < _norb ; p ++)
+        {
+            for(int mu = 0 ; mu < _norb ; mu++)
+            {
+                for(int a = 0 ; a < _norb ; a ++)
+                {
+                    for(int b = 0 ; b < _norb ; b ++)
+                    {
+                        for(int c = 0 ; c < _norb ; c ++)
+                        {
+                            temp[p][ a ][ b][ c] += unitary(mu , p ) * get_two_rdm(spin, mu , a ,b  , c);
+                        }
+                    }
+                }
+            }
+            for(int q = 0 ; q < _norb ; q++)
+            {
+                for(int nu = 0 ; nu < _norb ; nu++)
+                {
+                    for(int a = 0 ; a < _norb ; a ++)
+                    {
+                        for(int b = 0 ; b < _norb ; b ++)
+                        {
+                            temp2[p][q][ a ][ b ] += unitary(nu , q) * temp[p][nu ][ a][ b];
+                        }
+                    }
+                }
+                for(int r = 0 ; r < _norb ; r++)
+                {
+                    for(int lam = 0 ; lam < _norb ; lam++)
+                    {
+                        for(int a = 0 ; a < _norb ; a ++)
+                        {
+                            temp3[p][q][ r ][ a ] += unitary(lam, r) * temp[p][q ][ lam][ a];
+                        }
+                    }
+                    for(int s = 0 ; s < _norb ; s++)
+                    {
+                        for(int sig = 0 ; sig < _norb ; sig++)
+                        {
+                            temp4[p ][ q][ r][s ] += unitary(sig, s) * temp3[p][q][r][sig];
+                        }
+                    } //Ens s loop
+                }//End r loop
+
+            }//End q loop
+        }//End p loop
+        //Copy back results.
+        for(int a = 0 ; a < _norb ; a ++)
+        {
+            for(int b = 0 ; b < _norb ; b ++)
+            {
+                for(int c = 0 ; c < _norb ; c ++)
+                {
+                    for(int d = 0 ; d < _norb ; d++)
+                    {
+                        set_two_rdm(spin,  a, b , c,d, temp4[a][ b][ c][d]);
+                    }
+                }
+            }
+        }
+
+    }//End spin loop
+}
 
 double CIDens::get_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4, const vector<Vector2d > & twordm) const
 {
@@ -73,6 +187,36 @@ double CIDens::get_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4, 
         }
 
         return sign* twordm[spin](orb1 *dim() + orb2 - (orb1 +1) *(orb1+2)/2  , orb3*dim() + orb4 - (orb3 +1) *(orb3+2)/2  );
+    }
+}
+
+void CIDens::set_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4, double value)
+{
+    if(spin == 1)
+        _two_dens[1](orb1 *dim() +orb2 , orb3*dim() + orb4) = value;
+    else
+    {
+        if(orb1 == orb2 || orb3 == orb4)
+        {
+            SCPP_ASSERT(fabs(value) < 1e-12 , "Error we put an element of the 2rdm to a value which should be zero, element = " << value << " spin , orb1 , orb2 , orb3 , orb4: " << spin << ", " <<orb1 << ", " << orb2 << ", " << orb3 <<", " << orb4 <<", " << std::endl);
+        }
+        int sign = 1.;
+        if(orb1 > orb2)
+        {
+            int temp = orb2;
+            orb2 = orb1;
+            orb1 = temp;
+            sign *= -1.;
+        }
+        if(orb3 > orb4)
+        {
+            int temp = orb3;
+            orb3 = orb4;
+            orb4 = temp;
+            sign *= -1.;
+        }
+
+        _two_dens[spin](orb1 *dim() + orb2 - (orb1 +1) *(orb1+2)/2  , orb3*dim() + orb4 - (orb3 +1) *(orb3+2)/2  ) = sign* value;
     }
 }
 
@@ -112,11 +256,22 @@ double CIDens::get_one_rdm(int spin , int orb1 , int orb2, const valarray<valarr
 {
     if (orb1 > orb2)
     {
-        int temp = orb2;
-        orb2 = orb1;
-        orb1 = temp;
+        return onerdm[spin][(orb2 *  dim()) + orb1 - (orb2 * (orb2+1) /2.)];
     }
     return onerdm[spin][(orb1 *  dim()) + orb2 - (orb1 * (orb1+1) /2.)];
+}
+
+//We only save the unique elements onerdm is symmetric so we keep the upper triangular matrix:
+void CIDens::set_one_rdm(int spin , int orb1 , int orb2, double value)
+{
+    if (orb1 > orb2)
+    {
+        _one_dens[spin][(orb2 *  dim()) + orb1 - (orb2 * (orb2+1) /2.)] = value;
+    }
+    else
+    {
+        _one_dens[spin][(orb1 *  dim()) + orb2 - (orb1 * (orb1+1) /2.)] = value;
+    }
 }
 
 void CIDens::add_one_rdm(int spin , int orb1 , int orb2, double value, valarray<valarray<double>> & onerdm)
@@ -235,6 +390,24 @@ void CIDens::test_invariants(bool twordm)
         }
     }
 
+}
+
+double CIDens::get_mulliken(std::vector<int> orbs)
+{
+    double mulik = 0;
+    matrix unitary( _cim->get_ham()->get_unitary()->get_full_transformation() , _norb , _norb); //returns full transformation defined by unitary matrix (new basis in rows.)
+    transform_ordm(unitary); //go back to ao basis (we dont need to transpose because unitarymatrix saves in rows and not in columns the new basis)
+    for(int spin = 0 ; spin <2 ; spin++)
+    {
+        matrix mat = get_oblock(spin); //if equal number of ups and downs.
+        matrix prod(_norb , _norb);
+        matrix overlap(_cim->get_ham()->get_overlap() , _norb, _norb);
+        prod.prod(mat,  overlap);
+        for(auto & x: orbs)
+            mulik += prod(x,x);
+    }
+
+    return mulik;
 }
 
 unsigned CIDens::dim() const
