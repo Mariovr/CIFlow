@@ -135,6 +135,7 @@ sointegrals(Options &options)
     SharedMatrix tMat(factory->create_matrix("Kinetic"));
     SharedMatrix vMat(factory->create_matrix("Potential"));
     SharedMatrix hMat(factory->create_matrix("One Electron Ints"));
+
  
     const int nmo = dimension.sum();
     const int nirrep   = dimension.n();
@@ -178,7 +179,7 @@ sointegrals(Options &options)
     vOBI->compute(vMat);
 
     shared_ptr<Hamiltonian> Ham(new Hamiltonian(nmo, SyGroup, OrbIrreps.data(), nalpha , nbeta, NuclRepulsion));
-    Ham->_overlap = std::vector<double>(Ham->getL() *Ham->getL() ,0.);
+    Ham->set_overlap(std::vector<double>(Ham->getL() *Ham->getL() ,0.));
     if(saveoverlap)
     {
         std::ofstream ofs (overlapname, std::ofstream::out);
@@ -199,8 +200,8 @@ sointegrals(Options &options)
         	    for(int aa = 0 ; aa < norb ; aa++)
         	    {
         		ofs << sMat->get(irrep,  aa, ll ) << "    "; //We transpose because psi4 saves in columns and unitarymatrix saves in rows.
-			sMat->print() ;
-			Ham->set_overlap(irrep, aa, ll, sMat->get(irrep, ll , aa) );
+			    //sMat->print() ;
+			    Ham->set_overlap(irrep, aa, ll, sMat->get(irrep, ll , aa) );
         	    }
         	    ofs << std::endl;
        	        }
@@ -251,6 +252,7 @@ sointegrals(Options &options)
              nTot += norb;
          }
      }
+     sMat->print();
     if(print)
     {
         //tMat->print();
@@ -337,6 +339,7 @@ sointegrals(Options &options)
 
     temp->gemm(false, true, 1.0, temp2, eigvec, 0.0);
     sMat->gemm(false , false, 1.0, eigvec, temp, 0.0);
+    sMat->print();//Prints transformation
 
     temp->gemm(false, false, 1.0, hMat, sMat, 0.0);
     hMat->gemm(true , false, 1.0, sMat, temp, 0.0);
@@ -445,6 +448,29 @@ sointegrals(Options &options)
             }// end run irrep3
         } // end run irrep2
 
+    //Set UnitaryMatrix
+    std::vector<double> transform(nmo*nmo, 0.);
+    for (int irrep=0; irrep< nirrep; irrep++)
+    {
+        int norb = dimension[irrep];
+        if(norb > 0)
+        {
+            int start = Ham2->getNstart(irrep);
+            for(int ll = 0 ; ll < norb ; ll++)
+            {
+                for(int aa = 0 ; aa < norb ; aa++)
+                {
+                    transform[start+ll + (start+aa) * nmo] = sMat->get(irrep,  ll, aa );
+                }
+            }
+            nTot += norb;
+        }
+    }
+    Ham2->set_unitary(transform);
+
+    SharedMatrix overlap(factory->create_matrix("Overlap"));
+    sOBI->compute(overlap);
+
     //Set overlap
      int nTot = 0;
      for (int irrep=0; irrep< nirrep; irrep++)
@@ -456,7 +482,7 @@ sointegrals(Options &options)
              {
                  for(int aa = 0 ; aa < norb ; aa++)
                  {
-     		         Ham2->set_overlap(irrep,ll , aa  , sMat->get(irrep,  ll, aa )) ; 
+     		         Ham2->set_overlap(irrep,ll , aa  , overlap->get(irrep,  ll, aa )) ; 
                  }
              }
              nTot += norb;
