@@ -480,6 +480,20 @@ void Hamiltonian::load_overlap(const std::string & filename)
     file.close();
 }
 
+void Hamiltonian::load_unitary(const std::string & filename)
+{
+    int last_index = filename.find_last_of('.');
+    //Check if inputfile is in hdf5 format.
+    if("h5" == filename.substr(last_index+1 , string::npos))
+    {
+        _unit->loadU(filename);
+    }
+    else
+    {
+    	_unit->load_unitary(filename);
+    }
+}
+
 void Hamiltonian::load_overlap(std::istream & file)
 {
     _overlap = std::vector<double>( L*L, 0. );
@@ -597,8 +611,8 @@ void Hamiltonian::save_file(const string & filename)
    if(_unit)
    {
        _unit->print_unitary(std::cout);
-       print_overlap(std::cout );
    }
+   print_overlap(std::cout );
    outputfile << "****  MO OEI \n";
    for(int i = 0 ; i < L ; i++)
    {

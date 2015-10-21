@@ -134,6 +134,41 @@ UnitaryMatrix& UnitaryMatrix::operator=(UnitaryMatrix &&unit)
     return *this;
 }
 
+double UnitaryMatrix::get_element(int i , int j)
+{
+    int irrepi = get_orbital_irrep(i);
+    int irrepj = get_orbital_irrep(j);
+    if (irrepi != irrepj)
+        return 0.;
+    else
+    {
+        int start = get_nstart(irrepi);
+        int norb = get_norb(irrepi);
+        return unitary[irrepi][i-start + (j - start) * norb ];
+    }
+
+}
+
+
+std::vector<double> UnitaryMatrix::get_full_transformation()
+{
+    int L = _index->getL();
+    std::vector<double> transform(L*L , 0);
+    for (int irrep=0; irrep<_index->getNirreps(); irrep++)
+    {
+        const int linsize = _index->getNORB(irrep);
+        const int size = linsize * linsize;
+        int nstart = get_nstart(irrep);
+        for( int j = 0 ; j < linsize ; j ++)//Row
+        {
+            for( int l = 0 ; l < linsize ; l ++)//col
+                transform[(j+nstart)+L*(l+nstart)]  =  unitary[irrep][j+linsize * l];
+        }
+    }
+    return transform;
+}
+
+
 void UnitaryMatrix::jacobi_rotation(int irrep , int i , int j , double angle)
 {
     //Simple implementation of jacobi rotation. 

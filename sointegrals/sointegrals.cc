@@ -467,6 +467,7 @@ sointegrals(Options &options)
         int lastindex = filename.find_last_of("."); 
         string rawname = filename.substr(0, lastindex); 
         Ham2->save(rawname+"orthon");
+        //Ham2->save_file(rawname+"orthon");
 
     }//end doTei transform to symmetric orthogonal.
 

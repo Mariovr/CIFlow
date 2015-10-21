@@ -17,7 +17,7 @@
 
 
 /*
- *File based on the Local optimization for exact DOCI of Ward Poelmans. 
+ *File based on the Local optimization for exact DOCI from Ward Poelmans. 
  */
 
 LocalMinimizer::LocalMinimizer(CIMethod * cim): OrbitalOptimization(cim)
@@ -29,7 +29,7 @@ LocalMinimizer::LocalMinimizer(CIMethod * cim): OrbitalOptimization(cim)
    _mt = std::mt19937(rd());
 
    // expect to be comma seperated list of allowed irreps
-   char *irreps_env = getenv("v2DM_DOCI_ALLOWED_IRREPS");
+   char *irreps_env = getenv("DOCI_ALLOWED_IRREPS");
    if(irreps_env && strlen(irreps_env) > 0)
    {
       std::string irreps_string = irreps_env;
@@ -59,7 +59,7 @@ LocalMinimizer::LocalMinimizer(CIMethod * cim): OrbitalOptimization(cim)
             end = irreps_string.find(delim, start);
          }
       } catch (std::exception& e) {
-         std::cout << "Invalid value in v2DM_DOCI_ALLOWED_IRREPS" << e.what() << std::endl;
+         std::cout << "Invalid value in DOCI_ALLOWED_IRREPS" << e.what() << std::endl;
       }
 
       std::sort(_allow_irreps.begin(), _allow_irreps.end());

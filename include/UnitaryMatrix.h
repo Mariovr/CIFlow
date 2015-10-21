@@ -62,7 +62,12 @@ class UnitaryMatrix
         /** \param irrep The irreducible representation
             \return Pointer to the desired unitary block */
         double * getBlock(const int irrep) const;
-        
+
+        double get_element(int i , int j );
+
+        //returns a vector of double that contains the unitary transformation, without irrep information, and in column major format (and new basis is in rows (same as unitary matrix))
+        std::vector<double> get_full_transformation();
+
         //! Copy the x solution back (NR, augmented NR, ...)
         /** \param vector The x-solution */
         void copyXsolutionBack(double * vector);
@@ -71,7 +76,7 @@ class UnitaryMatrix
         /** \param workmem1 Work memory
             \param workmem2 Work memory */
         void updateUnitary(double * workmem1, double * workmem2, double * vector , const bool multiply);
-        
+
         //! Rotate the unitary matrix to a given basis (eg. NO) eigenbasis
         /** \param eigenvecs The eigenbasis
             \param work Work memory */
