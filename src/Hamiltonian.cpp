@@ -70,7 +70,7 @@ Hamiltonian::Hamiltonian(const int Norbitals, const int nGroup, const int * OrbI
 
     //Orthogonal atomic orbitals.(for example for model hamiltonians.)
     _overlap = std::vector<double>(  0. );
-    _unit = nullptr;
+    _unit.reset(nullptr);
 }
 
 Hamiltonian::Hamiltonian(const int Norbitals, const int nGroup, int nup , int ndown, double Econstant): _modham{false}{
@@ -107,7 +107,7 @@ Hamiltonian::Hamiltonian(const int Norbitals, const int nGroup, int nup , int nd
     _filename = "";
     //Orthogonal atomic orbitals.(for example for model hamiltonians.)
     _overlap = std::vector<double>(  0. );
-    _unit = nullptr;
+    _unit.reset(nullptr);
 }
 
 Hamiltonian::Hamiltonian(const Hamiltonian & HamIn){
@@ -145,7 +145,10 @@ Hamiltonian::Hamiltonian(const Hamiltonian & HamIn){
            for(int i = 0 ; i < L*L ; i++)
                _overlap[i] = HamIn.get_overlap()[i];
        }
-       _unit.reset(HamIn.get_unitary() );
+       if(HamIn.get_unitary())
+           _unit.reset(new UnitaryMatrix(*HamIn.get_unitary()) );
+       else
+           _unit.reset(nullptr);
 }
 
 Hamiltonian::Hamiltonian(const string filename) : _modham{false}
@@ -201,7 +204,10 @@ Hamiltonian& Hamiltonian::operator=(const Hamiltonian &orig)
         for(int i = 0 ; i < L*L ; i++)
             _overlap[i] = orig.get_overlap()[i];
    }
-    _unit.reset(orig.get_unitary() );
+   if(orig.get_unitary())
+       _unit.reset(new UnitaryMatrix(*orig.get_unitary()) );
+   else
+       _unit.reset(nullptr);
     return *this;
 }
 
@@ -345,13 +351,13 @@ void Hamiltonian::save(const string filename) const{
 	 //nalpha
          hsize_t dimarray5      = 1;
          hid_t dataspace_id5    = H5Screate_simple(1, &dimarray5, NULL);
-         hid_t dataset_id5      = H5Dcreate(group_id, "nup", H5T_STD_I32LE, dataspace_id2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+         hid_t dataset_id5      = H5Dcreate(group_id, "nup", H5T_STD_I32LE, dataspace_id5, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
          H5Dwrite(dataset_id5, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &_nup);
 
          //nbeta
          hsize_t dimarray6      = 1;
          hid_t dataspace_id6    = H5Screate_simple(1, &dimarray6, NULL);
-         hid_t dataset_id6      = H5Dcreate(group_id, "ndown", H5T_STD_I32LE, dataspace_id2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+         hid_t dataset_id6      = H5Dcreate(group_id, "ndown", H5T_STD_I32LE, dataspace_id6, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
          H5Dwrite(dataset_id6, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &_ndown);
     
          //overlap
@@ -471,12 +477,12 @@ void Hamiltonian::read(const string filename){
    try
    {
        OptIndex opt = OptIndex(L, nGroup ,irrep2num_orb);
-       _unit.reset(new UnitaryMatrix(opt, filename ));
+       _unit.reset(new UnitaryMatrix(opt));
        _unit->loadU(filename+"unitary");
    }
    catch(...)
    {
-       _unit = nullptr;
+       _unit.reset(nullptr);
    }
 
 
@@ -511,51 +517,63 @@ void Hamiltonian::set_unitary(const std::vector<double> & unit)
     _unit.reset(new UnitaryMatrix(unit,opt ));
 }
 
-void Hamiltonian::load_overlap(std::istream & file)
+bool Hamiltonian::load_overlap(std::istream & file)
 {
-    _overlap = std::vector<double>( L*L, 0. );
     //std::ifstream file(overlapname.c_str()); 
+    bool roverlap = false;
 
     //Wind forward to relevant part
     std::string line; 
     int position = file.tellg();
-    while(line.find("CIFlowOverlap") == std::string::npos)
-        getline(file, line);
-
-    int tot = 0;
-    for( int irrep = 0 ; irrep < getNirreps() ; irrep ++)
+    while( getline(file, line) )
     {
-        int linsize = getNORB(irrep);
-        if(linsize > 0)
+        if(   line.find("CIFlowOverlap") != std::string::npos)
         {
-            while(line.find("irrep") == std::string::npos && line.find("Irrep") == std::string::npos)
+            roverlap = true;
+            _overlap = std::vector<double>( L*L, 0. );
+            int tot = 0;
+            for( int irrep = 0 ; irrep < getNirreps() ; irrep ++)
             {
-                std::getline(file , line);
-            }
-            for( int j = 0 ; j < linsize ; j ++)
-            {
-                std::getline(file, line );
-                std::istringstream sin(line);
-                double coef;
-                for( int l = 0 ; l < linsize ; l ++)
+                int linsize = getNORB(irrep);
+                if(linsize > 0)
                 {
-                    sin >> coef;
-                    _overlap[L* (j+tot) + (l+tot) ] =  coef;
-                }
+                    while(line.find("irrep") == std::string::npos && line.find("Irrep") == std::string::npos)
+                    {
+                        std::getline(file , line);
+                    }
+                    for( int j = 0 ; j < linsize ; j ++)
+                    {
+                        std::getline(file, line );
+                        std::istringstream sin(line);
+                        double coef;
+                        for( int l = 0 ; l < linsize ; l ++)
+                        {
+                            sin >> coef;
+                            _overlap[L* (j+tot) + (l+tot) ] =  coef;
+                        }
 
+                    }
+                    tot += linsize;
+                } //End linsize > 0
             }
-            tot += linsize;
-        } //End linsize > 0
+            break;
+        }
     }
-    file.seekg(position);
+    if(!roverlap)
+    {
+        file.clear();
+        file.seekg(position);
+    }
+
     //file.close();
+    return roverlap;
 }
 
 void Hamiltonian::print_overlap(std::ostream & file)
 {
     if(_overlap.size() > 0)
     {
-        file << "CIFlowOverlap:   "<< std::endl;
+        file << "#CIFlowOverlap:   "<< std::endl;
         int tot = 0;
         for( int irrep = 0 ; irrep < getNirreps() ; irrep ++)
         {
@@ -637,11 +655,11 @@ void Hamiltonian::save_file(const string & filename)
    outputfile << "\n" ;
    outputfile << "DOCC = " << "" << " \n";
    outputfile << "SOCC = " << "" << " \n";
+   print_overlap(outputfile);
    if(_unit)
    {
-       _unit->print_unitary(std::cout);
+       _unit->print_unitary(outputfile);
    }
-   print_overlap(std::cout );
    outputfile << "****  MO OEI \n";
    for(int i = 0 ; i < L ; i++)
    {
@@ -776,23 +794,24 @@ void Hamiltonian::read_file(const string filename){
    //getline(inputfile,line);
    //getline(inputfile,line);
    //getline(inputfile,line);
+   if( load_overlap( inputfile))
+   {
+       OptIndex opt = OptIndex(L, nGroup ,irrep2num_orb);
+       _unit.reset(new UnitaryMatrix(opt, filename));
+       //_unit->print_unitary(std::cout);
+   }
+   else
+   {
+       std::cout << "we didn't succeed in reading in an overlap and unitary matrix for this matrixelements." << endl;
+       _overlap = std::vector<double> (0);
+       _unit.reset(nullptr);
+   }
+   //Wind till integrals
    stop = false; 
    start = "**";
    do{
       getline(inputfile,line);
-      if(line.find("CIFlowOverlap") != std::string::npos)//This is already a new file format so we load in overlaps and transformation from ao to mo.
-      {
-           OptIndex opt = OptIndex(L, nGroup ,irrep2num_orb);
-           _unit.reset(new UnitaryMatrix(opt, inputfile ));
-           //_unit->print_unitary(std::cout);
-           load_overlap( inputfile);
-      }
-      else
-      {
-          _unit = nullptr;
-          _overlap = std::vector<double> (0);
-
-      }
+      //std::cout << line << endl;
       pos = line.find(start);
       if (pos==0) stop = true;
    } while (!stop);

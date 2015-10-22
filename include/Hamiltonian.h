@@ -184,7 +184,7 @@ class Hamiltonian{
          double get_overlap(int irrep , int i , int j )const; //in irrep ordering
          double get_overlap( int i , int j )const; //in orbital index
          void load_overlap( const std::string & filename);
-	     void load_overlap(std::istream & file);
+	     bool load_overlap(std::istream & file);
 	     void print_overlap( std::ostream & file);
          void set_overlap(std::vector<double> overlap);
 	     void set_overlap(int irrep, int i, int j , double val);

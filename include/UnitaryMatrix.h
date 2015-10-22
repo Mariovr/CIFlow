@@ -95,9 +95,9 @@ class UnitaryMatrix
         void loadU(const std::string loadname);
 
         //! Load the unitary from a textfile
-        void load_unitary(const std::string filename);
+        void load_unitary(const std::string & filename);
 
-        void load_unitary(std::istream & file );
+        bool load_unitary(std::istream & file );
         
         //! Delete the stored unitary (on disk)
         void deleteStoredUnitary(std::string name) const;

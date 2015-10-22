@@ -539,7 +539,7 @@ void UnitaryMatrix::print_unitary(const std::string & filename) const
     file.close();
 }
 
-void UnitaryMatrix::load_unitary(const std::string filename)
+void UnitaryMatrix::load_unitary(const std::string & filename)
 {
     int last_index = filename.find_last_of('.');
     //Check if inputfile is in hdf5 format.
@@ -556,38 +556,48 @@ void UnitaryMatrix::load_unitary(const std::string filename)
 
 }
 
-void UnitaryMatrix::load_unitary(std::istream & file)
+bool UnitaryMatrix::load_unitary(std::istream & file)
 {
     std::string line;
+    bool found_unit = false;
     //Wind the file forward to the relevant part.
     int position = file.tellg();
-    while(line.find("CIFlowTransformation") == std::string::npos )
+    while(std::getline(file, line))
     {
-        std::getline(file, line);
-    }
-    for( int irrep = 0 ; irrep < _index->getNirreps() ; irrep ++)
-    {
-        int linsize = _index->getNORB(irrep);
-        if(linsize > 0)
+        if(line.find("CIFlowTransformation") != std::string::npos )
         {
-            while(line.find("irrep") == std::string::npos && line.find("Irrep") == std::string::npos)
+            found_unit = true;
+            for( int irrep = 0 ; irrep < _index->getNirreps() ; irrep ++)
             {
-                std::getline(file, line);
-            }
-            for( int j = 0 ; j < linsize ; j ++)
-            {
-                std::getline(file, line );
-                std::istringstream sin(line);
-                double coef;
-                for( int l = 0 ; l < linsize ; l ++){
-                    sin >> coef;
-                    unitary[irrep][j + linsize* l] =  coef;
-                }
+                int linsize = _index->getNORB(irrep);
+                if(linsize > 0)
+                {
+                    while(line.find("irrep") == std::string::npos && line.find("Irrep") == std::string::npos)
+                    {
+                        std::getline(file, line);
+                    }
+                    for( int j = 0 ; j < linsize ; j ++)
+                    {
+                        std::getline(file, line );
+                        std::istringstream sin(line);
+                        double coef;
+                        for( int l = 0 ; l < linsize ; l ++){
+                            sin >> coef;
+                            unitary[irrep][j + linsize* l] =  coef;
+                        }
 
+                    }
+                }
             }
+            break;
         }
     }
-    file.seekg(position);
+    if(!found_unit)
+    {
+        file.clear();
+        file.seekg(position);
+    }
+    return found_unit;
 }
 
 UnitaryMatrix::UnitaryMatrix(matrix & mat, OptIndex &opt){
