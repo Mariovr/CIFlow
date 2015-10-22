@@ -177,7 +177,7 @@ void CIMethod::reset_density()
 void CIMethod::print_rdm(unsigned state, bool trdm)
 {
     construct_density(state, trdm);
-    _output->print_rdm(*_cid);
+    _output->print_rdm(*_cid , trdm);
 }
 
 double CIMethod::get_spin_squared(unsigned state)
