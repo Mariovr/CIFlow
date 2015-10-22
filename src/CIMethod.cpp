@@ -156,16 +156,16 @@ void CIMethod::print_ham()
     _output->print_ham();
 }
 
-void CIMethod::construct_density(unsigned state)
+void CIMethod::construct_density(unsigned state, bool trdm)
 {
     if(state != _cid->get_state())//The standard value = 0
     {
         _cid->set_state(state);
-        _cid->construct_density();
+        _cid->construct_density(trdm);
     }
     else if( !_cid->is_constructed() )
     {
-        _cid->construct_density();
+        _cid->construct_density(trdm);
     }
 }
 
@@ -174,28 +174,28 @@ void CIMethod::reset_density()
     _cid.reset(nullptr);
 }
 
-void CIMethod::print_rdm(unsigned state)
+void CIMethod::print_rdm(unsigned state, bool trdm)
 {
-    construct_density(state);
+    construct_density(state, trdm);
     _output->print_rdm(*_cid);
 }
 
 double CIMethod::get_spin_squared(unsigned state)
 {
-    construct_density(state);
+    construct_density(state, true);
     return _cid->get_spin_squared();
 }
 
 double CIMethod::get_mulliken(std::vector<int> orbs, unsigned state )
 {
-    construct_density(state);
+    construct_density(state, false);
     return _cid->get_mulliken(orbs);
 }
 
 
 double CIMethod::get_spin(unsigned state)
 {
-    construct_density(state);
+    construct_density(state, true);
     return _cid->get_spin();
 }
 

@@ -44,7 +44,7 @@ class CIMethod{
 		virtual int get_dim() = 0;
 		virtual std::string get_name() = 0;
 		virtual std::unique_ptr<CIDens> get_density() = 0;
-        void construct_density(unsigned state = 0);
+        void construct_density(unsigned state = 0, bool trdm = true);
         void reset_density();
 
 
@@ -94,7 +94,7 @@ class CIMethod{
 		std::string get_ex_info();
 		void print_output();
 		void print_ham();
-		void print_rdm(unsigned state = 0);
+		void print_rdm(unsigned state = 0, bool trdm = false);
         void reset_output(std::string sort, bool partial = true);
 
 		//test and check functions
