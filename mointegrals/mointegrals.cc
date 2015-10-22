@@ -202,6 +202,31 @@ mointegrals(Options &options)
      // contains the transformation from Symmetrized atomic Orbitals -> MO (THIS IS NOT FROM Symmetric orthogonalized orbitals to MO)
      boost::shared_ptr<MatrixFactory> factory = Process::environment.wavefunction()->matrix_factory();
      const Dimension &dimension = moOei.rowspi();
+
+     SharedMatrix S= factory->create_shared_matrix("OverlapMatrixCIFlow: ");
+     S = Process::environment.wavefunction()->S();
+     fprintf(integralfile, "CIFlowOverlap: \n");
+     for (int irrep=0; irrep< nirrep; irrep++)
+     {
+         int norb = dimension[irrep];
+         if(norb > 0)
+         {
+             std::stringstream irrepname;
+             irrepname << "irrep_" << irrep;
+
+             fprintf(integralfile ,"%s\n" , irrepname.str().c_str() );
+             for(int ll = 0 ; ll < norb ; ll++)
+             {
+                 for(int aa = 0 ; aa < norb ; aa++)
+                 {
+     		         fprintf(integralfile , "%.15f    " , S->get(irrep,  aa, ll )) ; //We transpose because psi4 saves in columns and unitarymatrix saves in rows.
+                 }
+                 fprintf(integralfile , "\n" ) ; //We transpose because psi4 saves in columns and unitarymatrix saves in rows.
+             }
+         }
+     }
+     S->print();
+
      SharedMatrix ca = factory->create_shared_matrix("Transformationao->mo: ");
      ca = Process::environment.wavefunction()->Ca();
      fprintf(integralfile, "CIFlowTransformation: \n");
@@ -227,29 +252,6 @@ mointegrals(Options &options)
      }
      ca->print();
      
-     SharedMatrix S= factory->create_shared_matrix("OverlapMatrixCIFlow: ");
-     S = Process::environment.wavefunction()->S();
-     fprintf(integralfile, "CIFlowOverlap: \n");
-     for (int irrep=0; irrep< nirrep; irrep++)
-     {
-         int norb = dimension[irrep];
-         if(norb > 0)
-         {
-             std::stringstream irrepname;
-             irrepname << "irrep_" << irrep;
-
-             fprintf(integralfile ,"%s\n" , irrepname.str().c_str() );
-             for(int ll = 0 ; ll < norb ; ll++)
-             {
-                 for(int aa = 0 ; aa < norb ; aa++)
-                 {
-     		         fprintf(integralfile , "%.15f    " , S->get(irrep,  aa, ll )) ; //We transpose because psi4 saves in columns and unitarymatrix saves in rows.
-                 }
-                 fprintf(integralfile , "\n" ) ; //We transpose because psi4 saves in columns and unitarymatrix saves in rows.
-             }
-         }
-     }
-     S->print();
     if(save_unitaries)
     {
         // Construct Shalf

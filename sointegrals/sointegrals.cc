@@ -236,6 +236,26 @@ sointegrals(Options &options)
     hMat->add(vMat);
 
      outfile->Printf("CIFlowOverlap: \n");
+     for (int irrep=0; irrep< nirrep; irrep++)
+     {
+         int norb = dimension[irrep];
+         if(norb > 0)
+         {
+             std::stringstream irrepname;
+             irrepname << "irrep_" << irrep;
+
+             outfile->Printf("%s\n" , irrepname.str().c_str() );
+             for(int ll = 0 ; ll < norb ; ll++)
+             {
+                 for(int aa = 0 ; aa < norb ; aa++)
+                 {
+     		         outfile->Printf("%.15f    " , sMat->get(irrep,  aa, ll )) ; //We transpose because psi4 saves in columns and unitarymatrix saves in rows.
+                 }
+                 outfile->Printf("\n" ); //We transpose because psi4 saves in columns and unitarymatrix saves in rows.
+             }
+         }
+     }
+     /*  
      int nTot = 0;
      for (int irrep=0; irrep< nirrep; irrep++)
      {
@@ -252,7 +272,7 @@ sointegrals(Options &options)
              nTot += norb;
          }
      }
-     sMat->print();
+     sMat->print();*/
     if(print)
     {
         //tMat->print();
