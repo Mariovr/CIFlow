@@ -61,6 +61,8 @@ OrbitalOptimization::OrbitalOptimization(CIMethod * cim)
 //This is commented out because you have to make sure the Hamiltonian object is different.
 OrbitalOptimization::~OrbitalOptimization()
 {
+    if(_optham->get_unitary() )//Check if _optham contains already a unitary transformation. This can be the case if the original Hamiltonian is generated from an old psi4 outputfile.
+        _optham->get_unitary()->multiply_left_with(*_opt_unitary);
 }
 
 void OrbitalOptimization::set_cim_optimal()
@@ -329,7 +331,6 @@ double SimulatedAnnealing::optimize()
 
             if (accept_function(e_new, e_old, temp, mt, dist_real))
             {
-                //Determine if we keep the new solution
                 e_old = e_new;
                 if(e_new < _opt_energy)
                 {

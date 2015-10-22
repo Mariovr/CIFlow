@@ -35,7 +35,7 @@ class OrbitalOptimization
 {
     public:
         OrbitalOptimization(CIMethod * cim);
-        virtual ~OrbitalOptimization();
+        virtual ~OrbitalOptimization(); //Orbital optimizations contains an orbital transform and when it is deleted. We multiply the resulting unitary matrix of the orbital optimization in the unitary matrix contained in _optham of the original hamiltonian, which defines the original hamiltonian. So at the end the unitary matrix contained in _optham represents the transformation from the atomic orbitals to _optham. This can be used for visualisation in a molden file.
         virtual double optimize() = 0 ;
         void get_back_original_ham();
         double get_opt_ci_energy() { return _opt_energy; }

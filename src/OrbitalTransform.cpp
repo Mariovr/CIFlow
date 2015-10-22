@@ -58,7 +58,6 @@ OrbitalTransform::OrbitalTransform(Hamiltonian *  HamIn)
     mem2.reset(new double[sizeWorkmem2]);
 }
 
-
 void OrbitalTransform::set_ham(Hamiltonian * ham){ _hamorig = ham ; }
 UnitaryMatrix & OrbitalTransform::get_unitary(){ return (*_unitary); } //Watch out pass by reference.
 
