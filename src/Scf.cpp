@@ -83,6 +83,8 @@ RHF::RHF(Hamiltonian * ham, int max_iter , double e_conv , double d_conv , int p
     _dodiis = diis;
     if (diis)
         _diis = new DIIS(8);
+    else
+        _diis = nullptr;
 
     if(_print > 1){
         printf("Transformed Fock matrix.:\n");
@@ -91,6 +93,11 @@ RHF::RHF(Hamiltonian * ham, int max_iter , double e_conv , double d_conv , int p
         _C.Print();
         _P.Print();
     }
+}
+
+RHF::~RHF()
+{
+    delete _diis;
 }
 
 void RHF::symmetric_diag()

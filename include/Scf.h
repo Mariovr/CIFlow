@@ -27,17 +27,18 @@ class RHF
 {
     public:
         RHF(Hamiltonian * ham, int max_iter , double e_conv , double d_conv , int print, int diis); 
-	UnitaryMatrix load_overlap(std::string overlap_file);//Remark unitary matrix is not unitary :), because of nonorthogonal atomic orbitals.
+        ~RHF();
+	    UnitaryMatrix load_overlap(std::string overlap_file);//Remark unitary matrix is not unitary :), because of nonorthogonal atomic orbitals.
         UnitaryMatrix get_transformation();
 
-	void symmetric_diag();
-	void construct_density();
-	double get_hf_energy(); //Depends on density (which depends on c the unitary transformation from ao to mo) and fock matrix.
-	double scf(); //returns scf energy
+	    void symmetric_diag();
+	    void construct_density();
+	    double get_hf_energy(); //Depends on density (which depends on c the unitary transformation from ao to mo) and fock matrix.
+	    double scf(); //returns scf energy
 
-        matrix get_orbital_energies(int print = 0);
-	void diag_symmetric_matrix( matrix Fockt, matrix & val_part , matrix & part);
-	void sort_energies(matrix & orbe);
+            matrix get_orbital_energies(int print = 0);
+	    void diag_symmetric_matrix( matrix Fockt, matrix & val_part , matrix & part);
+	    void sort_energies(matrix & orbe);
 
         int get_max_iter(){return _max_iter ; }
         double get_e_conv(){return _e_conv ; }
@@ -50,24 +51,24 @@ class RHF
 
     private:
     	std::unique_ptr<Hamiltonian> _ham;
-	matrix _X; //transformation that makes the non-orthogonal atomic orbitals orthogonal.
-	matrix _P;
-	matrix _Fock;
-	matrix _Fockt ; //Contains transformed fock matrix to orthogonal basis
-	matrix _C;
-	matrix _overlap;
-	matrix _orbitale;
+      	matrix _X; //transformation that makes the non-orthogonal atomic orbitals orthogonal.
+      	matrix _P;
+      	matrix _Fock;
+      	matrix _Fockt ; //Contains transformed fock matrix to orthogonal basis
+      	matrix _C;
+      	matrix _overlap;
+      	matrix _orbitale;
 
-	int _max_iter;
-	double _e_conv;
-	double _d_conv;
-	int _print;
-	int _dodiis;
+	    int _max_iter;
+	    double _e_conv;
+	    double _d_conv;
+	    int _print;
+	    int _dodiis;
 
-	DIIS * _diis;
+	    DIIS * _diis;
 
-	std::vector<int> _orbarray; //Contains the map to the lowest (orbital energy) orbitals, this is necessary
-	//because we keep spatial symmetry and only order by energy in one irrep.
+	    std::vector<int> _orbarray; //Contains the map to the lowest (orbital energy) orbitals, this is necessary
+	    //because we keep spatial symmetry and only order by energy in one irrep.
 };
 
 #endif
