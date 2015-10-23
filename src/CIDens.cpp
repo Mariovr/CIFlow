@@ -88,13 +88,13 @@ void CIDens::set_oblock(int spin, const matrix & dens)
 
 void CIDens::transform_trdm(const matrix & unitary)
 {
-    std::vector<std::vector< vector<vector<double> > > > temp (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
-    std::vector<std::vector< vector<vector<double> > > > temp2 (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
-    std::vector<std::vector< vector<vector<double> > > > temp3 (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
-    std::vector<std::vector< vector<vector<double> > > > temp4 (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
 
     for(int spin = 0 ; spin < 3 ; spin++ )
     {
+        std::vector<std::vector< vector<vector<double> > > > temp (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
+        std::vector<std::vector< vector<vector<double> > > > temp2 (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
+        std::vector<std::vector< vector<vector<double> > > > temp3 (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
+        std::vector<std::vector< vector<vector<double> > > > temp4 (_norb , std::vector<vector<vector<double>>> (_norb, vector<vector<double>> ( _norb , vector<double> (_norb , 0.) ) ) );
         for(int p = 0 ; p < _norb ; p ++)
         {
             for(int mu = 0 ; mu < _norb ; mu++)
@@ -128,7 +128,7 @@ void CIDens::transform_trdm(const matrix & unitary)
                     {
                         for(int a = 0 ; a < _norb ; a ++)
                         {
-                            temp3[p][q][ r ][ a ] += unitary(lam, r) * temp[p][q ][ lam][ a];
+                            temp3[p][q][ r ][ a ] += unitary(lam, r) * temp2[p][q ][ lam][ a];
                         }
                     }
                     for(int s = 0 ; s < _norb ; s++)
@@ -151,6 +151,7 @@ void CIDens::transform_trdm(const matrix & unitary)
                 {
                     for(int d = 0 ; d < _norb ; d++)
                     {
+                        //cout << "spin" << spin << "a" << a<<  "b" << b<< "c" << c << "d" <<d << "value " << temp4[a][ b][ c][d] << endl;
                         set_two_rdm(spin,  a, b , c,d, temp4[a][ b][ c][d]);
                     }
                 }
@@ -199,6 +200,7 @@ void CIDens::set_two_rdm(int spin , int orb1 , int orb2, int orb3 , int orb4, do
         if(orb1 == orb2 || orb3 == orb4)
         {
             SCPP_ASSERT(fabs(value) < 1e-12 , "Error we put an element of the 2rdm to a value which should be zero, element = " << value << " spin , orb1 , orb2 , orb3 , orb4: " << spin << ", " <<orb1 << ", " << orb2 << ", " << orb3 <<", " << orb4 <<", " << std::endl);
+            return;
         }
         int sign = 1.;
         if(orb1 > orb2)
