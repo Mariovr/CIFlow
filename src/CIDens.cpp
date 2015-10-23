@@ -320,7 +320,7 @@ void CIDens::construct_density(bool twordm)
 {
     build_parallel(twordm);
     #ifdef _DEBUG
-        test_invariants(twordm);
+        //test_invariants(twordm);
     #endif
 }
 
@@ -395,8 +395,7 @@ void CIDens::test_invariants(bool twordm)
 double CIDens::get_mulliken(std::vector<int> orbs)
 {
     double mulik = 0;
-    matrix unitary( _cim->get_ham()->get_unitary()->get_full_transformation() , _norb , _norb); //returns full transformation defined by unitary matrix (new basis in rows.)
-    transform_ordm(unitary); //go back to ao basis (we dont need to transpose because unitarymatrix saves in rows and not in columns the new basis)
+    transform_to_ao(false, false); //Transforms ordm to the ao basis.
     for(int spin = 0 ; spin <2 ; spin++)
     {
         matrix mat = get_oblock(spin); //if equal number of ups and downs.
@@ -406,8 +405,24 @@ double CIDens::get_mulliken(std::vector<int> orbs)
         for(auto & x: orbs)
             mulik += prod(x,x);
     }
+    transform_to_ao(false, true); //Transforms the density matrices back to the original basis
 
     return mulik;
+}
+
+void CIDens::transform_to_ao(bool trdm, bool revert )
+{
+    matrix unitary( _cim->get_ham()->get_unitary()->get_full_transformation() , _norb , _norb); //returns full transformation defined by unitary matrix (new basis in rows.)
+    if (revert)
+    {
+        matrix tran(unitary.getn() , unitary.getm());
+        tran.transpose(unitary);
+        unitary = tran;
+    }
+
+    transform_ordm(unitary); //go back to ao basis (we dont need to transpose because unitarymatrix saves in rows and not in columns the new basis)
+    if (trdm)
+        transform_trdm(unitary);
 }
 
 unsigned CIDens::dim() const

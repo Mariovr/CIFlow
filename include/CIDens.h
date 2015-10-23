@@ -48,6 +48,7 @@ class CIDens
         CIMethod * get_cim()const{return _cim;};
         std::vector<Vector2d >  get_two_dm(){return _two_dens;} 
         std::valarray<std::valarray<double> > get_one_dm(){return _one_dens;}
+
 		void print_one_dens(std::ostream & os, const std::valarray<std::valarray<double>> & onerdm ) const;
 		void print_one_dens(std::ostream & os) const {print_one_dens(os , _one_dens); }
 	    void print_two_dens(std::ostream & os, const std::vector<Vector2d > & twordm ) const;
@@ -90,6 +91,9 @@ class CIDens
         void set_two_rdm(int spin ,int orb1 , int orb2, int orb3, int orb4, double value);
         void transform_ordm(const matrix & unitary);
         void transform_trdm(const matrix & unitary);
+        //transforms the rdms to the AO basis, REMARK if this is used implicitely as is the case for the mulliken function, the density matriceces contained are not anymore in the MO, but in the AO so pay attention if one wants to use the density matrices later (so keep track of the basis) after a call to for example mulliken. To revert this transformation call this function with the revert bool = true.
+        void transform_to_ao(bool trdm = true, bool revert = false);
+
         matrix get_oblock(int spin); //returns the square density matrix associated to a particular spin block of the ordm.
         void set_oblock(int spin, const matrix & dens);
         //matrix get_tblock(int spin);//returns the square density matrix associated to a particular spin block of the trdm (i,j , k,l). 
