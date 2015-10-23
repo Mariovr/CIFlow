@@ -152,10 +152,18 @@ class CIFlow_Reader(Reader):
                 if startrdm >= 2:
                     if twordm:
                         match = re.search(reg2rdm , line)
-                        if match:
+                        if match:#watch out 8 fold permutation symmetry
                             #print match.group(0)
                             self.trdm[startrdm-2][int(match.group(1)) , int(match.group(2)) , int(match.group(3)) , int(match.group(4)) ] = float(match.group(5))
-                            #print self.trdm[startrdm-2][int(match.group(1)) , int(match.group(2)) , int(match.group(3)) , int(match.group(4)) ] 
+                            if startrdm-2 != 1: #only when alpha, beta, alpha,beta block we dont have this symmetry (if nalpha != nbeta)
+                                self.trdm[startrdm-2][int(match.group(2)) ,int(match.group(1)) ,  int(match.group(4)) ,int(match.group(3))  ] =  float(match.group(5))
+                                self.trdm[startrdm-2][int(match.group(3)) , int(match.group(4)) , int(match.group(1)) , int(match.group(2)) ] = float(match.group(5))
+                                self.trdm[startrdm-2][int(match.group(4)) ,int(match.group(3)) , int(match.group(2)),  int(match.group(1))  ] = float(match.group(5))
+                                self.trdm[startrdm-2][int(match.group(3)) , int(match.group(4)) , int(match.group(2)) ,int(match.group(1))  ] = -1.* float(match.group(5))
+                                self.trdm[startrdm-2][int(match.group(1)) , int(match.group(2)) , int(match.group(4)), int(match.group(3))  ] = -1.*float(match.group(5))
+                                self.trdm[startrdm-2][int(match.group(2)) ,int(match.group(1)) ,  int(match.group(3)) , int(match.group(4)) ] = -1. * float(match.group(5))
+                                self.trdm[startrdm-2][int(match.group(4)) ,int(match.group(3)) ,  int(match.group(1)) , int(match.group(2)) ] = -1.*float(match.group(5))
+                                #print self.trdm[startrdm-2][int(match.group(1)) , int(match.group(2)) , int(match.group(3)) , int(match.group(4)) ] 
               
     
     def read_matrix(self, filename, comment = '#'):
@@ -247,11 +255,11 @@ class CIFlow_Reader(Reader):
         t4index = None
         if twordm:
             t4index = [np.zeros((dim,dim, dim, dim)) for i in range(3)]
-            temp = np.zeros((dim,dim, dim, dim))
-            temp2 = np.zeros((dim,dim, dim, dim))
-            temp3 = np.zeros((dim,dim, dim, dim))
 
             for i in range(3):
+                temp = np.zeros((dim,dim, dim, dim))
+                temp2 = np.zeros((dim,dim, dim, dim))
+                temp3 = np.zeros((dim,dim, dim, dim))
                 for p in range(0,dim):
                     for mu in range(0,dim):
                         temp[p,:,:,:] += unitary[mu,p]*self.trdm[i][mu,:,:,:]
@@ -292,7 +300,7 @@ class CIFlow_Reader(Reader):
 
 
 def test_density():
-    cifres = CIFlow_Reader('psi0_output10outputfci.dat')
+    cifres = CIFlow_Reader('psioutputoutputfci.dat')
     cifres2 = CIFlow_Reader('testfci.dat')
     cifres.read_rdm()
     cifres2.read_rdm()
@@ -306,7 +314,7 @@ def test_density():
                     for l in range(k,L):
                         #if abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) > 1e-8:
                             #print abs(cifres.trdm[w][i,j,k,l] -rdmw[w][i,j,k,l] ) 
-                        if abs(cifres.trdm[w][i,j,k,l] -cifres2.trdm[w][i,j,k,l]) > 1e-15 :
+                        if abs(cifres.trdm[w][i,j,k,l] -cifres2.trdm[w][i,j,k,l]) > 1e-9 :
                             print abs(cifres.trdm[w][i,j,k,l] - cifres2.trdm[w][i,j,k,l] ) 
                             print w, " " , i , " " , j, " " , k , " " , l , " " , cifres.trdm[w][i,j,k,l] , ' and nopar' , cifres2.trdm[w][i,j,k,l]
                     #if cifres.trdm[0][i,j,k,l] > 1e-10:
@@ -472,16 +480,18 @@ def main():
 
 
 def mulliken():
-    rootdir = './results/nopluspatrickham/'
-    #rootdir = './results/nopluspatricktest/'
-    collector = fc.File_Collector(rootdir , r'hamnoplus[-\w\d.]*output[\w_]*.dat', sortfunction = None)
+    #rootdir = './results/nopluspatrickham/'
+    #collector = fc.File_Collector(rootdir , r'hamnoplus[-\w\d.]*output[\w_]*.dat', sortfunction = None)
     #collector = fc.File_Collector(rootdir , r'psi[-\w\d.]*output[\w_]*.dat', sortfunction = None)
-    for outfile in collector.plotfiles:
+    plotfiles = ['hamatomicintegralsorthonoutputfci.dat']
+    rootdir = '.'
+    #for outfile in collector.plotfiles:
+    for outfile in plotfiles:
         #print 'starting with: ' , outfile
         cifdoci = CIFlow_Reader( outfile)
         cifdoci.read_rdm(twordm=False)
         #print cifdoci.ordm
-        if 'fmmin' or 'sim' in outfile: #Transform the RDMs back from the OO basis to the MO basis.
+        if 'fmmin' and 'sim' in outfile: #Transform the RDMs back from the OO basis to the MO basis.
             if 'sim' in outfile:
                 unitary2= cifdoci.read_matrix(os.path.join(rootdir, 'unitarysim.dat') ) 
                 unitary2 = unitary2.T #Because unitarysim.dat is generated with the read_psi unitary reader (of .h5 file to .dat file ) which transposes implicitly and saves new basis in columns. Instead of the rows such as UnitaryMatrix.
@@ -492,21 +502,24 @@ def mulliken():
             cifdoci.ordm = t2index
             #print 'One rdm in MO basis (after backtransforming to check the seniority non-zero contribution)' , cifdoci.ordm 
 
-        unitary = cifdoci.read_matrix(os.path.join(rootdir, 'no_100.0_PB.mo') )
+        #unitary = cifdoci.read_matrix(os.path.join(rootdir, 'no_100.0_PB.mo') )
+        unitary = cifdoci.read_matrix(os.path.join(rootdir, 'unitary.txt') )
+
         t2index , t4index = cifdoci.transform_rdms(unitary, twordm = False)
-        overlap = cifdoci.read_matrix(os.path.join(rootdir , 'no_100.0_PB.ove') )
+        #overlap = cifdoci.read_matrix(os.path.join(rootdir , 'no_100.0_PB.ove') )
         #unitary = cifdoci.read_matrix(os.path.join(rootdir, 'unitary.txt') ) #MO is row index, AO is column index
-        #overlap = cifdoci.read_matrix(os.path.join(rootdir , 'overlap.txt') )
+        overlap = cifdoci.read_matrix(os.path.join(rootdir , 'overlap.txt') )
         #t2index , t4index = cifdoci.transform_rdms(unitary.T, twordm = False) #for psi4 unitaries which save the 
         #print unitary
         #print overlap
         density = np.dot(t2index, overlap)
-        mulliken_n = sum([density[i,i] for i in range(5)] ) 
-        mulliken_o = sum([density[i,i] for i in range(5,10)] ) 
+        mulliken_n = 2*sum([density[i,i] for i in range(5)] ) 
+        mulliken_o = 2*sum([density[i,i] for i in range(5,10)] ) 
         print 'outputfile: ', outfile, 'mulliken n : ' , mulliken_n  , 'mulliken_o : '  , mulliken_o 
 
 def back_transform():
     rootdir = './results/hechangerep/'
+    rootdir = './results/hechangerepstar631g/'
     rootdir = './results/hechangerepstar631g/'
     collector = fc.File_Collector(rootdir , r'[-\w\d.]*output[\w_]*.dat', notsearch = 'rdm_ao' , sortfunction = None)
     for outfile in collector.plotfiles:
@@ -520,6 +533,24 @@ def back_transform():
         t2index , t4index = cifread.transform_rdms(unitary , twordm = False)
         np.savetxt(outfile +'rdm_ao.dat' , t2index)
         
+def test_transform():
+    cifread = CIFlow_Reader('psioutputoutputfci.dat')
+    cifread.read_rdm(twordm= True)
+    print cifread.trdm[1][6][5][6][5]
+    print cifread.trdm[1][1][2][1][1]
+    print cifread.trdm[1][4][4][4][4]
+    #print cifread.ordm
+    #print len(cifread.ordm)
+    unitary = cifread.read_matrix('unitaryao_to_mo.txt' )
+    #print unitary
+    #print len(unitary)
+    t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
+    np.savetxt('rdm_ao.dat' , t2index)
+    print t4index[1][6][5][6][5]
+    print t4index[1][1][2][1][1]
+    print t4index[1][4][4][4][4]
+
+
 if __name__ == "__main__":
     #main()
     #wavefunction_analysis()
@@ -527,6 +558,7 @@ if __name__ == "__main__":
     #overlap_analysis()
     #overlap_analysis2()
     #mulliken()
+    test_transform()
     #test_density()
-    back_transform()
+    #back_transform()
 
