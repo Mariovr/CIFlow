@@ -53,15 +53,35 @@ if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
     #WARNING implicitely transposes, SAVES new basis in colums
     class Unitary_Matrix(object):
         def __init__(self,fname):
-            self.f = h5py.File(fname,"r")
-            self.unitary = [None]*8 #biggest point group in psi4 is D2h, which has 8 irreps.
-            self.numorb = 0
-            for name in self.f['/Data']:
-                irrep_num= int(re.search(r'(\d+)',name).group())
-                linsize = sqrt(len(self.f['/Data/' + name][:]))
-                self.numorb += linsize
-                self.unitary[irrep_num] = np.array(self.f['/Data/' + name][:] ) #transforms implicitly because unitary matrix saves first columns (fast changing index), but when we use numpy.shapeit puts data in rows and then cuts. This is oke, because unitary matrix saves the eigenbasis where we need to transform to in the rows, and this python class will keep them than in the columns. This is consistent with new eigenbasis obtained by diagonalizing a 2 index matrix.
-                self.unitary[irrep_num].shape = (linsize , linsize)
+            if(fname[-2:] == "h5"):
+                self.f = h5py.File(fname,"r")
+                self.unitary = [None]*8 #biggest point group in psi4 is D2h, which has 8 irreps.
+                self.numorb = 0
+                for name in self.f['/Data']:
+                    irrep_num= int(re.search(r'(\d+)',name).group())
+                    linsize = sqrt(len(self.f['/Data' + name][:]))
+                    self.numorb += linsize
+                    self.unitary[irrep_num] = np.array(self.f['/Data' + name][:] ) #transforms implicitly because unitary matrix saves first columns (fast changing index), but when we use numpy.shapeit puts data in rows and then cuts. This is oke, because unitary matrix saves the eigenbasis where we need to transform to in the rows, and this python class will keep them than in the columns. This is consistent with new eigenbasis obtained by diagonalizing a 2 index matrix.
+                    self.unitary[irrep_num].shape = (linsize , linsize)
+            else:
+                self.unitary = [None]*8 #biggest point group in psi4 is D2h, which has 8 irreps.
+                with open(fname , 'r') as file:
+                    for line in file:
+                        if "CIFlowTransformation" in line:
+                            break
+                    self.numorb = 0
+                    for line in file:
+                        irrep_num= int(re.search(r'(\d+)',line).group())
+                        irreplist = []
+                        for line in file:
+                            try:
+                               irreplist.append(np.array(map(float,line.split() ) ) )
+                               self.numorb += 1
+                            except ValueError:
+                                print 'finished executing irrep: ' , irrep_num
+                                break
+                    self.unitary[irrep_num] = np.transpose(np.array(irreplist)) 
+
                 
         def get_unitary(self):
             #At this moment we haven't supported point group symmetry
@@ -88,7 +108,7 @@ if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
 
 
 class CIFlow_Input(object):
-    def __init__(self, nalpha , nbeta , nucnuc , norb , sym , nirrep , irreplist , oeilist, teilist , hfenergy, docclist , socclist):
+    def __init__(self, nalpha , nbeta , nucnuc , norb , sym , nirrep , irreplist , oeilist, teilist , hfenergy, docclist , socclist, overlap = None , unit = None):
         self.nalpha = nalpha 
         self.nbeta = nbeta 
         self.nucnuc = nucnuc 
@@ -101,6 +121,8 @@ class CIFlow_Input(object):
         self.hfenergy = hfenergy
         self.docclist = docclist
         self.socclist = socclist
+        self.overlap = overlap
+        self.unit = unit
         self.create_strings()
 
     def create_strings(self):
@@ -109,6 +131,18 @@ class CIFlow_Input(object):
         self.soccstring = ' '.join(map(str,self.socclist))
         self.oeistring = '\n'.join(['%d %d %.25f '%(i,j,val)      for i, j ,val in self.oeilist])
         self.teistring = '\n'.join(['%d %d %d %d %.25f '%(i,j,k,l,val) for i, j ,k,l,val in self.teilist])
+        if self.overlap != None:
+            self.overlapstring = ""
+            for irrep, data in enumerate(self.overlap):
+                if data != None:
+                    self.overlapstring += "irrep_"+ str(irrep) + "\n"
+                    self.overlapstring+= '\n'.join([ '    '.join(map( lambda x: "%.12f" % x , dat) ) for dat in data  ]  )
+
+            self.transformationstring = ""
+            for irrep, data in enumerate(self.unit):
+                if data != None:
+                    self.transformationstring+= "irrep_"+ str(irrep) + "\n"
+                    self.transformationstring+= '\n'.join([ '    '.join(map( lambda x: "%.12f" % x , dat) ) for dat in data  ]  )
 
     def __str__(self):
         text = """****  Molecular Integrals For DOCI Start Here 
@@ -121,8 +155,15 @@ Number Of Molecular Orbitals =  %(norb)d
 Irreps Of Molecular Orbitals = 
 %(irrepstring)s 
 DOCC =  %(doccstring)s #this line is ignored
-SOCC =  %(soccstring)s #this line is ignored 
-****  MO OEI 
+SOCC =  %(soccstring)s #this line is ignored
+"""%(self.__dict__)
+        if self.overlap != None:
+            text += """CIFlowOverlap: 
+    %(overlapstring)s
+    CIFlowTransformation: 
+    %(transformationstring)s
+    """%(self.__dict__)
+        text+= """****  MO OEI 
 %(oeistring)s
 ****  MO TEI 
 %(teistring)s
@@ -134,6 +175,29 @@ SOCC =  %(soccstring)s #this line is ignored
     def write_file(self,fname = 'output.dat'):
         with open(fname , 'w') as mofile:
             mofile.write(str(self))
+
+
+class ModHam(CIFlow_Input):
+    def __init__(self  , nalpha , nbeta , norb , modtype, options , params):
+        super(ModHam, self).__init__(nalpha , nbeta , 0., norb , 'c1' , 1 , [0]*norb, [] , []  , 0., [nalpha], [0] )
+        self.options = options
+        self.params = params
+        self.modtype = modtype
+        self.make_mod_strings()
+
+    def make_mod_strings(self):
+        self.optionsstring = '\n'.join(self.options)
+        self.paramsstring = '\n'.join(map(str , self.params ) )
+
+    def __str__(self):
+        text = super(ModHam , self).__str__()
+        text += """###Model Hamiltonian Type: %(modtype)s
+###Model Hamiltonian options:
+%(optionsstring)s
+####Params:
+%(paramsstring)s
+""" %(self.__dict__ )
+        return text
 
 class Reader(object):
     """
@@ -173,16 +237,42 @@ class PsiReader(Reader):
             #self.create_star_data()
             self.extract_values()
             print self.values
+            self.overlap = self.read_ao_info(filename, "CIFlowOverlap")
+            self.unit = self.read_ao_info(filename, "CIFlowTransformation")
 
             if isbig:
                 self.delete_lines(numorbs) #numorbs is the number of orbitals you wanna keep
                 self.values['irreplist'] = self.values['irreplist'][:numorbs]
                 self.values['norb'] = numorbs
 
+
             if read_ints:
                 self.extract_ints()
             self.data.close()
             
+    def read_ao_info(self, fname , startstring):
+        overlap = [None] * 8 #8 is max num of irreps in abelian point groups we consider
+        with open(fname , 'r') as file:
+            for line in file:
+                if startstring in line:
+                    break
+            numorb = 0
+            for line in file:
+                irrep_num= int(re.search(r'(\d+)',line).group())
+                irreplist = []
+                for line in file:
+                    try:
+                       irreplist.append(np.array(map(float,line.split() ) ) )
+                       numorb += 1
+                    except ValueError:
+                        print 'finished executing irrep: ' , irrep_num
+                        break
+                overlap[irrep_num] = np.array(irreplist) 
+                if self.values['norb'] == numorb:
+                    break
+        return overlap
+
+
     def extract_values(self):
         for key, value in self.regexps.iteritems():
             try:
@@ -409,11 +499,11 @@ class PsiReader(Reader):
         self.values['irreplist'] = [0] *self.values['norb']
         self.create_output(outname)
 
-    def change_repulsion(self):
-        self.ints['mo4index'] = [[integrals[0] ,integrals[1] ,integrals[2] , integrals[3], -1.*integrals[4] ] for integrals in self.ints['mo4index']]
+    def change_repulsion(self, factor = -1.):
+        self.ints['mo4index'] = [[integrals[0] ,integrals[1] ,integrals[2] , integrals[3], factor*integrals[4] ] for integrals in self.ints['mo4index']]
 
     def create_output(self , fname = 'output.dat'):
-        ciflow_input = CIFlow_Input(self.values['nalpha'], self.values['nbeta'], self.values['nucrep'], self.values['norb'] , self.values['sym'] , self.values['nirrep'] , self.values['irreplist'], self.ints['mo2index'], self.ints['mo4index'], self.values['hfenergy'], self.values['DOCC'] , self.values['SOCC'])
+        ciflow_input = CIFlow_Input(self.values['nalpha'], self.values['nbeta'], self.values['nucrep'], self.values['norb'] , self.values['sym'] , self.values['nirrep'] , self.values['irreplist'], self.ints['mo2index'], self.ints['mo4index'], self.values['hfenergy'], self.values['DOCC'] , self.values['SOCC'], self.overlap , self.unit)
         ciflow_input.write_file(fname = fname)
 
     def get_hf_orbs(self, frozen = None, virtual = None):    
@@ -501,6 +591,8 @@ def test_unitary():
 def print_unitary(fname):
     d = Unitary_Matrix(fname)
     d.print_unitary()
+    if fname[-2:] == "h5":
+        d.print_structure()
     return d
 
 def benzene():
@@ -512,7 +604,7 @@ class HDF5Reader(object):
         self.f = h5py.File(fname,"r")
         self.print_structure()
 
-        datanames = {'nucrep' : 'Econst','nalpha' :'nup', 'nbeta': 'ndown', 'norb': 'L' , 'sym' :'nGroup' , 'irreplist' : 'orb2irrep' }
+        datanames = {'nucrep' : 'Econst','nalpha' :'nup', 'nbeta': 'ndown', 'norb': 'L' , 'sym' :'nGroup' , 'irreplist' : 'orb2irrep' , 'overlap' : 'overlap' }
         self.extract_values(datanames)
         self.extract_ints()
         print self.values
@@ -555,7 +647,8 @@ class HDF5Reader(object):
          
 
 def hdf5_ham():
-    fname = 'results/beh2_sto_3g_symcomp/hamiltonians/hampsi0_sto-3g0.86DOCIsim.h5'
+    #fname = 'results/beh2_sto_3g_symcomp/hamiltonians/hampsi0_sto-3g0.86DOCIsim.h5'
+    fname = 'hamatomicintegralsorthon.h5'
     ham = HDF5Reader(fname)
 
 def list_test():
@@ -594,12 +687,28 @@ def reverse_repulsion():
     reader.change_repulsion()
     reader.create_output(fname = 'results/hechangerep/matrixelements/changedrep.dat')
 
+def test_new_format():
+    filename = "psioutput.dat"
+    reader = PsiReader(filename, isbig = False, numorbs = None, read_ints = True)
+    reader.create_output(fname = 'newpsioutput.dat')
+
+
+def test_mod_ham():
+    nalpha =4 ; nbeta = 4 ; nucnuc = 0 ;  norb  = 8 ;  sym = 'c1' ; nirrep = 1 ; irreplist  = [0]* norb;  hfenergy = 0. ; docclist = [4] ; socclist = [0] ; overlap = None ; unit = None
+    modtype = 'Hub1d' ; options = ['notzero' , 'pos', 'none']  ; params = [1. , 4.] 
+    hub1d = ModHam(nalpha,nbeta,norb,modtype , options , params)
+    hub1d.write_file(fname = 'hub1d.mod')
+
 
 if __name__ == "__main__":
-    reverse_repulsion()
+    #reverse_repulsion()
     #benzene()
     #test_unitary()
-    #print_unitary('./data/unitary-mo.h5')
+    #print_unitary('./tests/data/unitary-moorthon.h5')
+    #print_unitary('unitary.txt')
+    #test_new_format()
+    test_mod_ham()
     #hdf5_ham()
     #list_test()
     #main()
+    #test_new_format()
