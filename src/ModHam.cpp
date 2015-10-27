@@ -322,7 +322,7 @@ void Constrained_DM::construct_ham(std::vector<double> params, std::vector<std::
     {
         for(int j = i ; j < this->getL() ; j ++)
         {
-            setTmat(i,j, getTmat(i,j) + trans(i,j)) ; //augment one body part with the constrained.
+            setTmat(i,j, getTmat(i,j) + params[ params.size()-1] * trans(i,j)) ; //augment one body part with the constrained.
         }
     }
 }

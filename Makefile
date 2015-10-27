@@ -29,7 +29,7 @@ OBJ = $(patsubst %.cpp, obj/%.o, $(OBJ_SRC))
 INCLUDE_PATH = -I./include -I/opt/local/include 
 LIB_PATH = -L./lib 
 CXX_FLAGS = -Wall -Wextra -std=c++11 -march=native $(INCLUDE_PATH) $(MPIOPT) -O3 -fpic
-CXX_FLAGS += -g -ggdb3 -D_DEBUG
+#CXX_FLAGS += -g -ggdb3 #-D_DEBUG
 
 ifneq ($(CXX) , g++) 
 	CXX_FLAGS += -D__INTEL_COMPILER__ -D__OMP__ -openmp 
