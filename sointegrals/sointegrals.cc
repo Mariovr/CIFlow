@@ -469,6 +469,7 @@ sointegrals(Options &options)
         } // end run irrep2
 
     //Set UnitaryMatrix
+    int nTot = 0;
     std::vector<double> transform(nmo*nmo, 0.);
     for (int irrep=0; irrep< nirrep; irrep++)
     {
@@ -492,7 +493,7 @@ sointegrals(Options &options)
     sOBI->compute(overlap);
 
     //Set overlap
-     int nTot = 0;
+     nTot = 0;
      for (int irrep=0; irrep< nirrep; irrep++)
      {
          int norb = dimension[irrep];
