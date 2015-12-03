@@ -123,6 +123,9 @@ class matrix
 
         double operator[](int x) const;
 
+        std::vector<double> get_column( int index);
+        std::vector<double> get_row( int index);
+
         double* getpointer() const;
 
         void add(matrix & a, double mult = 1);

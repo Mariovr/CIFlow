@@ -192,6 +192,24 @@ double matrix::get(int i,int j)
     return mat[i+j*n];
 }
 
+std::vector<double> matrix::get_column( int index)
+{
+    std::vector<double> col(getn());
+    for(int i = 0; i < getn() ; i++)
+        col[i] = (*this)(i,index);
+
+    return col;
+}
+
+std::vector<double> matrix::get_row( int index)
+{
+    std::vector<double> row(getm()) ;
+    for(int i = 0; i < getm() ; i++)
+        row[i] = (*this)(index,i);
+
+    return row;
+}
+
 double* matrix::getpointer() const
 {
     return mat.get();
