@@ -78,9 +78,11 @@ class SimulatedAnnealing: public OrbitalOptimization
         double optimize();
         void run_multiple(int num, bool saveopt = true);
         bool accept_function(double e_new, double e_old, double temp, std::mt19937 &mt, std::uniform_real_distribution<double> &dist);
+        double cost_function();
         double get_cooling_steps() const { return _c_steps; }
         void set_cooling_steps(int c_step) { _c_steps = c_step; }
         void set_good_start();
+
     private:
         double _temp;
         double _change_temp;

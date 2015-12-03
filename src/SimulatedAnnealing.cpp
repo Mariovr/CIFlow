@@ -35,6 +35,7 @@
 #include "matrix.h"
 #include "CIDens.h"
 #include "DIIS.h"
+#include "Properties.h"
 
 using namespace std;
 
@@ -294,6 +295,14 @@ bool SimulatedAnnealing::accept_function(double e_new, double e_old, double temp
     }
 }
 
+double SimulatedAnnealing::cost_function()
+{
+    //return _cim->get_ci_energy(); //For energy based orbital optimization.
+    Properties prop { _cim->get_eigvec(0)  , _cim->get_l() , _cim->get_perm() };
+    return prop.shannon_ic();
+
+}
+
 double SimulatedAnnealing::optimize()
 {
     //int size = _orbtrans->_unitary->getNumVariablesX();
@@ -302,7 +311,7 @@ double SimulatedAnnealing::optimize()
     double temp = _temp;
     double max_angle = _max_angle;
     double cur_angle;
-    double e_old = _cim->get_ci_energy(); 
+    double e_old =  cost_function();
     if(Orbopt_debugPrint)
         cout << "start E is:" << e_old << endl;
     //Setup random number generators. (making use of c++11 standards.)
@@ -327,11 +336,13 @@ double SimulatedAnnealing::optimize()
             transform_orbitals(_optham->getOrbitalIrrep(rani) , rani, ranj , cur_angle); 
             //transform_withasx(step, temp, maxangle);
             update_cim();
-            double e_new = _cim->get_ci_energy();
+
+            double e_new = cost_function();
 
             if (accept_function(e_new, e_old, temp, mt, dist_real))
             {
                 e_old = e_new;
+                cout << "new E: " << e_new << "old E: " << e_old << " at Temp: " << temp << "Angle : " << cur_angle <<endl;
                 if(e_new < _opt_energy)
                 {
                     _opt_energy = e_new;
@@ -341,7 +352,6 @@ double SimulatedAnnealing::optimize()
                 if(_c_steps % 1000 == 0)
                 {
                     //get_cim_no(); //If not possible we start from the natural orbitals from this method.
-                    //cout << "new E: " << e_new << "old E: " << e_old << " at Temp: " << temp << "Angle : " << cur_angle <<endl;
                 }
             }
             else
@@ -362,6 +372,10 @@ double SimulatedAnnealing::optimize()
             {
                 //we reached a minimum from which we cant escape.
                 cout << "Stopped through the unaccept criterium." << endl;
+                break;
+            }
+            if(max_angle < 1e-7)
+            {
                 break;
             }
         }// endif test good orbitals
