@@ -22,6 +22,7 @@ from itertools import combinations
 import sys
 import re
 import read_psi as rp
+import ciflowoutput as co
 
 def perm_onestring(n,k):
     result = []
@@ -206,6 +207,7 @@ def insert_frozen_virtual(detlist, active , frozen , virtual):
     return detlist
 
 
+
 def cimain(nup , ndown , norb , exlist, senlist , fname = 'determinants.dat' , exheader = '', ref = [get_hf_det], active = None , virtual = None , frozen = None, add_frozen = 0, add_virtual = 0, frozenstring = None, virtualstring = None, write = True):
     """
     set exlist = [] if you don't want any excitations of the reference determinant, [0] if you only want reference determinant
@@ -294,7 +296,20 @@ def num_dets():
         for value in detmethods:
             file.write("%f    %.9f\n" % (value[0] , value[1]))
 
+def generate_all_ex(nup ,ndown , norb , refdet, name = 'determinants.dat'):
+    exlist = [[],[] ] #single ex, pair ex
+    maxex = 2*norb-nup-ndown
+    for ex_max in range(1, maxex+1):
+        exlist[0] = range(1,ex_max+1) #
+        print exlist
+        name = "determinants" + str(ex_max) +".dat"
+        cimain(nup , ndown , norb ,exlist,  [], fname = name , ref = [lambda x , y , z : refdet ])
 
+def biggest_det_ex(wffile = 'psioutputoutputfci.dat'):
+    cifread = co.CIFlow_Reader(wffile)
+    maxdet = cifread.get_max_det()
+    print 'maxdet = ' , maxdet
+    generate_all_ex(cifread.header['nup'], cifread.header['ndown'], cifread.header['norbs'], tuple(maxdet[0].split('|')) )
 
 def test_main():
     fname = 'psi0_output10.dat' ; detfile1 = 'determinants.dat' ; detfile2 = 'determinants2.dat'
@@ -307,7 +322,8 @@ def test_main():
 if __name__ == "__main__":
     #test_main()
     #reflist = get_reference_list(3,3,10)
-    main()
+    #main()
     #num_dets()
     #print len(fci( 6, 6, 12))
     #cimain(7, 7, 10, [ [1,2,3,4] , [] ], [ ] , fname = "cisddeterminants.dat" ,ref =  [lambda x , y , z :  get_hf_det(7,7,10)] , add_frozen = 0) #FCI
+    biggest_det_ex()
