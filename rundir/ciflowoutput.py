@@ -225,6 +225,17 @@ class CIFlow_Reader(Reader):
         self.energies = map(float , elist)
         return self.energies
 
+    def get_max_det(self):
+        max_val = ('' , 0.)
+        for i, val in enumerate( self.groundstate):
+            if val > max_val[1]:
+                max_val = (i ,val)
+        for key,value in self.mapdict.iteritems(): 
+            if value == max_val[0]:
+                max_val = (key , max_val[1])
+                break
+        return max_val
+
     def get_selected_coef(self, detlist):
         #print self.mapdict
         coeflist = [ self.groundstate[self.mapdict[det]]**2 for det in detlist]
@@ -550,6 +561,11 @@ def test_transform():
     print t4index[1][1][2][1][1]
     print t4index[1][4][4][4][4]
 
+def test_max_det():
+    #cifread = CIFlow_Reader('psioutputoutputfci.dat')
+    cifread = CIFlow_Reader('hamatomicintegralsorthonoutputfci.dat')
+    maxdet = cifread.get_max_det()
+    print maxdet
 
 if __name__ == "__main__":
     #main()
@@ -558,7 +574,8 @@ if __name__ == "__main__":
     #overlap_analysis()
     #overlap_analysis2()
     #mulliken()
-    test_transform()
+    #test_transform()
     #test_density()
     #back_transform()
+    test_max_det()
 
