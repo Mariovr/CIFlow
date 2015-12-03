@@ -25,6 +25,7 @@ import mmap
 import copy
 import shutil
 from math import sqrt
+import random
 
 #sys.path.append('/home/mario/ownCloud/Doctoraat/CIFlowImproved/rundir')
 import detwrite as dw
@@ -48,6 +49,7 @@ def deleteFromMmap(filename , start,end):
     mmapob.close()
     f.truncate(newsize)
     f.close()
+
 
 if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
     #WARNING implicitely transposes, SAVES new basis in colums
@@ -256,20 +258,22 @@ class PsiReader(Reader):
             for line in file:
                 if startstring in line:
                     break
-            numorb = 0
+            irrep_num = -1
+            irreplist = []
             for line in file:
-                irrep_num= int(re.search(r'(\d+)',line).group())
-                irreplist = []
-                for line in file:
-                    try:
-                       irreplist.append(np.array(map(float,line.split() ) ) )
-                       numorb += 1
-                    except ValueError:
-                        print 'finished executing irrep: ' , irrep_num
-                        break
-                overlap[irrep_num] = np.array(irreplist) 
-                if self.values['norb'] == numorb:
-                    break
+                if re.search(r'irrep', line ):
+                    if irrep_num != -1:
+                        overlap[irrep_num] = irreplist
+                    irrep_num = int(re.search(r'(\d+)',line).group())
+                    irreplist = []
+                elif re.search(r'([\-+]?\d+\.\d+[eEdD]?[\-+]?\d+)', line):
+                    irreplist.append(np.array(map(float,line.split() ) ) )
+                else:
+                    overlap[irrep_num] = irreplist
+                    print "finished reading in ao information this is the result:"
+                    print overlap
+                    break 
+
         return overlap
 
 
@@ -548,6 +552,7 @@ class PsiReader(Reader):
             self.cum.append(self.cum[i-1] + self.occurences[i-1])
         print self.occurences
         print self.cum
+        return (self.occurences, self.cum)
 
     def set_active_space(self, irreplist , exlist , senlist, detfile ):
         """
@@ -574,30 +579,6 @@ class PsiReader(Reader):
         print 'frozen' , frozen , 'virtual' , virtual
 
         dw.cimain(nup,ndown ,norb ,exlist , senlist ,fname = detfile ,ref = [lambda x , y, z : activehf ], add_frozen = 0, frozenstring = frozen , virtualstring = virtual) 
-
-def test_unitary():
-    """
-    Calculate orbital optimized unitary matrix with ciflow for a CI method, read it in with this script, read in the matrixelements, transform them with the unitary and output a new integral file.    Perform the CI calculation on the new integral file, you should obtain the same orbital optimized energy.
-    """
-    rootdir = './results/nopluspatrickham/'
-    unitname = os.path.join(rootdir , 'unitarydocisimnopluspatrick100.h5')  #'unitary_output.datDOCI.h5'
-    d = print_unitary(unitname)
-    #reader = PsiReader('output.dat', isbig = False, numorbs = None, read_ints = True)
-    #reader = PsiReader('./results/h2o_testsunit/output_run/psi0.75sto-3g.out', isbig = False, numorbs = None, read_ints = True)
-    #t2,t4 = reader.transform_integrals(d.get_unitary())
-    #reader.matrix_to_list(t2 , t4)
-    #reader.create_output(fname = 'newoutput.dat')
-
-def print_unitary(fname):
-    d = Unitary_Matrix(fname)
-    d.print_unitary()
-    if fname[-2:] == "h5":
-        d.print_structure()
-    return d
-
-def benzene():
-    reader = PsiReader('results/benzene_deformation/output_run_50/psi0_6-31g1.05.out', isbig = False, numorbs = None, read_ints = False)
-    reader.set_active_space([1,2] , [] , [0] , 'detfile.dat')
 
 class HDF5Reader(object):
     def __init__(self,fname):
@@ -699,6 +680,55 @@ def test_mod_ham():
     hub1d = ModHam(nalpha,nbeta,norb,modtype , options , params)
     hub1d.write_file(fname = 'hub1d.mod')
 
+def test_unitary():
+    """
+    Calculate orbital optimized unitary matrix with ciflow for a CI method, read it in with this script, read in the matrixelements, transform them with the unitary and output a new integral file.    Perform the CI calculation on the new integral file, you should obtain the same orbital optimized energy.
+    """
+    rootdir = './results/nopluspatrickham/'
+    unitname = os.path.join(rootdir , 'unitarydocisimnopluspatrick100.h5')  #'unitary_output.datDOCI.h5'
+    d = print_unitary(unitname)
+    #reader = PsiReader('output.dat', isbig = False, numorbs = None, read_ints = True)
+    #reader = PsiReader('./results/h2o_testsunit/output_run/psi0.75sto-3g.out', isbig = False, numorbs = None, read_ints = True)
+    #t2,t4 = reader.transform_integrals(d.get_unitary())
+    #reader.matrix_to_list(t2 , t4)
+    #reader.create_output(fname = 'newoutput.dat')
+
+def print_unitary(fname):
+    d = Unitary_Matrix(fname)
+    d.print_unitary()
+    if fname[-2:] == "h5":
+        d.print_structure()
+    return d
+
+def benzene():
+    reader = PsiReader('results/benzene_deformation/output_run_50/psi0_6-31g1.05.out', isbig = False, numorbs = None, read_ints = False)
+    reader.set_active_space([1,2] , [] , [0] , 'detfile.dat')
+
+def generate_random_unitary(norb):
+    #Create random unitary matrix based on the QR decomposition (this is valid for every matrix)
+    # A = QR with Q unitary and R invertible -> Q = AR^-1
+    unit = np.random.uniform(0,1,norb * norb) 
+    unit = np.reshape(unit , (norb,norb ))
+    q, r = np.linalg.qr(unit)
+    print q
+    print np.dot(q , np.linalg.inv(q) ) 
+    return q
+
+def generate_random_hamiltonian(reader):
+    unit = generate_random_unitary(reader.values['norb'])
+    t2,t4 = reader.transform_integrals(unit)
+    reader.matrix_to_list(t2,t4)
+    return reader
+
+def generate_random_hams():
+    rootdir = './results/shannon_entropy/beh2'
+    filename = './results/shannon_entropy/beh2/psioutput.dat'
+    reader = PsiReader(filename, isbig = False, numorbs = None, read_ints = True)
+    os.chdir(os.path.join(rootdir , 'random_hamiltonians') )
+    for i in range(1000):
+        generate_random_hamiltonian(reader)
+        name = 'randomhamiltonian' + str(i) +'.dat'
+        reader.create_output(fname = name)
 
 if __name__ == "__main__":
     #reverse_repulsion()
@@ -707,7 +737,8 @@ if __name__ == "__main__":
     #print_unitary('./tests/data/unitary-moorthon.h5')
     #print_unitary('unitary.txt')
     #test_new_format()
-    test_mod_ham()
+    #test_mod_ham()
+    generate_random_hams()
     #hdf5_ham()
     #list_test()
     #main()
