@@ -35,6 +35,7 @@
 #include "LocalMinimizer.h"
 #include "HamConstruct.h"
 #include "scpp_assert.h"
+#include "Properties.h"
 
 
 using namespace std;
@@ -89,6 +90,7 @@ double get_no_energy(CIMethod * cim , const CIDens & cid, bool print_no)
 Hamiltonian * get_mmin_ham( CIMethod* cimmin, bool diis)
 {
     Iterative_Subotnik * min_sen;
+    diis = 0;
     if(diis)
         min_sen = new Iterative_Subotnik_DIIS(cimmin  , 1e-7, 0);
     else
@@ -148,6 +150,7 @@ double get_fci_no_energy(CIMethod * cim)
 
 void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
 {
+    Hamiltonian * ham = cim->get_ham();
     if(sort == "sim")
     {
         SimulatedAnnealing orbopt {cim  , 0.4 , 0.99 , 1.4 , 0.999};
@@ -196,6 +199,21 @@ void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
         cim->solve();
         std::cout  << "energy with loaded Hamiltonian: " << cim->get_ci_energy() << std::endl;
     }
+    else if(sort == "unit")
+    {
+        string unitname = "unitarymatrix.dat";
+        OptIndex opt = cim->get_ham()->get_index_object();
+        //UnitaryMatrix unit(opt , unitname);
+        UnitaryMatrix unit(opt );
+        unit.set_random_unitary();
+        OrbitalTransform orbtrans = OrbitalTransform(cim->get_ham());
+        Hamiltonian * ham = new Hamiltonian(*cim->get_ham()); //Save old ham to set back.
+        orbtrans.set_unitary(unit);
+        orbtrans.fillHamCI(*ham);
+        cim->set_ham(ham);
+        cim->solve();
+        std::cout  << "energy with random transformation of hamiltonian: " << cim->get_ci_energy() << std::endl;
+    }
     else if(sort == "fno")
     {
         get_fci_no_energy(cim);
@@ -214,11 +232,14 @@ void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
     if(printoutput)
     {
         cim->reset_output(sort);
-        cim->print_output();
-        cim->print_rdm();
+        cim->print_output({"shannon"});
+        //cim->print_rdm();
         //cim->print_ham();
+        Properties prop { cim->get_eigvec(0)  , cim->get_l() , cim->get_perm() };
+        cout << "shannon entropy "  << prop.shannon_ic() << std::endl;
     }
     cim->delete_ham();
+    cim->set_ham(ham); //Set CIMethod back to the original hamiltonian.
 }
 
 
@@ -227,7 +248,7 @@ int main ( int argc, char ** argv){
     cout.precision(15);
     string method;
     string matrixelements;
-    vector<string> methods(0);
+    vector<pair< vector<string> , vector<string> > > methods(0);
 
     //Provide matrixelements.
     struct stat stFileInfo;
@@ -240,6 +261,7 @@ int main ( int argc, char ** argv){
 
     //Provide methods.
     while(1){
+        pair<vector<string> , vector<string> > calculation {{} , {} };
         cout << "Give the Hilbertspaces for which you want to calculate the CI energy : " << endl;
         cout << "Possible options are: doci, fci, file, big" << endl;
         cout << "To finish providing methods type : end" <<endl;
@@ -247,7 +269,7 @@ int main ( int argc, char ** argv){
         transform(method.begin(), method.end(), method.begin(), ::tolower);
         //start method providing.
         if (method == "doci" || method == "fci" || method == "file" || method == "big"){
-            methods.push_back(method);
+            calculation.first.push_back(method);
         }
         else if(method == "end"){
             break;
@@ -262,20 +284,23 @@ int main ( int argc, char ** argv){
                 cin >> method;
                 intStat = stat(method.c_str(),&stFileInfo);
             }
-            methods.push_back(method);
+            calculation.first.push_back(method);
         }
         cout << "Orbital Optimization? " << endl;
         cout << "Wanna do orbital optimization, or select different Hamiltonian?" <<endl;
         while(1){
-            cout << "Possible options are: sim (simmulated annealing), local, fno, none, ... " << endl;
+            cout << "Possible options are: sim (simmulated annealing), local, fno, loadham, ..., stop with endm" << endl;
             cin >> method;
             transform(method.begin(), method.end(), method.begin(), ::tolower);
             cout << method;
-            if (method == "sim" || method == "mcscf" || method == "none" || method == "line" || method == "fmmin" || method == "fno" || method == "mmind" || method == "hmmin" || method == "loadham" || method == "no" || method == "sdmmin"  || method == "local" ){
-                methods.push_back(method);
-                break;
+            if (method == "sim" || method == "mcscf" || method == "line" || method == "fmmin" || method == "fno" || method == "mmind" || method == "hmmin" || method == "loadham" || method == "no" || method == "sdmmin"  || method == "local" || method == "unit" ){
+                calculation.second.push_back(method);
             }//end if
+            else if(method == "endm"){
+                break;
+            }
         }//end while orbital optimization.
+        methods.push_back(calculation) ; 
     }//end method providing.
 
     //Create objects to do the work, and execute the work.
@@ -283,14 +308,14 @@ int main ( int argc, char ** argv){
     std::shared_ptr<Hamiltonian> ham = hamconst.generate_ham(matrixelements);
     cout << "The group was found to be " << Irreps::getGroupName(ham->getNGroup()) << endl;
     std::cout << "HF energy (lowest energy of a single determinant in the selection): " << ham->get_hf_energy() << std::endl;
-    for (vector<string>::iterator cimethod  = methods.begin(); cimethod != methods.end() ; cimethod ++){
-        if (*cimethod == "doci" || *cimethod == "fci"){
-            if(*cimethod == "doci"){
+    for (vector<pair<vector<string> , vector<string> > >::iterator cimethod  = methods.begin(); cimethod != methods.end() ; cimethod ++){
+        if ((*cimethod).first[0] == "doci" || (*cimethod).first[0] == "fci"){
+            if((*cimethod).first[0] == "doci"){
                 DOCI * cim = new DOCI(ham.get());
                 cim->solve();
                 std::cout  << "DOCI energy: " << cim->get_ci_energy() << std::endl;
                 std::cout << "Spin Squared: " << cim->get_spin_squared() << std::endl;
-                cim->print_output();
+                cim->print_output({"shannon"});
                 //cim->print_ham();
                 cim->print_rdm();
 
@@ -303,19 +328,21 @@ int main ( int argc, char ** argv){
                 //std::cout << "DOCI-DENS total energy: " << densmat.get_dens_energy() << std::endl;
 
                 //Take care of the orbital optimizations.
-                cimethod++;
-                if( *cimethod != "none")
-                    orb_opt(*cimethod, cim ,  1,  1);
-                    //orb_opt(*cimethod, cim ,  0,  0);
+                if( (*cimethod).second.size() != 0)
+                    for(auto sort : (*cimethod).second )
+                        orb_opt(sort , cim ,  1,  1);
+                        //orb_opt(sort, cim ,  0,  0);
                 delete cim;
             }
-            if(*cimethod == "fci"){
+            if((*cimethod).first[0] == "fci"){
                 FCI *  cim5 = new FCI(ham.get());
                 int neigval = 1;
                 cim5->solve(neigval);
                 //cim5->check_hermiticity();
                 std::cout  << "FCI energy:" << cim5->get_ci_energy() << " Per site: " << cim5->get_ci_energy() / (double) ham->getL() <<std::endl;
-                cim5->print_output();
+                Properties prop { cim5->get_eigvec(0)  , cim5->get_l() , cim5->get_perm() };
+                cout << "shannon entropy "  << prop.shannon_ic() << std::endl;
+                cim5->print_output({"shannon"});
                 //cim5->print_rdm(0 , true); //0 -> state , 1-> 2rdm
                 //cim5->get_ham()->print_overlap(std::cout);
                 //cim5->get_ham()->get_unitary()->print_unitary(std::cout);
@@ -338,26 +365,28 @@ int main ( int argc, char ** argv){
                 //std::cout << "FCI-DENS one-electron energy: " << densmatfci.get_one_electron_energy() << std::endl;
                 //std::cout << "FCI-DENS two-electron energy: " << densmatfci.get_two_electron_energy() << std::endl;
                 //std::cout << "FCI-DENS total energy: " << densmatfci.get_dens_energy() << std::endl;
-
-                cimethod++;
-                if( *cimethod != "none")
-                    orb_opt(*cimethod, cim5 , 1, 1);
-                    //orb_opt(*cimethod, cim5 , 0,0 );
+                if( (*cimethod).second.size() != 0)
+                    for(auto sort : (*cimethod).second )
+                        orb_opt(sort , cim5 ,  1,  1);
+                        //orb_opt(sort, cim5 ,  0,  0);
                 delete cim5;
             }
 
         }// end doci or fci
-        else if(*cimethod == "file" || *cimethod == "big"){
-            string sort = *cimethod;
-            string detfile = *++cimethod;
+        else if((*cimethod).first[0] == "file" || (*cimethod).first[0] == "big"){
+            SCPP_ASSERT((*cimethod).first.size() == 2 , "The size of the first element of the pair that defines the calculation is not equal to 2 for a filemethod (method , detfile), it is: " << (*cimethod).first.size() << endl)
+            string sort = (*cimethod).first[0];
+            string detfile = (*cimethod).first[1];
             if(sort == "file"){
-                FCI_File *  cim2 = new FCI_File(ham.get(), *cimethod);
+                FCI_File *  cim2 = new FCI_File(ham.get(), detfile);
                 cim2->solve();
-                std::cout  << "CIenergy " << sort << " of all the dets in " << *cimethod << " :  " << cim2->get_ci_energy() << std::endl;
-                std::cout << "Spin squared: " << cim2->get_spin_squared() << std::endl;
-            	cim2->print_output();
+                std::cout  << "CIenergy " << sort << " of all the dets in " << detfile << " :  " << cim2->get_ci_energy() << std::endl;
+                //std::cout << "Spin squared: " << cim2->get_spin_squared() << std::endl;
+                Properties prop { cim2->get_eigvec(0)  , cim2->get_l() , cim2->get_perm() };
+                cout << cim2->get_name() + cim2->get_ham()->get_short_filename() << ": shannon entropy: "  << prop.shannon_ic() << std::endl;
+            	cim2->print_output({"shannon"});
 	            //cim2->print_ham();
-	            cim2->print_rdm();
+	            //cim2->print_rdm();
 		        //cim2->print_dets();
 
                 //DensFILE densmatfile {cim2};
@@ -370,20 +399,23 @@ int main ( int argc, char ** argv){
                 //densmatfile.compare_one_dens(densmat);
                 //std::cout << "FILE-DENS two-electron energy: " << densmatfile.get_two_electron_energy() << std::endl;
                 //std::cout << "FILE-DENS total energy: " << densmatfile.get_dens_energy() << std::endl;
-                cimethod++;
-		        if( *cimethod != "none")
-                    orb_opt(*cimethod, cim2 , 1, 1);
+                if( (*cimethod).second.size() != 0)
+                    for(auto sort : (*cimethod).second )
+                        orb_opt(sort , cim2 ,  1,  1);
+                        //orb_opt(sort, cim2 ,  0,  0);
+
                 delete cim2;
             }    
             else{
-                CI_Big *  cim3 = new CI_Big(ham.get(), *cimethod);
+                CI_Big *  cim3 = new CI_Big(ham.get(), (*cimethod).first[1]);
                 cim3->solve();
-                std::cout  << "CIenergy " << sort << " of all the dets in " << *cimethod << " :  " << cim3->get_ci_energy() << std::endl;
+                std::cout  << "CIenergy " << sort << " of all the dets in " << (*cimethod).first[1] << " :  " << cim3->get_ci_energy() << std::endl;
                 //cim3->print_output();
                 //cim3->print_ham();
-                cimethod++;
-                if( *cimethod != "none")
-                    orb_opt(*cimethod, cim3 , 1, 1 );
+                if( (*cimethod).second.size() != 0)
+                    for(auto sort : (*cimethod).second )
+                        orb_opt(sort , cim3 ,  1,  1);
+                        //orb_opt(sort, cim3 ,  0,  0);
                 delete cim3;
             }
         } // End if cimethods that use permutator_file

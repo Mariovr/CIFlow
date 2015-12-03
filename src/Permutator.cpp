@@ -94,7 +94,7 @@ std::string Permutator::get_clean_detfile()
     char chars[] = "_()-./\\";
     for (unsigned int i = 0; i < strlen(chars); ++i)
     {
-	detfile.erase(std::remove(detfile.begin(), detfile.end(), chars[i]), detfile.end());
+        detfile.erase(std::remove(detfile.begin(), detfile.end(), chars[i]), detfile.end());
     }
     return detfile;
 }

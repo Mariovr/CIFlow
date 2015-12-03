@@ -173,8 +173,12 @@ def create_matrix_elements(elemdir, basissets, runlist, atoms, chmult = (0,1) , 
 def create_ciflow_input_file(matrixelements , methods , fname = "flow.dat"):
     with open(fname, 'w') as file:
         file.write(matrixelements+'\n')
-        for cimethod in methods:
+        file.write(methods[0]+'\n')
+        for cimethod in methods[1:]:
+            if( cimethod == "doci" or cimethod == "fci" or cimethod == "file" or cimethod == "big"):
+                file.write('endm\n')
             file.write(cimethod+'\n')
+        file.write('endm\n')
         file.write('end\n')
 
 def gkci():
@@ -371,14 +375,22 @@ def create_header(afh, methods, psienergies, extra = None):
     string = '#' + afh + '    '+ 'HF' + '    '
     itmethods = iter(methods)
     methodstring = []
-    for method in itmethods:
-        methodstring.append( method.upper() )  
-        if method == "file" or  method == "big":
-            method = itmethods.next()
-            methodstring[-1] = methodstring[-1] + '(' + method.upper() + ')'
-        method = itmethods.next()    
-        if method != "none":
-            methodstring.append(methodstring[-1]+'$_{'+method.upper()+'}$')
+    calculation = ""
+    method = itmethods.next()
+    try:
+        while True :
+            calculation =  method.upper()   
+            if method == "file" or  method == "big":
+                method = itmethods.next()
+                calculation += calculation + '(' + method.upper() + ')'
+            methodstring.append(calculation)
+            method = itmethods.next()    
+            while  method != "doci" or method != "fci" or method != "file" or method != "big":
+                    methodstring.append(calculation+ '$_{'+method.upper()+'}$')
+                    method = itmethods.next()    
+    except StopIteration:
+        print 'created header'
+
     if extra:
         for pair in extra:
             methodstring.insert(pair[0] , pair[1])#insert works with index and then value.
@@ -387,8 +399,10 @@ def create_header(afh, methods, psienergies, extra = None):
     return string        
 
 def main_opt(*args , **kwargs):
-    ciflowoutputfile = "ciflowoutput.txt" 
+    ciflowoutputfile = "ciflowoutput2.txt" 
     flowname = "flow.dat"; detfile1= "cisddeterminants.dat" ; detfile2 = "cisddocideterminants.dat" ; detfile3 = "CIS(P).dat" ; detfile4 = "CISD(P).dat" ; detfile5 = "SEN0-2.dat" ; detfile6 = "fci_f"; detfile7 = 'frozencisdpibenzene.dat' ; detfile8 = 'cisdpibenzenesigma.dat' ; detfile9= 'CISDirrepref+cisd.dat' ; detfile10 = "CISDT(P).dat" ; detfile11 = "lin_hyb.dat" ;  detfile12 = "ref2.dat"
+    detfile14 = 'cisdtdeterminants.dat'
+    detfile15 = 'cisdtqdeterminants.dat'
     detfile12 = 'linhybcisdd'
     change_ints = False#if you changed the standard psi4 integrals somewhere during the process
     #flowname = "flow.dat"; detfile1= "CIS(P)" ; detfile2 = "CISD(P)" ; detfile3 = "CISDT(P)" ; detfile4 = "CISDTQ(P)"
@@ -398,7 +412,9 @@ def main_opt(*args , **kwargs):
     methods = ["doci" , "sim", "doci", "fmmin", "doci" , "fno" , "file" , detfile1 , "mmind"]
     methods = ["doci" , "none" , "file" , detfile2 , "none", "file" , detfile1 , "none" , "file" , detfile11 , "none" , "fci" , "none", "doci" , "sim"] #, "doci" , "fmmin"]
     methods = ["fci", "none" , "doci" , "fno" , "file" , detfile2 , "none", "file" , detfile1 , "none", "file" , detfile6, "none"] #, "doci" , "fmmin"]
-    methods = ["fci", "none" ] #, "doci" , "fmmin"]
+    methods = ["fci", "fno" , "fci" , "hmmin" , "file" , detfile1 , "fno" ,"file" , detfile1 , "fmmin" , "file" ,detfile14 , "fmmin" , "file" ,detfile14 ,"fno" , "file" , detfile15 ,"fmmin" ,"file",  detfile15 , "fno"] #, "doci" , "fmmin"]
+    methods = ["file" , detfile1 , "none" ,"file" , detfile1 , "fmmin" , "file" ,detfile14 , "none" , "file",  detfile15 , "none"] #, "doci" , "fmmin"]
+    methods = ["fci" , "unit" , "fmmin", "doci" , "fno" , "file" , detfile1 , "fmmin" , "fno"]
     #methods = [ "file" , detfile5 ,"mmind"] #, "doci" , "fmmin"]
     #methods = ["fci" , "none"]
     #methods = []
@@ -412,9 +428,9 @@ def main_opt(*args , **kwargs):
     #methods = [  "file" , detfile1, "sim", "file", detfile2 , "sim" ,"file" ,detfile3 , "sim" , "file", detfile4, "sim", "fci"]
     basissets = ['sto-3g']
     #runlist = [0.1 , 0.2 , 0.3, 0.4 , 0.5 , 0.6 , 0.7,  0.86374047590, 0.9, 1. , 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6.] #BeH2 (linear)
-    runlist = [0.86374047590, 0.9, 1.02 , 1.1, 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6. , 7 , 8, 9 , 10, 11, 12, 13, 14, 15 , 20 ,25] #BeH2 (linear)
-    runlist = [1.1, 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6. , 7 , 8, 9 , 10, 11, 12, 13, 14, 15 , 20 ,25] #BeH2 (linear)
-    import numpy as np
+    #runlist = [0.86374047590, 0.9, 1.02 , 1.1, 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6. , 7 , 8, 9 , 10, 11, 12, 13, 14, 15 , 20 ,25] #BeH2 (linear)
+    #runlist = [1.1, 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6. , 7 , 8, 9 , 10, 11, 12, 13, 14, 15 , 20 ,25] #BeH2 (linear)
+    #import numpy as np
     #runlist = list(np.arange(1,2.5,0.2)) + [2.5] + list(np.arange(2.6,4,0.2))
     #runlist = list(np.arange(0.1,1,0.02)) #+ [2.5] + list(np.arange(2.6,4,0.2))
     #runlist = list(np.arange(1,2.5,0.2)) + [2.5] + list(np.arange(2.6,4,0.5))
@@ -427,7 +443,10 @@ def main_opt(*args , **kwargs):
     #runlist = [ 1.81625952410, 1.97501269880, 2.13376587350] 
     #runlist = [1.1 , 1.2 , 1.23 , 1.3 , 1.35 , 1.4 , 1.55 , 1.6 , 1.7 , 1.75, 1.85]
     #runlist = [ 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0, 3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6.] #BeH2 extra (linear)
-    #runlist = [0.6402695456, 0.7 , 0.7461049954, 0.8 , 0.8519404452, 0.9 , 0.957775895, 1. , 1.0636113448, 1.1, 1.1694467946, 1.2 , 1.2752822444, 1.3, 1.3811176942, 1.4, 1.486953144, 1.5, 1.5927885938, 1.6, 1.6986240436 , 1.72 , 1.8 , 1.85 , 1.9 , 1.95 , 2. , 2.05, 2.2278012926]#, 2.1 , 2.15, 2.2278012926 ]#, 1.8044594934, 1.9102949432, 2.016130393, 2.1219658428, 2.2278012926, 2.3336367424 ] #H2O (c2v)
+    runlist = [0.6402695456, 0.7 , 0.7461049954, 0.8 , 0.8519404452, 0.9 , 0.957775895, 1. , 1.0636113448, 1.1, 1.1694467946, 1.2 , 1.2752822444, 1.3, 1.3811176942, 1.4, 1.486953144, 1.5, 1.5927885938, 1.6, 1.6986240436 , 1.72 , 1.8 , 1.85 , 1.9 , 1.95 , 2. , 2.05, 2.2278012926]#, 2.1 , 2.15, 2.2278012926 ]#, 1.8044594934, 1.9102949432, 2.016130393, 2.1219658428, 2.2278012926, 2.3336367424 ] #H2O (c2v)
+    runlist = [ 1.2 , 1.2752822444, 1.3, 1.3811176942, 1.4, 1.486953144]#, 2.1 , 2.15, 2.2278012926 ]#, 1.8044594934, 1.9102949432, 2.016130393, 2.1219658428, 2.2278012926, 2.3336367424 ] #H2O (c2v)
+    #runlist = [0.9578]
+    #runlist = range(0,1000)
     #runlist = [0.848, 0.973, 1.098, 1.223, 1.348, 1.473, 1.598, 1.723, 1.848, 1.973, 2.224207488557] #N2 (dimer)
     #runlist = [0.6 , 0.8 , 1.0 , 1.2, 1.4 , 1.6 , 1.8 , 2 , 2.2 , 2.4, 2.6 , 2.8, 3. , 3.2, 3.4, 3.6 , 3.8,4., 5. , 6., 7., 8., 9. ,10.]
     #runlist = map( lambda x : x/100. , range(70 , 800 , 10) ) 
@@ -437,10 +456,10 @@ def main_opt(*args , **kwargs):
     #runlist = np.arange(0.6 , 1.1, 0.03) 
     #atoms = [6,6] #C2 
     #atoms = [7,6] 
-    atoms = [8,1,1] #H2O
-    atoms = [7 , 8]
+    #atoms = [8,1,1] #H2O
+    #atoms = [7 , 8]
     #atoms = [6,7]
-    #atoms = [4,1,1] #beh2
+    atoms = [4,1,1] #beh2
     #atoms = [1,1]
     #atoms = [1,1,1, 1] #h4 but
     #atoms = [1,1,1,1,1,1,1,1] #h8
@@ -450,26 +469,31 @@ def main_opt(*args , **kwargs):
     #runlist = [x*math.pi/180. for x in range(55,61) ]#+ [59.5]] #, 60]  ] #angle between two triangles in benzene.
     #runlist = [2.224207488557] 
     name = 'noplusbond'
-    rootdir = './results/noplusbondpatrickham/' #relative to the directory that contains this script
+    name = 'interfacetest'
+    rootdir = './results/interface_test/' #relative to the directory that contains this script
     exe = 'ciflow.x'
     elemdir = 'matrixelements'
+    #elemdir = 'random_hamiltonians'
     #elemdir = 'output_run'
 
     generate_dir(rootdir , exe)
     #shutil.copy(exe, rootdir)#When the matrixelements are already present.
     #os.chdir(rootdir) #When the matrixelements are already present.
-    create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (1,1) , moltype = 'dimer', package = 'psi' , units = 'au', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = 'c1', hdf5 = False, guess = 'sad', extrapar = 104.479848, ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
+    create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (0,1) , moltype = 'linear', package = 'psi' , units = 'angstrom', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = 'c1', hdf5 = False, guess = 'sad', extrapar = 104.479848, ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
 
     outputfile = open(ciflowoutputfile , 'w')
     fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?out' , x).group(1))
+    #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?dat' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'.*-[\w\d]*([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)orthon\.h5' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.out' , x).group(1))
     hamfiles = {}
     search = r'psi.+%s.+mout' 
+    #search = r'randomham.+\d+\.dat' 
     #search = r'ham.+%s.+out' 
     #search = r'psi.+%s.+orthon.h5'
     for basis in basissets:
         hamfiles[basis] = fc.File_Collector(elemdir , search = search %basis ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1 and fileinfo(x) < 1000. )
+        #hamfiles[basis] = fc.File_Collector(elemdir , search = search ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1 and fileinfo(x) < 1000. )
   
     afh = 'R'
     for basis in basissets:
@@ -477,11 +501,13 @@ def main_opt(*args , **kwargs):
         psir = rp.PsiReader(hamfiles[basis].plotfiles[0], isbig = False, numorbs = -1 , read_ints = False) #just to get number of electrons and orbitals
         #reflist = dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'], [1] , [] , pairex = True)
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] , []], [] ,fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2,3] , []], [] ,fname = detfile14 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2,3,4] , []], [] ,fname = detfile15 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] ,[0]], [] ,fname = detfile2 ,ref = [lambda x , y , z : dw.get_hf_det(x,y,z)]) #CISDDOCI
         #dw.cimain(7,7,10,[[1,2] ,[]], [0] ,fname = detfile2 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISDDOCI
         #dw.cimain(7,7,10,[[1,2] ,[]], [] ,fname = detfile1 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISD
         #dw.cimain(7,7,10,[[] ,[]], [0,2] ,fname = detfile5 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #seniority two and zero
-        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [[1,2] ,[2,3]], [] , fname = detfile12 ,ref = [ lambda x , y , z : psir.get_hf_orbs()]) #CISDDOCI
+        dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [[1,2] ,[]], [] , fname = detfile1 ,ref = [ lambda x , y , z : psir.get_hf_orbs()]) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], [[], [1]], [] , fname = detfile3 ,ref =[ lambda x , y , z : psir.get_hf_orbs()] ) #CIS(P)
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[[],[1,2]], [] , fname = detfile4 ,ref =[  lambda x , y , z : psir.get_hf_orbs()] ) #CISD(P)
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[], [0,2] , fname = detfile5 ,ref = [ lambda x , y , z : psir.get_hf_orbs()] ) #SEN0-2
@@ -537,15 +563,6 @@ def main_opt(*args , **kwargs):
                 if change_ints:
                     os.remove(matrixelements)
   
-    
-        if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
-            plotter = pf.Plot_Files(fname)
-            plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
-            plotter.data[0].depvar['xas'] = '$R$'  #is normally set to the column header 0
-            plotter.data[0].units['x'] = r'(\AA)'
-            plotter.data[0].units['y'] = r'(E$_h$)'
-            plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
- 
     os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
     outputfile.close()
     generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
@@ -554,6 +571,15 @@ def main_opt(*args , **kwargs):
     os.chdir('..')
     generate_dir('matrixelements_otherbasis', None, prefix = 'hamp')
     os.chdir('..')
+    
+    if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
+        plotter = pf.Plot_Files(fname)
+        plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
+        plotter.data[0].depvar['xas'] = '$R$'  #is normally set to the column header 0
+        plotter.data[0].units['x'] = r'(\AA)'
+        plotter.data[0].units['y'] = r'(E$_h$)'
+        plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
+ 
 
 def prepare_dmrg(name):
     fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*).*\.out' , x).group(1))
@@ -681,14 +707,6 @@ def farnaz(*args , **kwargs):
                 f.write("%.15f\t%s\n" %(runlist[index], '\t'.join(energies )) )
   
     
-        if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
-            plotter = pf.Plot_Files(fname)
-            plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
-            plotter.data[0].depvar['xas'] = '$R$'  #is normally set to the column header 0
-            plotter.data[0].units['x'] = r'(\AA)'
-            plotter.data[0].units['y'] = r'(E$_h$)'
-            plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
- 
     os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
     outputfile.close()
     generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
@@ -697,6 +715,14 @@ def farnaz(*args , **kwargs):
     os.chdir('..')
     generate_dir('matrixelements_otherbasis', None, prefix = 'hamp')
     os.chdir('..')
+    if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
+        plotter = pf.Plot_Files(fname)
+        plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
+        plotter.data[0].depvar['xas'] = '$R$'  #is normally set to the column header 0
+        plotter.data[0].units['x'] = r'(\AA)'
+        plotter.data[0].units['y'] = r'(E$_h$)'
+        plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
+ 
 
 def farnaz2(*args , **kwargs):
     ciflowoutputfile = "ciflowoutput.txt" ; flowname = "flow.dat"; psienergies = [] ;  extra = None
@@ -759,16 +785,16 @@ def farnaz2(*args , **kwargs):
                 print_output(matrixelements, energies , methods)
                 f.write("%.15f\t%s\n" %(fac, '\t'.join(energies )) )
   
-    
-        if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
-            plotter = pf.Plot_Files(fname)
-            plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
-            plotter.data[0].depvar['xas'] = '$R$'  #is normally set to the column header 0
-            plotter.data[0].units['x'] = r'(\AA)'
-            plotter.data[0].units['y'] = r'(E$_h$)'
-            plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
- 
     os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
+    
+    if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
+        plotter = pf.Plot_Files(fname)
+        plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
+        plotter.data[0].depvar['xas'] = '$R$'  #is normally set to the column header 0
+        plotter.data[0].units['x'] = r'(\AA)'
+        plotter.data[0].units['y'] = r'(E$_h$)'
+        plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
+ 
     outputfile.close()
     generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
     os.chdir('..')
@@ -866,13 +892,13 @@ def hub1d(nalpha, options):
             print_output(matrixelements, energies , methods)
             f.write("%.15f\t%s\n" %(runlist[index], '\t'.join(energies )) )
   
+    os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
 
     generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
     os.chdir('..')
     make_tarfile( 'guillaumehub1_na_'+str(nalpha)+'_norb_'+ str(norb) + '_U_' + str(params[1]) + options[2], 'output_files')
     
  
-    os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
     if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
         plotter = pf.Plot_Files(fname)
         plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
@@ -884,9 +910,9 @@ def hub1d(nalpha, options):
 
 
 if __name__ == "__main__":
-    hubloop()
+    #hubloop()
     #hub1d()
-    #main_opt()
+    main_opt()
     #farnaz()
     #farnaz2()
     #print benzene(math.pi/3 , 1.398)
