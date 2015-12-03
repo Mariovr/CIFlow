@@ -96,6 +96,7 @@ Permutator * CIMethod::get_perm(){return _perm.get() ;}
 int CIMethod::get_l() const {return _perm->get_norb();}
 
 double CIMethod::get_eigvec(int numstate , int numvec){ return _eigvec(numstate,numvec); }
+std::vector<double> CIMethod::get_eigvec(int numvec){ return _eigvec.get_column(numvec); }
 double CIMethod::get_econst() const{ return _ham->getEconst(); }
 
 matrix CIMethod::get_mat(){
@@ -146,9 +147,9 @@ void CIMethod::delete_ham()
     delete _ham;
 }
 
-void CIMethod::print_output()
+void CIMethod::print_output(std::vector<std::string> vec , int num )
 {
-    _output->print_output();
+    _output->print_output(vec, num);
 }
 
 void CIMethod::print_ham()
@@ -226,7 +227,7 @@ void CIMethod::solve(int neigval){
         //mat.diagonalize(_eigval, _eigvec);
         //_eigval.Print();
         _solved = true;
-        SCPP_TEST_ASSERT( fabs(_eigvec.inproduct(0) - 1.) < 1e-12  , "Error in solve routine of CIMethod: the eigenvectors are not normalized: the inproduct is : " << _eigvec.inproduct(0) );
+        SCPP_TEST_ASSERT( fabs(_eigvec.inproduct(0) - 1.) < 1e-9  , "Error in solve routine of CIMethod: the eigenvectors are not normalized: the inproduct is : " << _eigvec.inproduct(0)<< "with eigenvalue : " << _eigval[0]);
     }    
     else{
         cout << "The system is unchanged after the last call of solve." << endl;
@@ -530,6 +531,7 @@ void CIMethod::build_parallel()
         cout << "Number of nonzero elements: " << _mat.datasize() << " dimension :  " << get_dim() << " number uppperdiagonal elements: " << get_dim() * (get_dim() +1) /2. << " sparsity : " << _mat.datasize() / ( get_dim() * (get_dim() +1) /2. )<<endl ;
     }
 }
+
 
 //---------------------------------SUBCLASSES-------------------------------------------------
 

@@ -120,6 +120,8 @@ void Hub1d::construct_ham(std::vector<double> params, std::vector<string> info)
         {
            setTmat(i, i+1, -1.*params[0]);
         }
+       //setTmat(2,11 , -1.*params[0]);//For Hubbar anthraceen
+       //setTmat(4,9 , -1.*params[0]);
 
         if(info[2] == "per")
         {

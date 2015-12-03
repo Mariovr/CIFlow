@@ -45,10 +45,11 @@ public:
 
 	virtual void print_ci_vec(int num = 0 , double nauw = -1.);
 	void print_energy();
+    void print_properties(std::vector<std::string> props , int num = 0);
 	void print_rdm(const CIDens & cid, bool twordm = true);
 	void print_solutions();
 	void print_ham();
-	void print_output();
+	void print_output(std::vector<std::string> props = {} , int num = 0);
 	void print_psi4_input(std::string psi_input = "input.dat");
     void prepare_for_writing();
     void change_filename(const std::string & filen, bool partial = true);

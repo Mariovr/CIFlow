@@ -27,6 +27,7 @@
 #include "matrix.h"
 #include "Output.h"
 #include "CIDens.h"
+#include "Properties.h"
 
 namespace mp = boost::multiprecision;     // Reduce the typing a bit later...
 
@@ -75,9 +76,15 @@ void OutputSingleFile::print_energy(){
 	_file << setprecision(16) << "#The groundstate energy = " << _cim->get_ci_energy() << endl ;
 }
 
-void OutputSingleFile::print_output()
+void OutputSingleFile::print_properties(vector<string> props , int num){
+    Properties prop { _cim->get_eigvec(num)  , _cim->get_l() , _cim->get_perm() };
+    for(std::string & which : props)
+        _file << setprecision(16) << "#Property "  << which << " = " <<  prop.get_property(which) << endl ;
+}
+
+void OutputSingleFile::print_output(std::vector<std::string> props, int num )
 {
-    prepare_for_writing() ; print_energy(); print_ci_vec(); print_solutions(); 
+    prepare_for_writing() ; print_energy(); print_properties(props, num) ; print_ci_vec(num); print_solutions(); 
 }
 
 void OutputSingleFile::close_stream()

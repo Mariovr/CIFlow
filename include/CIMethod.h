@@ -57,6 +57,7 @@ class CIMethod{
 		Hamiltonian * get_ham();//{ return _ham ;}
 		Permutator * get_perm();//{return _perm ;}
 		double get_eigvec(int numstate , int numvec);
+        std::vector<double> get_eigvec(int numvec);
 		matrix get_eigval(){return _eigval;}
 		matrix get_mat();
 		double get_mat(int i , int j);
@@ -92,7 +93,7 @@ class CIMethod{
 
 		//functions necessary for output
 		std::string get_ex_info();
-		void print_output();
+		void print_output(std::vector<std::string> vec = {} , int num = 0 );
 		void print_ham();
 		void print_rdm(unsigned state = 0, bool trdm = false);
         void reset_output(std::string sort, bool partial = true);
