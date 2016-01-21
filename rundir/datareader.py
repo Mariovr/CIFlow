@@ -103,7 +103,7 @@ class Reader(object):
     def read_data(self):
         with open(self.filename,'r') as ref:
             #For more info check: http://docs.scipy.org/doc/numpy/reference/generated/numpy.genfromtxt.html#numpy.genfromtxt  
-            self.data = np.genfromtxt(self.filename, dtype='float', comments= self.comment, delimiter=None, skiprows=0, skip_header=0, skip_footer=0, converters=None, missing='', missing_values= '', filling_values=None, usecols=None, names=None, excludelist=None, deletechars=None, replace_space='_', autostrip=False, case_sensitive=True, defaultfmt='f%i', unpack=None, usemask=False, loose=True, invalid_raise=True)
+            self.data = np.genfromtxt(self.filename, dtype='float', comments= self.comment, delimiter=None, skiprows=0, skip_header=0, skip_footer=0, converters=None, missing='', missing_values= 0., filling_values=None, usecols=None, names=None, excludelist=None, deletechars=None, replace_space='_', autostrip=False, case_sensitive=True, defaultfmt='f%i', unpack=None, usemask=False, loose=True, invalid_raise=True)
 
     def calc_error(self , difcols, absolute = True):
         errorlist = []
