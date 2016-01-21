@@ -24,6 +24,7 @@
 
 #include "Properties.h"
 #include "Permutator.h"
+#include "CIMethod.h"
 #include "scpp_assert.h"
 
 
@@ -31,8 +32,18 @@ using namespace std;
 
 Properties::Properties(vector<double> eigvec, int norb , Permutator * perm)
 {
+    //When a full copy of the cimethod is not necessary to extract the properties, and one only needs the eigenvector (shannon entropy, mpd's, ...)
     _perm = perm;
     _wf = eigvec;
+    _cim = nullptr;
+}
+
+Properties::Properties(CIMethod * cim)
+{
+    _perm = cim->get_perm();
+    _wf = cim->get_eigvec(0);
+    _cim = cim;
+    _cim->construct_density(); //Make sure the density matrices are constructed because they are used to construct most of the properties.
 
 }
 
@@ -41,7 +52,7 @@ double Properties::shannon_ic()
     double som = 0;
     for(auto & x : _wf)
     {
-        if (x > 1e-12)
+        if (fabs(x) > 1e-15)
             som += x*x*log(x * x)/log(2.); // log_2 (x) = log(x) / log(2) 
     }
     return -1.* som;
@@ -61,14 +72,20 @@ std::string Properties::get_property(std::string prop)
 {
     if(prop ==  "shannon")
         return std::to_string(shannon_ic() );
+    else if(prop == "spin_squared")
+        return std::to_string(_cim->get_spin_squared());
     else if(prop == "spin")
-        return "234234";
+        return std::to_string(_cim->get_spin());
+    else if(prop == "sz")
+        return std::to_string(_cim->get_sz());
+    else if(prop == "mulliken")
+        return std::to_string(_cim->get_mulliken({0,1,2,3,4}) ) ;
     else if(prop == "maxdet")
     {
         return "d";
     }
     else
-        SCPP_ASSERT(1 , "Property " << prop << " is not one of shannon, " << std::endl);
+        SCPP_ASSERT(1 , "Property " << prop << " is not one of shannon, spin, spin_squared, sz, mulliken, ..." << std::endl);
 } 
 
 
