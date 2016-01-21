@@ -225,11 +225,27 @@ class CIFlow_Reader(Reader):
         self.energies = map(float , elist)
         return self.energies
 
+    def get_properties(self):
+        properties = {}
+        with open(self.filename , 'r') as file:
+            for line in file:
+                #print line
+                if '#' == line[0] or '-' == line[0] or '\n' == line[0] or ' ' == line[0]:
+                    regexp = r'^#Property\s*(\w+)\s*=\s*([\-+]?\d+\.\d+[eEdD]?[\-+]?\d*)\s*$'
+                    match = re.search(regexp , line)
+                    if match:
+                        properties[match.group(1)] = match.group(2)
+                        print 'we extracted property:' , match.group(1) , ' with value : '  , match.group(2)
+                else:
+                    break
+        self.properties = properties
+        return self.properties
+
     def get_max_det(self):
         max_val = ('' , 0.)
         for i, val in enumerate( self.groundstate):
-            if val > max_val[1]:
-                max_val = (i ,val)
+            if abs(val) > max_val[1]:
+                max_val = (i ,abs(val) )
         for key,value in self.mapdict.iteritems(): 
             if value == max_val[0]:
                 max_val = (key , max_val[1])
@@ -491,42 +507,43 @@ def main():
 
 
 def mulliken():
-    #rootdir = './results/nopluspatrickham/'
     #collector = fc.File_Collector(rootdir , r'hamnoplus[-\w\d.]*output[\w_]*.dat', sortfunction = None)
-    #collector = fc.File_Collector(rootdir , r'psi[-\w\d.]*output[\w_]*.dat', sortfunction = None)
-    plotfiles = ['hamatomicintegralsorthonoutputfci.dat']
-    rootdir = '.'
-    #for outfile in collector.plotfiles:
-    for outfile in plotfiles:
-        #print 'starting with: ' , outfile
-        cifdoci = CIFlow_Reader( outfile)
-        cifdoci.read_rdm(twordm=False)
-        #print cifdoci.ordm
-        if 'fmmin' and 'sim' in outfile: #Transform the RDMs back from the OO basis to the MO basis.
-            if 'sim' in outfile:
-                unitary2= cifdoci.read_matrix(os.path.join(rootdir, 'unitarysim.dat') ) 
-                unitary2 = unitary2.T #Because unitarysim.dat is generated with the read_psi unitary reader (of .h5 file to .dat file ) which transposes implicitly and saves new basis in columns. Instead of the rows such as UnitaryMatrix.
-            else:
-                unitary2= cifdoci.read_matrix(os.path.join(rootdir, 'unitary_hamnoplussto-3gpatrick100.0permbitFCI.dat') )
-            #print unitary2
-            t2index , t4index = cifdoci.transform_rdms(unitary2, twordm = False)
-            cifdoci.ordm = t2index
-            #print 'One rdm in MO basis (after backtransforming to check the seniority non-zero contribution)' , cifdoci.ordm 
+    rootdir = './results/noconstraineddmhermextrema100angstromloop7/output_files'
+    fileinfo = lambda x: float(re.search(r'run[\=]*([-]?\d+\.\d+[e\-]*\d*)outputfci\.dat' , x).group(1))
+    collector = fc.File_Collector(rootdir , r'Constrained_DM.+run=([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)outputfci\.dat', sortfunction = fileinfo)
 
-        #unitary = cifdoci.read_matrix(os.path.join(rootdir, 'no_100.0_PB.mo') )
-        unitary = cifdoci.read_matrix(os.path.join(rootdir, 'unitary.txt') )
+    rootdirmat = './results/noconstraineddmhermextrema100angstromloop7/matrixelements'
+    fileinfomat = lambda x: float(re.search(r'run[\=]*([-]?\d+\.\d+[e\-]*\d*)\.mod' , x).group(1))
+    collectormat = fc.File_Collector(rootdirmat , r'run=([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)\.mod', sortfunction = fileinfomat)
 
-        t2index , t4index = cifdoci.transform_rdms(unitary, twordm = False)
-        #overlap = cifdoci.read_matrix(os.path.join(rootdir , 'no_100.0_PB.ove') )
-        #unitary = cifdoci.read_matrix(os.path.join(rootdir, 'unitary.txt') ) #MO is row index, AO is column index
-        overlap = cifdoci.read_matrix(os.path.join(rootdir , 'overlap.txt') )
-        #t2index , t4index = cifdoci.transform_rdms(unitary.T, twordm = False) #for psi4 unitaries which save the 
-        #print unitary
-        #print overlap
-        density = np.dot(t2index, overlap)
-        mulliken_n = 2*sum([density[i,i] for i in range(5)] ) 
-        mulliken_o = 2*sum([density[i,i] for i in range(5,10)] ) 
-        print 'outputfile: ', outfile, 'mulliken n : ' , mulliken_n  , 'mulliken_o : '  , mulliken_o 
+    with open(os.path.join(os.path.dirname(rootdirmat ) ,  "mullikendata.dat") , "w" ) as file:
+        file.write("#Lambda\tFCI_E\tMulliken_A\tMulliken_rest\n")
+        for num , outfile in enumerate(collector.plotfiles):
+        #for outfile in plotfiles:
+            #print 'starting with: ' , outfile
+            ciffci = CIFlow_Reader( outfile)
+            ciffci.read_rdm(twordm=False)
+            #print cifoci.ordm
+            
+            print 'matrixelements : ' , collectormat.plotfiles[num]
+            probinfo = rp.PsiReader(collectormat.plotfiles[num], isbig = False, numorbs = -1 , read_ints = False)
+            unitary2 = probinfo.unit
+            unitary2 = np.array([i for i in unitary2[0]])
+            overlap = probinfo.overlap
+            overlap = np.array([i for i in overlap [0]])
+            #print ciffci.ordm
+            t2index , t4index = ciffci.transform_rdms(unitary2, twordm = False)
+            ciffci.ordm = t2index
+            #print 'One rdm in MO basis (after backtransforming to check the seniority non-zero contribution)' , ciffci.ordm 
+
+            #t2index , t4index = cifdoci.transform_rdms(unitary.T, twordm = False) #for psi4 unitaries which save the 
+            #print unitary
+            #print overlap
+            density = np.dot(t2index, overlap)
+            mulliken_n = 2*sum([density[i,i] for i in range(5)] ) 
+            mulliken_o = 2*sum([density[i,i] for i in range(5,10)] ) 
+            print 'outputfile: ', outfile, 'mulliken n : ' , mulliken_n  , 'mulliken_o : '  , mulliken_o , ' energy: ' , ciffci.header['energy']
+            file.write("%f\t%f\t%f\t%f\n" % (fileinfo(outfile), ciffci.header['energy'] , mulliken_n , mulliken_o  ) )
 
 def back_transform():
     rootdir = './results/hechangerep/'
@@ -567,15 +584,29 @@ def test_max_det():
     maxdet = cifread.get_max_det()
     print maxdet
 
+def extract_properties():
+    rootdir = './results/shannonebeh2smallvirtual6/output_files'
+    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)\.[m]?dat' , x).group(1))
+    collector = fc.File_Collector(rootdir , r'[-\w\d.]*outputfci[\w_]*\d.dat', notsearch = 'rdm_ao' , sortfunction = fileinfo)
+    data = []
+    for outfile in collector.plotfiles:
+        cifread = CIFlow_Reader(outfile)
+        cifread.get_properties()
+        data.append(cifread.properties['shannon'])
+    os.chdir(rootdir)
+    with open('propertiesfci.dat', 'w') as file:
+        file.write('\n'.join(map(str,data) )  )
+
 if __name__ == "__main__":
     #main()
     #wavefunction_analysis()
     #wavefunction_analysis_fci()
     #overlap_analysis()
     #overlap_analysis2()
-    #mulliken()
+    mulliken()
     #test_transform()
     #test_density()
     #back_transform()
-    test_max_det()
+    #test_max_det()
+    #extract_properties()
 
