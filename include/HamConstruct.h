@@ -15,11 +15,10 @@
 //
 //--
 
-#include <string>
-
 #ifndef HAMCONSTRUCT_H
 #define HAMCONSTRUCT_H
 
+#include <string>
 #include <memory>
 
 class Hamiltonian;

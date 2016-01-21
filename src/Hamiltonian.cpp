@@ -71,6 +71,7 @@ Hamiltonian::Hamiltonian(const int Norbitals, const int nGroup, const int * OrbI
     //Orthogonal atomic orbitals.(for example for model hamiltonians.)
     _overlap = std::vector<double>(  0. );
     _unit.reset(nullptr);
+    _hf_energy = 0.;
 }
 
 Hamiltonian::Hamiltonian(const int Norbitals, const int nGroup, int nup , int ndown, double Econstant): _modham{false}{
@@ -108,6 +109,7 @@ Hamiltonian::Hamiltonian(const int Norbitals, const int nGroup, int nup , int nd
     //Orthogonal atomic orbitals.(for example for model hamiltonians.)
     _overlap = std::vector<double>(  0. );
     _unit.reset(nullptr);
+    _hf_energy = 0;
 }
 
 Hamiltonian::Hamiltonian(const Hamiltonian & HamIn){
@@ -120,6 +122,7 @@ Hamiltonian::Hamiltonian(const Hamiltonian & HamIn){
 	_ndown = HamIn.getndown();
     SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
 	_oneOverNMinusOne = 1.0/((_ndown+_nup)-1);
+    _hf_energy = HamIn.get_hf_energy();
 
         orb2irrep = new int[L];
 	orb2indexSy = new int[L];
@@ -172,6 +175,7 @@ Hamiltonian& Hamiltonian::operator=(const Hamiltonian &orig)
     L = orig.getL();
     _nup = orig.getnup();
     _ndown = orig.getndown();
+    _hf_energy = orig.get_hf_energy();
     SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
     _oneOverNMinusOne = 1.0/((_ndown+_nup)-1);
     int SyGroup = orig.getNGroup();

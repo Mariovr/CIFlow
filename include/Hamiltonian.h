@@ -134,7 +134,6 @@ class Hamiltonian{
              \param index4 The fourth index
              \return \f$V_{index1,index2,index3,index4}\f$ */
          double getVmat(const int index1, const int index2, const int index3, const int index4) const;
-         
          //! Save the Hamiltonian
          void save(const string filename = "") const;
          
@@ -168,7 +167,7 @@ class Hamiltonian{
          int getndown() const;
          void setnup(int nup) { _nup = nup;} 
          void setndown(int ndown) {_ndown = ndown;} 
-	     double get_hf_energy(){return _hf_energy;}
+	     double get_hf_energy() const{return _hf_energy;}
 	     //std::vector<double> get_moealpha() {return moealpha;}
 	     //std::vector<int> get_perm_order();
 
