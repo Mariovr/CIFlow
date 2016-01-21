@@ -66,6 +66,7 @@ class CIDens
 
         void reset_1rdm(); //resizes 1rdm to zero.
 		void reset_2rdm(); //resizes 2rdm to zero.
+        void reset_density();
 		double get_seniority()const;
         double get_spin_squared()const;
         double get_spin()const;

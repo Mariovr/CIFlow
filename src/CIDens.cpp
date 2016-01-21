@@ -336,6 +336,12 @@ void CIDens::reset_2rdm()
     _two_dens.resize(0);
 }
 
+void CIDens::reset_density()
+{
+    reset_1rdm();
+    reset_2rdm();
+}
+
 matrix CIDens::spin_summed_1rdm()const {
     matrix spinsummed = matrix( dim(), dim());
     for(int i = 0 ; i < 2 ; i++){
