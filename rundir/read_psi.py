@@ -26,6 +26,7 @@ import copy
 import shutil
 from math import sqrt
 import random
+import copy
 
 #sys.path.append('/home/mario/ownCloud/Doctoraat/CIFlowImproved/rundir')
 import detwrite as dw
@@ -86,7 +87,7 @@ if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
 
                 
         def get_unitary(self):
-            #At this moment we haven't supported point group symmetry
+            #At this moment point group symmetry is not yet supported
             unit = np.zeros((self.numorb , self.numorb))
             pos = 0
             for irrep in range(len(self.unitary)):
@@ -161,10 +162,10 @@ SOCC =  %(soccstring)s #this line is ignored
 """%(self.__dict__)
         if self.overlap != None:
             text += """CIFlowOverlap: 
-    %(overlapstring)s
-    CIFlowTransformation: 
-    %(transformationstring)s
-    """%(self.__dict__)
+%(overlapstring)s
+CIFlowTransformation: 
+%(transformationstring)s
+"""%(self.__dict__)
         text+= """****  MO OEI 
 %(oeistring)s
 ****  MO TEI 
@@ -180,12 +181,20 @@ SOCC =  %(soccstring)s #this line is ignored
 
 
 class ModHam(CIFlow_Input):
-    def __init__(self  , nalpha , nbeta , norb , modtype, options , params):
-        super(ModHam, self).__init__(nalpha , nbeta , 0., norb , 'c1' , 1 , [0]*norb, [] , []  , 0., [nalpha], [0] )
-        self.options = options
-        self.params = params
-        self.modtype = modtype
-        self.make_mod_strings()
+    def __init__(self  , nalpha , nbeta , norb , modtype, options , params, matrixelements = None):
+        if matrixelements is None :
+            super(ModHam, self).__init__(nalpha , nbeta , 0., norb , 'c1' , 1 , [0]*norb, [] , []  , 0., [nalpha], [0] )
+            self.options = options
+            self.params = params
+            self.modtype = modtype
+            self.make_mod_strings()
+        else:
+            psireader = PsiReader(matrixelements, isbig = False , numorbs = -1 , read_ints = True, valdict = {}, intdict = {})
+            super(ModHam , self).__init__(psireader.values['nalpha'],psireader.values['nbeta'],psireader.values['nucrep'],psireader.values['norb'] ,psireader.values['sym'] ,psireader.values['nirrep'] ,psireader.values['irreplist'],psireader.ints['mo2index'],psireader.ints['mo4index'],psireader.values['hfenergy'],psireader.values['DOCC'] ,psireader.values['SOCC'],psireader.overlap ,psireader.unit)
+            self.options = options
+            self.params = params
+            self.modtype = modtype
+            self.make_mod_strings()
 
     def make_mod_strings(self):
         self.optionsstring = '\n'.join(self.options)
@@ -211,9 +220,9 @@ class Reader(object):
 
     def read(self):
         size = os.stat(self.filename).st_size
-        f = open(self.filename)
-        self.data = mmap.mmap(f.fileno(), size, access=mmap.ACCESS_READ)
-        f.close()
+        self.f = open(self.filename)
+        self.data = mmap.mmap(self.f.fileno(), size, access=mmap.ACCESS_READ)
+        self.f.close()
 
     def process_element(self, regexp , text , func):
         return func(re.search(regexp,text).group(1))
@@ -238,7 +247,7 @@ class PsiReader(Reader):
 
             #self.create_star_data()
             self.extract_values()
-            print self.values
+            self.values = copy.deepcopy(self.values)
             self.overlap = self.read_ao_info(filename, "CIFlowOverlap")
             self.unit = self.read_ao_info(filename, "CIFlowTransformation")
 
@@ -250,6 +259,7 @@ class PsiReader(Reader):
 
             if read_ints:
                 self.extract_ints()
+                self.ints = copy.deepcopy(self.ints)
             self.data.close()
             
     def read_ao_info(self, fname , startstring):
@@ -270,8 +280,8 @@ class PsiReader(Reader):
                     irreplist.append(np.array(map(float,line.split() ) ) )
                 else:
                     overlap[irrep_num] = irreplist
-                    print "finished reading in ao information this is the result:"
-                    print overlap
+                    #print "finished reading in ao information this is the result:"
+                    #print overlap
                     break 
 
         return overlap
@@ -503,6 +513,32 @@ class PsiReader(Reader):
         self.values['irreplist'] = [0] *self.values['norb']
         self.create_output(outname)
 
+    def add_ni_system(self , psireader, outname = 'ni_system.dat'):
+        psireader.add_index(self.values['norb'])
+        norb = self.values['norb']
+        oeint =list(psireader.ints['mo2index'])
+        teint =list(psireader.ints['mo4index'])
+        self.insert(oeint, teint)
+        self.values['norb'] += psireader.values['norb']
+        print self.values['nalpha']
+        self.values['nalpha'] += psireader.values['nalpha']
+        print self.values['nalpha'] 
+        self.values['nbeta'] += psireader.values['nbeta']
+        self.values['nucrep'] += psireader.values['nucrep'] 
+        self.values['sym'] = 'c1'
+        self.values['irreplist'] = [0] *self.values['norb']
+        overlap = [None] * 8 #8 is max num of irreps in abelian point groups we consider
+        overlap[0] = np.zeros( (self.values['norb'], self.values['norb']) )
+        overlap[0][:norb , :norb] = self.overlap[0]
+        overlap[0][norb: , norb : ] = psireader.overlap[0]
+        unit = [None] * 8
+        unit[0] = np.zeros((self.values['norb'], self.values['norb']))
+        unit[0][:norb , :norb] = self.unit[0]
+        unit[0][norb: , norb:] = psireader.unit[0]
+        self.overlap = overlap
+        self.unit = unit
+        self.create_output(outname)
+
     def change_repulsion(self, factor = -1.):
         self.ints['mo4index'] = [[integrals[0] ,integrals[1] ,integrals[2] , integrals[3], factor*integrals[4] ] for integrals in self.ints['mo4index']]
 
@@ -730,6 +766,16 @@ def generate_random_hams():
         name = 'randomhamiltonian' + str(i) +'.dat'
         reader.create_output(fname = name)
 
+def add_ni_system():
+    filename1 = "psioutputn+.dat"; filename2 = "psioutputo.dat"
+    reader1 = PsiReader(filename1 , isbig = False, numorbs = None, read_ints = True)
+    print reader1.values
+    reader2 = PsiReader(filename2 , isbig = False, numorbs = None, read_ints = True)
+    print reader1.values
+    reader1.add_ni_system(reader2)
+    print reader1.values
+
+
 if __name__ == "__main__":
     #reverse_repulsion()
     #benzene()
@@ -738,8 +784,9 @@ if __name__ == "__main__":
     #print_unitary('unitary.txt')
     #test_new_format()
     #test_mod_ham()
-    generate_random_hams()
+    #generate_random_hams()
     #hdf5_ham()
     #list_test()
     #main()
     #test_new_format()
+    add_ni_system()
