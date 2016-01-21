@@ -132,6 +132,8 @@ class matrix
 
         void subtract(matrix & a);
 
+        void multiply(double mul);
+
         void scale_column(int col, double val);
 
         double inproduct(int which);// returns inproduct of a particular(which) column of this matrix.

@@ -227,6 +227,12 @@ void matrix::subtract(matrix & a)
        mat[i] -= a[i];
 }
 
+void matrix::multiply(double mul)
+{
+   for(int i = 0 ; i < n * m ; i ++) 
+       mat[i] *= mul;
+}
+
 void matrix::scale_column(int col , double val)
 {
    for(int i = 0 ; i < n  ; i ++) 
