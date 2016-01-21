@@ -66,6 +66,7 @@ class UnitaryMatrix
         double * getBlock(const int irrep) const;
 
         double get_element(int i , int j );
+        void set_element(int i , int j , double val);
 
         //returns a vector of double that contains the unitary transformation, without irrep information, and in column major format (and new basis is in rows (same as unitary matrix))
         std::vector<double> get_full_transformation();
@@ -128,6 +129,7 @@ class UnitaryMatrix
 
         //! sets this unitary to a random unitary.
         void set_random_unitary();
+        void set_random_unitary(std::vector<std::pair<int,int> > orbs);
 
         //! make skew symmetric matrix.
         void make_skew_symmetric();

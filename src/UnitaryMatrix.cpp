@@ -34,6 +34,7 @@
 #include "matrix.h"
 #include "Options.h"
 #include "Hamiltonian.h" //For optindex (should put this in a separate file)
+#include "scpp_assert.h"
 
 using std::string;
 using std::ifstream;
@@ -149,6 +150,19 @@ double UnitaryMatrix::get_element(int i , int j)
 
 }
 
+void UnitaryMatrix::set_element(int i , int j, double val)
+{
+    int irrepi = get_orbital_irrep(i);
+    int irrepj = get_orbital_irrep(j);
+    if (irrepi != irrepj)
+        std::cerr << "Not allowed to set this element to val, because the orbs are not in the same irrep.";
+    else
+    {
+        int start = get_nstart(irrepi);
+        int norb = get_norb(irrepi);
+        unitary[irrepi][i-start + (j - start) * norb ] = val;
+    }
+}
 
 std::vector<double> UnitaryMatrix::get_full_transformation()
 {
@@ -686,11 +700,16 @@ void UnitaryMatrix::set_random_unitary(){
             matrix sym(linsize,linsize);
             //fill symmetric matrix. Remember the eigenvectors of a real symmetric matrix are orthogonal.
             for(int i=0;i<linsize;i++)
-                for(int j=i;j<linsize;j++)
+                for(int j=i;j< linsize;j++)
+            //for(int i=0;i< 6;i++)
+                //for(int j=i;j< 6;j++)
                 {
                     sym(i,j) = dist_angles(mt);
                     sym(j,i) = sym(i,j);
                 }
+
+            //for( int i = 6 ; i < linsize ; i ++)
+                    //sym(i,i) = 1;
             sym.diagonalize(eigval, eigvec);
             int inc = 1;
             dcopy_(&size, eigvec.getpointer(), &inc, unitary[irrep].get(), &inc);
@@ -700,6 +719,20 @@ void UnitaryMatrix::set_random_unitary(){
             unitary[irrep][0] = 1.;
         }
     }
+}
+
+void UnitaryMatrix::set_random_unitary(std::vector<std::pair<int,int>> orbs)
+{
+    std::random_device rd;
+    auto mt = std::mt19937_64(rd());
+    std::uniform_real_distribution<double> dist_angles(-M_PI,M_PI);
+    for(auto & x : orbs)
+    {
+        int irrep = get_orbital_irrep(x.first);
+        SCPP_TEST_ASSERT(irrep == get_orbital_irrep(x.second), "try to do a jacobi rotation of orbitals correpsonding to different irrep: " << x.first << "has irrep " << irrep << " and " << x.second << " has irrep " << get_orbital_irrep(x.second) <<std::endl) ;
+        jacobi_rotation(irrep ,  x.first , x.second ,dist_angles(mt) );
+    }
+
 }
 
 void UnitaryMatrix::make_skew_symmetric()
