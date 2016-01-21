@@ -122,6 +122,7 @@ void CIMethod::set_ham(Hamiltonian * ham, bool build){
         build_ci();
     }
     _solved = false;
+    _cid->reset_density();
 }   
 
 void CIMethod::load_ham( std::string hamname , bool build, bool reset)
@@ -172,7 +173,7 @@ void CIMethod::construct_density(unsigned state, bool trdm)
 
 void CIMethod::reset_density()
 {
-    _cid.reset(nullptr);
+    _cid->reset_density();
 }
 
 void CIMethod::print_rdm(unsigned state, bool trdm)
@@ -233,6 +234,7 @@ void CIMethod::solve(int neigval){
         cout << "The system is unchanged after the last call of solve." << endl;
     }
     _mat.reset_vecs();
+    _cid->reset_density();
 }
 
 double CIMethod::get_ci_energy(int neigval){

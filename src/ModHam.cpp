@@ -18,7 +18,7 @@ ModHam::ModHam(const int L , const int nup, const int ndown, double Econst, std:
     _options = options;
 }
 
-ModHam::ModHam(const Hamiltonian & Ham, std::vector<double> params , std::vector<std::string> options  ): Hamiltonian(Ham.getL() , Ham.getNGroup() , Ham.get_orb2irrep() , Ham.getnup() , Ham.getndown(), 0.)
+ModHam::ModHam(const Hamiltonian & Ham, std::vector<double> params , std::vector<std::string> options  ): Hamiltonian(Ham)
 {
     _params = params;
     _options = options;
@@ -111,9 +111,8 @@ Hub1d::Hub1d(const Hamiltonian & Ham, std::vector<double> params , std::vector<s
 //Params: first t, then U (both positive, t is automatically set negative, info determines the boundary conditions)
 void Hub1d::construct_ham(std::vector<double> params, std::vector<string> info)
 {
-    if (info[0] == "reset")
-        this->set_zero();
-    if(info[1] == "pos")
+    this->set_zero();
+    if(info[0] == "pos")
     {
         // one-particle integrals
         for(int i=0;i<(getL()-1);i++)
@@ -123,17 +122,17 @@ void Hub1d::construct_ham(std::vector<double> params, std::vector<string> info)
        //setTmat(2,11 , -1.*params[0]);//For Hubbar anthraceen
        //setTmat(4,9 , -1.*params[0]);
 
-        if(info[2] == "per")
+        if(info[1] == "per")
         {
             // periodic boundary condition
             setTmat(0, getL()-1, -1.*params[0]);
         }
-        else if(info[2] == "aper")
+        else if(info[1] == "aper")
         {
             //anti-periodic boundary condition
             setTmat(0, getL()-1, 1.*params[0]);
         }
-        else if(info[2] == "none")
+        else if(info[1] == "none")
         {
             //No boundary conditions. (sites on a straigth line)
         }
@@ -147,7 +146,7 @@ void Hub1d::construct_ham(std::vector<double> params, std::vector<string> info)
         for(int i=0;i< getL();i++)
            setVmat(i, i, i, i, params[1]); 
     }
-    else if(info[1] == "mom" )
+    else if(info[0] == "mom" )
     {
       // Don't forget: you cannot rotate states of different momentum!
       // one-particle integrals
@@ -193,9 +192,7 @@ RedBCS::RedBCS(const Hamiltonian & Ham, std::vector<double> params , std::vector
 //Params: First the L epsilon , then g
 void RedBCS::construct_ham(std::vector<double> params, std::vector<std::string> info)
 {
-
-    if (info[0] == "reset")
-	    this->set_zero();
+    this->set_zero();
     for(int i = 0 ; i < this->getL() ; i++)
     {
 	    this->setTmat(i,i, params[i]);
@@ -255,8 +252,7 @@ void FacInt::construct_ham(std::vector<double> params, std::vector<std::string> 
     }
     setEconst(getEconst() + som);  //getEconst() already contains the non-seniority zero part (which needs to be set by user in advance in the constructor of ModHam), this adds the seniority zero part of Econst
     
-    if (info[0] == "reset")
-        this->set_zero();
+    this->set_zero();
     for(int i = 0 ; i < this->getL() ; i++)
     {
         this->setTmat(i,i, params[i] * params[i] * params[getL()+1]/2.);
@@ -310,7 +306,7 @@ void Constrained_DM::construct_ham(std::vector<double> params, std::vector<std::
     cout << "start " ;
     matrix partdiag(this->getL() ,this->getL() );
     for (std::vector<double>::iterator it = params.begin() ; it != params.end()-2; ++it)        
-        partdiag((int) *it , (int) *it ) = 1.;
+        partdiag((int) *it , (int) *it ) = 1. ;
 
     setEconst(getEconst() - params[params.size()-1] * params[params.size()-2]);
     matrix trans(get_unitary()->get_full_transformation(), this->getL() , this->getL());
@@ -318,17 +314,21 @@ void Constrained_DM::construct_ham(std::vector<double> params, std::vector<std::
     matrix prod(this->getL() ,this->getL() );
     prod.prod(trans , overlap);
     overlap.prod(prod , partdiag);
-    prod.transpose(trans);//Contains now transposed of _unit.
+    trans.transpose(prod);//Prod contains now transposed of _unit.
     trans.prod(overlap,prod);
+    //To make the matrix hermitian.
+    matrix transposed(this->getL() ,this->getL() );
+    trans.transpose(transposed);//Contains now transposed of trans.
+    trans.add(transposed, 1.);
+    trans.multiply(0.5);
     for(int i = 0 ; i < this->getL() ; i ++)
     {
         for(int j = i ; j < this->getL() ; j ++)
         {
-            setTmat(i,j, getTmat(i,j) + params[ params.size()-1] * trans(i,j)) ; //augment one body part with the constrained.
+            //cout << "tmat" << getTmat(i,j) << endl;
+            setTmat(i,j, getTmat(i,j) + params[ params.size()-1] * trans(j,i)) ; //augment one body part with the constrained.
+            //cout << "tmat" << getTmat(i,j) << endl;
         }
     }
 }
-
-
-
 

@@ -261,7 +261,7 @@ void SimulatedAnnealing::run_multiple(int num, bool saveopt)
     if(Orbopt_debugPrint)
     {
         cout << "THE MINIMUM ENERGY VALUE WE FOUND IS: " << _opt_energy << endl;
-        cout << "With the followin unitary transformation of the starting orbitals." << endl;
+        cout << "With the following unitary transformation of the starting orbitals." << endl;
         _opt_unitary->print_unitary(cout);
     }    
 
@@ -297,10 +297,10 @@ bool SimulatedAnnealing::accept_function(double e_new, double e_old, double temp
 
 double SimulatedAnnealing::cost_function()
 {
+    return _cim->get_mulliken({0,1,2,3}, 0);
     //return _cim->get_ci_energy(); //For energy based orbital optimization.
-    Properties prop { _cim->get_eigvec(0)  , _cim->get_l() , _cim->get_perm() };
-    return prop.shannon_ic();
-
+    //Properties prop { _cim->get_eigvec(0)  , _cim->get_l() , _cim->get_perm() };
+    //return prop.shannon_ic();
 }
 
 double SimulatedAnnealing::optimize()
@@ -347,6 +347,11 @@ double SimulatedAnnealing::optimize()
                 {
                     _opt_energy = e_new;
                     _opt_unitary.reset(new UnitaryMatrix(_orbtrans->get_unitary()));
+                }
+                if(ll <  1000 && ll % 5 == 0)
+                {
+                    save_ham("sim"+ to_string(ll));
+
                 }
                 unaccept = 0;
                 if(_c_steps % 1000 == 0)
