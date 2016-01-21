@@ -37,7 +37,7 @@
 #include "scpp_assert.h"
 #include "Properties.h"
 
-
+int num = 0;
 using namespace std;
 
 double e_in_ham(Hamiltonian * ham, CIMethod *cim){
@@ -205,6 +205,7 @@ void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
         OptIndex opt = cim->get_ham()->get_index_object();
         //UnitaryMatrix unit(opt , unitname);
         UnitaryMatrix unit(opt );
+        //unit.set_random_unitary({{0,1} , {1,2} , {0,2}} );
         unit.set_random_unitary();
         OrbitalTransform orbtrans = OrbitalTransform(cim->get_ham());
         Hamiltonian * ham = new Hamiltonian(*cim->get_ham()); //Save old ham to set back.
@@ -226,15 +227,16 @@ void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
     }
     if( hamsave)
     {
-        string hamname =  cim->get_name() +sort;
+        string hamname =  cim->get_name() +sort + to_string(num);
         cim->get_ham()->save_file(hamname);
+        num += 1;
     }
     if(printoutput)
     {
         cim->reset_output(sort);
         cim->print_output({"shannon"});
-        //cim->print_rdm();
-        //cim->print_ham();
+        cim->print_rdm();
+        cim->print_ham();
         Properties prop { cim->get_eigvec(0)  , cim->get_l() , cim->get_perm() };
         cout << "shannon entropy "  << prop.shannon_ic() << std::endl;
     }
@@ -316,7 +318,7 @@ int main ( int argc, char ** argv){
                 std::cout  << "DOCI energy: " << cim->get_ci_energy() << std::endl;
                 std::cout << "Spin Squared: " << cim->get_spin_squared() << std::endl;
                 cim->print_output({"shannon"});
-                //cim->print_ham();
+                cim->print_ham();
                 cim->print_rdm();
 
                 //DensDOCI densmat {cim};
@@ -343,11 +345,12 @@ int main ( int argc, char ** argv){
                 Properties prop { cim5->get_eigvec(0)  , cim5->get_l() , cim5->get_perm() };
                 cout << "shannon entropy "  << prop.shannon_ic() << std::endl;
                 cim5->print_output({"shannon"});
+
                 //cim5->print_rdm(0 , true); //0 -> state , 1-> 2rdm
                 //cim5->get_ham()->print_overlap(std::cout);
                 //cim5->get_ham()->get_unitary()->print_unitary(std::cout);
-                //std::vector<int> orbs {0,1,2,3};
-                //std::cout << "Mulliken charges first atom: " << cim5->get_mulliken(orbs) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
+                std::vector<int> orbs {0,1,2,3,4};
+                std::cout << "Mulliken charges first atom: " << cim5->get_mulliken(orbs) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
                 //for(int i = 0 ; i < neigval ; i ++)
                 //{
                     //std::cout << "Spin Squared: " << cim5->get_spin_squared(0) << std::endl;
