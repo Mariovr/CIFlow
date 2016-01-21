@@ -21,6 +21,8 @@
 #include <string>
 #include <bitset>
 #include <boost/multiprecision/cpp_int.hpp>
+#include <regex>
+#include <algorithm>
 
 #include "Permutator.h"
 #include "CIMethod.h"
@@ -28,6 +30,7 @@
 #include "Output.h"
 #include "CIDens.h"
 #include "Properties.h"
+#include "Hamiltonian.h"
 
 namespace mp = boost::multiprecision;     // Reduce the typing a bit later...
 
@@ -36,6 +39,7 @@ using namespace std;
 Output::Output(CIMethod * cim)
 {
 	_cim =cim;
+    _num = 0;
 }
 
 Output::~Output()
@@ -56,7 +60,19 @@ void OutputSingleFile::change_filename( const std::string & filen, bool partial)
     {
         unsigned found = _filename.find_last_of(".");
         std::string sub = _filename.substr(0,found);
-        _filename = sub + filen + ".dat";
+        int pos = sub.find(filen);
+        if ( pos != std::string::npos) 
+        {
+            sub  = _filename.substr(0,pos);
+            _num += 1;
+            _filename = sub + filen + to_string(_num)  + ".dat";
+        }
+        else
+        {
+            std::string name = _cim->get_name();
+            transform(name.begin() , name.end(), name.begin() , ::tolower );
+            _filename = _cim->get_ham()->get_short_filename() + "output" + name + filen + "0.dat";
+        }
     }
     else
         _filename = filen;
@@ -84,7 +100,8 @@ void OutputSingleFile::print_properties(vector<string> props , int num){
 
 void OutputSingleFile::print_output(std::vector<std::string> props, int num )
 {
-    prepare_for_writing() ; print_energy(); print_properties(props, num) ; print_ci_vec(num); print_solutions(); 
+    prepare_for_writing() ; print_energy(); print_properties(props, num) ; print_solutions(); 
+    print_ci_vec(num); 
 }
 
 void OutputSingleFile::close_stream()
