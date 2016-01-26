@@ -33,7 +33,7 @@ virtual ~Output();
 
 
 protected:
-CIMethod * _cim;
+    CIMethod * _cim;
     int _num ;
 };
 
@@ -50,8 +50,8 @@ public:
 	void print_rdm(const CIDens & cid, bool twordm = true);
 	void print_solutions();
 	void print_ham();
-	void print_output(std::vector<std::string> props = {} , int num = 0);
-	void print_psi4_input(std::string psi_input = "input.dat");
+	void print_output(std::vector<std::string> props = {} , int num = 0, bool all = false); //num indicates the number eigenvectors to be printed.
+    void print_psi4_input(std::string psi_input = "input.dat");
     void prepare_for_writing();
     void change_filename(const std::string & filen, bool partial = true);
     void close_stream();

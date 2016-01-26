@@ -115,7 +115,7 @@ std::vector< std::tuple<int,int,double,double> > LocalMinimizer::scan_orbitals()
 
    auto end = std::chrono::high_resolution_clock::now();
 
-   std::cout << "Orbital scanning took: " << std::fixed << std::chrono::duration_cast<std::chrono::duration<double,std::ratio<1>>>(end-start).count() << " s" << std::endl;
+   //std::cout << "Orbital scanning took: " << std::fixed << std::chrono::duration_cast<std::chrono::duration<double,std::ratio<1>>>(end-start).count() << " s" << std::endl;
 
    assert(pos_rotations.size()>0);
 
@@ -150,8 +150,8 @@ double LocalMinimizer::optimize(bool dist_choice)
             return std::get<3>(a) < std::get<3>(b);
             });
 
-      for(auto& elem: list_rots)
-         std::cout << std::get<0>(elem) << "\t" << std::get<1>(elem) << "\t" << std::get<3>(elem)+ham2.getEconst() << "\t" << std::get<2>(elem) << std::endl;
+      //for(auto& elem: list_rots)
+         //std::cout << std::get<0>(elem) << "\t" << std::get<1>(elem) << "\t" << std::get<3>(elem)+ham2.getEconst() << "\t" << std::get<2>(elem) << std::endl;
 
       int idx = 0;
       std::pair<int,int> tmp;
@@ -210,7 +210,7 @@ double LocalMinimizer::optimize(bool dist_choice)
       if(fabs(_opt_energy- _cim->get_ci_energy() )<_conv_crit)
          converged++;
 
-      std::cout << iters << " (" << converged << ")\tRotation between " << std::get<0>(new_rot) << "  " << std::get<1>(new_rot) << " over " << std::get<2>(new_rot) << " E_rot = " << std::get<3>(new_rot)+ham2.getEconst() << "  E = " <<  _cim->get_ci_energy()  << "\t" << fabs(_opt_energy- _cim->get_ci_energy() ) << std::endl;
+      //std::cout << iters << " (" << converged << ")\tRotation between " << std::get<0>(new_rot) << "  " << std::get<1>(new_rot) << " over " << std::get<2>(new_rot) << " E_rot = " << std::get<3>(new_rot)+ham2.getEconst() << "  E = " <<  _cim->get_ci_energy()  << "\t" << fabs(_opt_energy- _cim->get_ci_energy() ) << std::endl;
 
       _opt_energy= _cim->get_ci_energy();
 

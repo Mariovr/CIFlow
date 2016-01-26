@@ -27,6 +27,7 @@ import shutil
 from math import sqrt
 import random
 import copy
+import filecollector as fc
 
 #sys.path.append('/home/mario/ownCloud/Doctoraat/CIFlowImproved/rundir')
 import detwrite as dw
@@ -421,7 +422,7 @@ class PsiReader(Reader):
         self.ints['mo4index'] += extratei
         self.ints['mo2index'] += extraoei
 
-    def add_patrick_mo(self,num = -1, one = 'OEI' , two = 'TEI'):
+    def add_patrick_mo(self,num = -1, one = 'OEI' , two = 'TEI', overlapfile = None, unitfile = None):
         with open(one, 'r') as tofile:
             oeilines = tofile.read()
         with open(two, 'r') as tofile:
@@ -436,6 +437,13 @@ class PsiReader(Reader):
         self.ints['mo2index'] = self.oei_func(oeilist)
         self.ints['mo4index'] = self.tei_func(teilist)
         self.add_index(num)
+
+        self.overlap = [None] * 8 #8 is max num of irreps in abelian point groups we consider
+        self.unit = [None] * 8
+
+        if overlapfile != None:
+            self.overlap[0] = np.loadtxt(overlapfile  , comments = '#')
+            self.unit[0] = np.loadtxt(unitfile , comments = '#')
 
     def add_diego_mo(self , fname = 'h2o-psi-cisd-1_8-mario.out'): #num adds a number to the integral indices but is not necessary because diego uses psi3 to generate his integrals and it uses the same numbering as psi4.
         with open(fname, 'r') as tofile:
@@ -669,12 +677,24 @@ def hdf5_ham():
     ham = HDF5Reader(fname)
 
 def list_test():
-    valdict = {'nalpha': 7 , 'nbeta' : 7 , 'norb' : 10 , 'nirrep' : 1 , 'sym' : 'c1' , 'nucrep' :0.560000000000000053290705182007513940334320068359 , 'irreplist': [0]*10, 'hfenergy' : -75.4675801847 , 'DOCC' : [7], 'SOCC' : [0]}
-    dir = 'results/nopluspatrickham'
-    reader = PsiReader( "" , isbig = False, numorbs = None, read_ints = True, valdict = valdict)
-    reader.add_patrick_mo(one = os.path.join(dir, 'no_100.0_PB.one') , two =  os.path.join(dir , 'no_100.0_PB.two') )
-    reader.create_output(fname = os.path.join(dir, 'hamnoplussto-3gpatrick100.0.out') )
+    dir = 'Mario_NO'
 
+    fileinfo = lambda x: float(re.search(r'no_([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)_PB\.one' , x).group(1))
+    search = r'no.*\.one' 
+    hamfiles = fc.File_Collector(dir , search = search ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1 and fileinfo(x) < 1000000. )
+
+    distancelist = [fileinfo(i) for i in hamfiles.plotfiles]
+    print distancelist
+
+    nucrep = [112, 56 , 28 , 14 , 7, 5.6 , 2.8 , 1.4 , 0.7 , 0.56, 0.28 , 0.14, 0.07 , 0.056 , 0.0112 , 0.0056]
+
+    assert(len(nucrep) == len(distancelist))
+
+    for num , dist in enumerate(distancelist):
+        valdict = {'nalpha': 7 , 'nbeta' : 7 , 'norb' : 10 , 'nirrep' : 1 , 'sym' : 'c1' , 'nucrep' : nucrep[num] , 'irreplist': [0]*10, 'hfenergy' : -75.4675801847 , 'DOCC' : [7], 'SOCC' : [0]}
+        reader = PsiReader( "" , isbig = False, numorbs = None, read_ints = True, valdict = valdict)
+        reader.add_patrick_mo(one = os.path.join(dir, 'no_%.1f_PB.one' % dist) , two =  os.path.join(dir , 'no_%.1f_PB.two' % dist) , overlapfile = os.path.join(dir, 'no_%.1f_PB.ove' % dist), unitfile =os.path.join(dir , 'no_%.1f_PB.mo' % dist)  )
+        reader.create_output(fname = 'hamnoplussto-3gpatrick%.1fnew.out' % dist )
 
 def main():
     filename = 'output.dat'
@@ -786,7 +806,7 @@ if __name__ == "__main__":
     #test_mod_ham()
     #generate_random_hams()
     #hdf5_ham()
-    #list_test()
+    list_test()
     #main()
     #test_new_format()
-    add_ni_system()
+    #add_ni_system()

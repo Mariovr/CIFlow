@@ -93,7 +93,7 @@ class CIMethod{
 
 		//functions necessary for output
 		std::string get_ex_info();
-		void print_output(std::vector<std::string> vec = {} , int num = 0 );
+		void print_output(std::vector<std::string> vec = {} , int num = 0, bool all = false );
 		void print_ham();
 		void print_rdm(unsigned state = 0, bool trdm = false);
         void reset_output(std::string sort, bool partial = true);

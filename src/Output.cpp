@@ -93,15 +93,22 @@ void OutputSingleFile::print_energy(){
 }
 
 void OutputSingleFile::print_properties(vector<string> props , int num){
-    Properties prop { _cim->get_eigvec(num)  , _cim->get_l() , _cim->get_perm() };
+    Properties prop { _cim };
     for(std::string & which : props)
         _file << setprecision(16) << "#Property "  << which << " = " <<  prop.get_property(which) << endl ;
 }
 
-void OutputSingleFile::print_output(std::vector<std::string> props, int num )
+void OutputSingleFile::print_output(std::vector<std::string> props, int num , bool all)
 {
     prepare_for_writing() ; print_energy(); print_properties(props, num) ; print_solutions(); 
-    print_ci_vec(num); 
+    if(all)//Print all eigenvectors.
+        for( int i = 0 ; i < _cim->_eigvec.getm() ; i++)
+        {
+            _file << "#Eigenvector : " << i << std::endl ;
+            print_ci_vec(i ); 
+        }
+    else
+        print_ci_vec(num); 
 }
 
 void OutputSingleFile::close_stream()

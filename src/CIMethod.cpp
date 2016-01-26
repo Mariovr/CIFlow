@@ -148,9 +148,9 @@ void CIMethod::delete_ham()
     delete _ham;
 }
 
-void CIMethod::print_output(std::vector<std::string> vec , int num )
+void CIMethod::print_output(std::vector<std::string> vec , int num , bool all )
 {
-    _output->print_output(vec, num);
+    _output->print_output(vec, num, all);
 }
 
 void CIMethod::print_ham()
@@ -162,12 +162,17 @@ void CIMethod::construct_density(unsigned state, bool trdm)
 {
     if(state != _cid->get_state())//The standard value = 0
     {
+        cout << "Density is constructed from the solution in CIMethod because state is changed." << _cid->get_state() << " doesnt equal " << state << "." <<std::endl;
+        _cid->reset_density();
         _cid->set_state(state);
         _cid->construct_density(trdm);
     }
     else if( !_cid->is_constructed() )
     {
+        _cid->reset_density();
+        _cid->set_state(state);
         _cid->construct_density(trdm);
+        cout << "Density is constructed from the solution in CIMethod because density was not yet constructed." << std::endl;
     }
 }
 
@@ -191,6 +196,7 @@ double CIMethod::get_spin_squared(unsigned state)
 double CIMethod::get_mulliken(std::vector<int> orbs, unsigned state )
 {
     construct_density(state, false);
+    //SCPP_ASSERT(_cid->is_constructed() , "density is not constructed but we extract variables.");
     return _cid->get_mulliken(orbs);
 }
 

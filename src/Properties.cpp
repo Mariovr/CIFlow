@@ -43,8 +43,7 @@ Properties::Properties(CIMethod * cim)
     _perm = cim->get_perm();
     _wf = cim->get_eigvec(0);
     _cim = cim;
-    _cim->construct_density(); //Make sure the density matrices are constructed because they are used to construct most of the properties.
-
+    _cim->construct_density();
 }
 
 double Properties::shannon_ic()
@@ -86,6 +85,7 @@ std::string Properties::get_property(std::string prop)
     }
     else
         SCPP_ASSERT(1 , "Property " << prop << " is not one of shannon, spin, spin_squared, sz, mulliken, ..." << std::endl);
+    return "";
 } 
 
 

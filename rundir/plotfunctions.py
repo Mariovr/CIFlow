@@ -311,11 +311,14 @@ def main():
     fname = 'results/noconstraineddmhermextrema100angstromgoodtrans/noconstrainedm_.dat'
     #fname = 'results/noconstraineddmhermextrema0.1angstrom/noconstrainedm_.dat'
     #fname = 'results/noconstraineddmhermextremainfinitedistance/noconstrainedm_.dat'
-    fname = 'results/noconstraineddmhermextremainfiniteangstromscan7.98/noconstrainedm_.dat'
+    #fname = 'results/noconstraineddmhermextremainfiniteangstromscan7.98/noconstrainedm_.dat'
+    #fname = 'results/noconstraineddmkeepwfni_system.datdocimoresultsinfinitedistance/noconstrainedm_.dat'
+    #fname = 'results/noconstraineddmkeepwfpsioutput.datdocimoresults2.3angstrom/noconstrainedm_.dat'
+    fname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick10.0new.out/noconstrainedm_.dat'
     
     plotter = Plot_Files(fname)
     #title = 'NO$^+$ Infinite Angstrom scan different ham (STO-3G)'
-    title = 'NO$^+$ Infinite Angstrom scan 7.98 (STO-3G)'
+    title = 'NO$^+$ pot  (STO-3G)'
     xlim = None
     ylim = None
     #xlim = (0.5,3.5)
@@ -325,19 +328,21 @@ def main():
         plotter.reader.convert(0) #converts angstrom to au.
         plotter.reader.units['x'] = '(a.u.)'
 
-    plotter.data[0].depvar['xas'] = 'lambda ' #change the future y-axis label 
-    plotter.data[0].depvar['yas'] = 'FCI energy' #change the future y-axis label 
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdascanfci')
+    #plotter.data[0].depvar['yas'] = 'CI Energy' #change the future y-axis label 
+    ##plotter.data[0].depvar['yas'] = 'Mulliken charge' #change the future y-axis label 
+    #plotter.data[0].depvar['xas'] = 'R' #change the future y-axis label 
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3,4,5,6,7], titel = title, name = 'plot' , exname = 'cienergies')
+    ##plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [8,9,10,11,12], titel = title, name = 'plot' , exname = 'mullikencharges')
 
-    #plotter.data[0].depvar['xas'] = 'Mulliken charge on N'#change the future y-axis label 
-    #plotter.data[0].depvar['yas'] = 'Extremum lambda'#change the future y-axis label 
-    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambda')
-    #plotter.data[0].depvar['yas'] = 'Energy'#change the future y-axis label 
-    #plotter.data[0].units['y'] = r'(E$_h$)'
-    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergy')
-    #plotter.data[0].depvar['xas'] = 'Extremum lambda'#change the future y-axis label 
-    #plotter.data[0].units['x'] = r'(a.u.)'
-    #plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergy')
+    plotter.data[0].depvar['xas'] = 'Mulliken charge on N'#change the future y-axis label 
+    plotter.data[0].depvar['yas'] = 'Extremum lambda'#change the future y-axis label 
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambda')
+    plotter.data[0].depvar['yas'] = 'Energy'#change the future y-axis label 
+    plotter.data[0].units['y'] = r'(E$_h$)'
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergy')
+    plotter.data[0].depvar['xas'] = 'Extremum lambda'#change the future y-axis label 
+    plotter.data[0].units['x'] = r'(a.u.)'
+    plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergy')
     option = None
     #here under is an example to show the flexibility of the plotclass
     if option == 'inset':
@@ -364,8 +369,9 @@ def togethermulliken():
     fname2 = 'results/noconstraineddmhermextremainfinitedistance/noconstrainedm_.dat'
     fname3 = 'results/noconstraineddmhermextrema0.1angstrom/noconstrainedm_.dat'
     fname4 = 'results/noconstraineddmhermextrema/noconstrainedm_.dat'
+    fname5 = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick10.0new.out/noconstrainedm_.dat'
 
-    plotter = Plot_Files([fname, fname2, fname3 , fname4])
+    plotter = Plot_Files([fname, fname2, fname3 , fname4, fname5])
     title = 'NO$^+$ Infinite Angstrom, 100angstrom (STO-3G)'
     xlim = None
     ylim = None
@@ -373,17 +379,24 @@ def togethermulliken():
     plotter.data[0].depvar['xas'] = 'Mulliken charge on N'#change the future y-axis label 
     plotter.data[0].depvar['yas'] = 'Lambda at extremum'#change the future y-axis label 
     plotter.data[0].units['y'] = r'(a.u.)'
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambdatogether', save = False, label = '100angstrom')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambdatogether', save = False, label = '100 bohr')
     plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambdatogether', save = False, datanum = 1, label = 'infinite distance')
     plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambdatogether', save = False, datanum = 2, label = '0.1 angstrom')
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambdatogether', save = True, datanum = 3, label = '1.225 angstrom')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambdatogether', save = False, datanum = 3, label = '1.225 angstrom')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambdatogether', save = True, datanum = 4, label = '10 bohr')
     plotter.data[0].depvar['yas'] = 'Energy'#change the future y-axis label 
     plotter.data[0].units['y'] = r'(E$_h$)'
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergytogether', save = False, label = '100 angstrom')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergytogether', save = False, label = '100 bohr')
     plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergytogether', save = False, datanum = 1, label = 'infinite distance' )
     plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergytogether', save = False, datanum =2, label = '0.1 angstrom' )
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergytogether', save = True, datanum = 3, label = '1.225 angstrom')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergytogether', save = False, datanum = 3, label = '1.225 angstrom')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergytogether', save = True, datanum = 4, label = '10 bohr')
 
+    plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergytogether', save = False, label = '100 bohr')
+    plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergytogether', save = False, datanum = 1, label = 'infinite distance' )
+    plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergytogether', save = False, datanum =2, label = '0.1 angstrom' )
+    plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergytogether', save = False, datanum = 3, label = '1.225 angstrom')
+    plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergytogether', save = True, datanum = 4, label = '10 bohr')
 
 def shannon_scatter():
     #fname = '/home/mario/DOCI-results/shannon_scattereq/shannon_scattereq_sto-3g.dat'
