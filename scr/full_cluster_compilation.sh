@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CLUSTERS=( "raichu" "delcatty" )
+CLUSTERS=( "raichu" "delcatty" "golett" "phanpy")
 for CLUSTER in ${CLUSTERS[@]} 
 do
     echo $CLUSTER

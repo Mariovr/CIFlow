@@ -80,7 +80,11 @@ tests :
 # If you have PSI4.
 .PHONY: mointegrals
 mointegrals:
-	cd ./mointegrals && $(MAKE)
+	cd ./mointegrals && $(MAKE) clean && $(MAKE)
+
+.PHONY: sointegrals
+sointegrals:
+	cd ./sointegrals && $(MAKE) clean && $(MAKE)
 
 .PHONY : clean
 clean:
