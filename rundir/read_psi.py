@@ -686,12 +686,9 @@ def list_test():
     distancelist = [fileinfo(i) for i in hamfiles.plotfiles]
     print distancelist
 
-    nucrep = [112, 56 , 28 , 14 , 7, 5.6 , 2.8 , 1.4 , 0.7 , 0.56, 0.28 , 0.14, 0.07 , 0.056 , 0.0112 , 0.0056]
-
-    assert(len(nucrep) == len(distancelist))
-
     for num , dist in enumerate(distancelist):
-        valdict = {'nalpha': 7 , 'nbeta' : 7 , 'norb' : 10 , 'nirrep' : 1 , 'sym' : 'c1' , 'nucrep' : nucrep[num] , 'irreplist': [0]*10, 'hfenergy' : -75.4675801847 , 'DOCC' : [7], 'SOCC' : [0]}
+        nucrep = 56./dist
+        valdict = {'nalpha': 7 , 'nbeta' : 7 , 'norb' : 10 , 'nirrep' : 1 , 'sym' : 'c1' , 'nucrep' : nucrep , 'irreplist': [0]*10, 'hfenergy' : -75.4675801847 , 'DOCC' : [7], 'SOCC' : [0]}
         reader = PsiReader( "" , isbig = False, numorbs = None, read_ints = True, valdict = valdict)
         reader.add_patrick_mo(one = os.path.join(dir, 'no_%.1f_PB.one' % dist) , two =  os.path.join(dir , 'no_%.1f_PB.two' % dist) , overlapfile = os.path.join(dir, 'no_%.1f_PB.ove' % dist), unitfile =os.path.join(dir , 'no_%.1f_PB.mo' % dist)  )
         reader.create_output(fname = 'hamnoplussto-3gpatrick%.1fnew.out' % dist )
