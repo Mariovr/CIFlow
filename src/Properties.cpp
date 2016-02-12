@@ -30,26 +30,25 @@
 
 using namespace std;
 
-Properties::Properties(vector<double> eigvec, int norb , Permutator * perm)
-{
-    //When a full copy of the cimethod is not necessary to extract the properties, and one only needs the eigenvector (shannon entropy, mpd's, ...)
-    _perm = perm;
-    _wf = eigvec;
-    _cim = nullptr;
-}
+//Properties::Properties(vector<double> eigvec, int norb , Permutator * perm)
+//{
+//    //When a full copy of the cimethod is not necessary to extract the properties, and one only needs the eigenvector (shannon entropy, mpd's, ...)
+//    _perm = perm;
+//    _wf = eigvec;
+//    _cim = nullptr;
+//}
 
 Properties::Properties(CIMethod * cim)
 {
-    _perm = cim->get_perm();
-    _wf = cim->get_eigvec(0);
     _cim = cim;
     _cim->construct_density();
 }
 
-double Properties::shannon_ic()
+double Properties::shannon_ic(int num)
 {
     double som = 0;
-    for(auto & x : _wf)
+    std::vector<double> wf = _cim->get_eigvec(num);
+    for(auto & x : wf )
     {
         if (fabs(x) > 1e-15)
             som += x*x*log(x * x)/log(2.); // log_2 (x) = log(x) / log(2) 
@@ -57,28 +56,28 @@ double Properties::shannon_ic()
     return -1.* som;
 }
 
-std::pair<std::string , double >  Properties::get_max_det()
+std::pair<std::string , double >  Properties::get_max_det(int num)
 {
-    auto val = std::max_element(_wf.begin() , _wf.end() ); //returns iterator
-    int index = std::distance(_wf.begin() , val);
+    std::vector<double> wf = _cim->get_eigvec(num);
+    auto val = std::max_element(wf.begin() , wf.end() ); //returns iterator
+    int index = std::distance(wf.begin() , val);
 
     std::pair<std::string , double> values { "d", *val};
     return values;
-
 }
 
-std::string Properties::get_property(std::string prop)
+std::string Properties::get_property(std::string prop, int num)
 {
     if(prop ==  "shannon")
-        return std::to_string(shannon_ic() );
+        return std::to_string(shannon_ic(num) );
     else if(prop == "spin_squared")
-        return std::to_string(_cim->get_spin_squared());
+        return std::to_string(_cim->get_spin_squared(num));
     else if(prop == "spin")
-        return std::to_string(_cim->get_spin());
+        return std::to_string(_cim->get_spin(num ));
     else if(prop == "sz")
         return std::to_string(_cim->get_sz());
     else if(prop == "mulliken")
-        return std::to_string(_cim->get_mulliken({0,1,2,3,4}) ) ;
+        return std::to_string(_cim->get_mulliken({0,1,2,3,4}, num) ) ;
     else if(prop == "maxdet")
     {
         return "d";

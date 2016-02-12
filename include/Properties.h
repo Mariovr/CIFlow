@@ -33,16 +33,14 @@ class Properties
 {
     public:
         //When a full copy of the cimethod is not necessary to extract the properties, and one only needs the eigenvector (shannon entropy, mpd's, ...)
-        Properties(std::vector<double> eigvec, int norb , Permutator * perm);
+        //Properties(std::vector<double> eigvec, int norb , Permutator * perm);
         //Extract properties from the solutions this CIMethod contains.
         Properties(CIMethod * cim);
-        double shannon_ic();
-        std::pair<std::string , double >  get_max_det();
-        std::string get_property(std::string prop); 
+        double shannon_ic(int num);
+        std::pair<std::string , double >  get_max_det(int num);
+        std::string get_property(std::string prop, int num); 
 
     private:
-        std::vector<double> _wf;
-        Permutator *  _perm;
         CIMethod * _cim;
 };
 

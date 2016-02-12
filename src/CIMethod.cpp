@@ -162,7 +162,7 @@ void CIMethod::construct_density(unsigned state, bool trdm)
 {
     if(state != _cid->get_state())//The standard value = 0
     {
-        cout << "Density is constructed from the solution in CIMethod because state is changed." << _cid->get_state() << " doesnt equal " << state << "." <<std::endl;
+        //cout << "Density is constructed from the solution in CIMethod because state is changed." << _cid->get_state() << " doesnt equal " << state << "." <<std::endl;
         _cid->reset_density();
         _cid->set_state(state);
         _cid->construct_density(trdm);
@@ -172,7 +172,7 @@ void CIMethod::construct_density(unsigned state, bool trdm)
         _cid->reset_density();
         _cid->set_state(state);
         _cid->construct_density(trdm);
-        cout << "Density is constructed from the solution in CIMethod because density was not yet constructed." << std::endl;
+        //cout << "Density is constructed from the solution in CIMethod because density was not yet constructed." << std::endl;
     }
 }
 
@@ -229,7 +229,7 @@ void CIMethod::solve(int neigval){
         //_mat.ConvertToMatrix(mat);
         //_eigval = matrix(get_dim(), 1);
         //_eigvec = matrix(get_dim() , get_dim());
-        //mat.Print();
+        ////mat.Print();
         //cout << "We solve the Hamiltonian with dimension: " << get_dim() << endl;
         //mat.diagonalize(_eigval, _eigvec);
         //_eigval.Print();

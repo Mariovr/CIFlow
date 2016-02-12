@@ -46,7 +46,7 @@ public:
 
 	virtual void print_ci_vec(int num = 0 , double nauw = -1.);
 	void print_energy();
-    void print_properties(std::vector<std::string> props , int num = 0);
+    void print_properties(std::vector<std::string> props );
 	void print_rdm(const CIDens & cid, bool twordm = true);
 	void print_solutions();
 	void print_ham();
