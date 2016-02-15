@@ -73,10 +73,11 @@ class CIDens
         double get_mulliken(std::vector<int> orbs);//orbs defines the indices of the orbitals over which the partial trace runs.
         unsigned dim() const;
 
-        void set_state(int state){_state = state; reset_1rdm(); reset_2rdm(); }
+        void set_state(int state){if (state != _state ){ _state = state; reset_density(); }  }
         unsigned get_state() const {return _state;}
 
-        bool is_constructed(){return _two_dens.size() != 0; } //Check if we already have a two dens.
+        std::pair<bool, bool> is_constructed(){return _solved; } //Check if we already have a two dens.
+        void set_constructed(std::pair<bool,bool> solved){_solved = solved ;}
 
         //Puts in occupations the occupations of the orbitals, and in no the natural orbitals.
 		//Get the NO in decreasing order of occupations.
@@ -104,6 +105,7 @@ class CIDens
 	protected:
         unsigned _norb;
         unsigned _state;
+        std::pair<bool, bool>  _solved;
 		CIMethod * _cim;
         std::valarray<std::valarray<double >> _one_dens;
         std::vector< Vector2d >  _two_dens;

@@ -237,8 +237,6 @@ void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
         cim->print_output({"shannon", "spin_squared", "mulliken"});
         //cim->print_rdm();
         //cim->print_ham();
-        //Properties prop { cim->get_eigvec(0)  , cim->get_l() , cim->get_perm() };
-        //cout << "shannon entropy "  << prop.shannon_ic() << std::endl;
         DensDOCI densmat {cim};
         densmat.construct_density(false);
         std::vector<int> orbs {0,1,2,3,4};
@@ -320,12 +318,13 @@ int main ( int argc, char ** argv){
                 DOCI * cim = new DOCI(ham.get());
                 cim->solve();
                 std::cout  << "DOCI energy: " << cim->get_ci_energy() << std::endl;
-                std::vector<int> orbs {0,1,2,3,4};
-                std::cout << "Mulliken charges first atom: " << cim->get_mulliken(orbs) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
-                //std::cout << "Spin Squared: " << cim->get_spin_squared() << std::endl;
+                //std::vector<int> orbs {0,1,2,3,4};
+                //std::cout << "Mulliken charges first atom: " << cim->get_mulliken(orbs) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
+                std::cout << "Spin Squared: " << cim->get_spin_squared() << std::endl;
                 cim->print_output({ "shannon" , "mulliken", "spin_squared"}, 0 , true);
+                //cim->print_output();
                 //cim->print_ham();
-                //cim->print_rdm();
+                cim->print_rdm();
 
                 //DensDOCI densmat {cim};
                 //densmat.construct_density(true);
@@ -350,15 +349,16 @@ int main ( int argc, char ** argv){
                 std::cout  << "FCI energy:" << cim5->get_ci_energy() << " Per site: " << cim5->get_ci_energy() / (double) ham->getL() <<std::endl;
                 for(int i = 0 ; i < neigval ; i ++)
                 {
-                    //std::cout << "Spin Squared: " << cim5->get_spin_squared(i) << std::endl;
+                    std::cout << "Spin Squared: " << cim5->get_spin_squared(i) << std::endl;
                     std::vector<int> orbs {0,1,2,3,4};
                     std::cout << "Mulliken charges first atom: " << cim5->get_mulliken(orbs, i ) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
                 }
                 //Properties prop { cim5->get_eigvec(0)  , cim5->get_l() , cim5->get_perm() };
                 //cout << "shannon entropy "  << prop.shannon_ic() << std::endl;
-                cim5->print_output({ "shannon" , "mulliken", "spin_squared"}, 0 , false);
+                //cim5->print_output({ "shannon" , "mulliken", "spin_squared"}, 0 , false);
+                cim5->print_output();
 
-                //cim5->print_rdm(0 , true); //0 -> state , 1-> 2rdm
+                cim5->print_rdm(0 , false); //0 -> state , 1-> 2rdm
                 //cim5->get_ham()->print_overlap(std::cout);
                 //cim5->get_ham()->get_unitary()->print_unitary(std::cout);
                 //cim5->print_ham();
@@ -368,7 +368,7 @@ int main ( int argc, char ** argv){
                 //densmatfci.construct_density();
                 //densmatfci.transform_to_ao(true, false); //options: 2rdm , revert
                 //ofstream file(ham->get_short_filename() + "aodens");
-                //densmatfci.print_one_dens(file);
+                //densmatfci.print_one_dens(std::cout);
                 //densmatfci.print_two_dens(file);
                 //file.close();
                 //std::cout << "FCI-DENS one-electron energy: " << densmatfci.get_one_electron_energy() << std::endl;

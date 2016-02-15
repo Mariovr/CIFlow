@@ -43,6 +43,7 @@ CIDens::CIDens(CIMethod * cim, unsigned state)
     _one_dens.resize(0);
     _two_dens.resize(0);
     _state = state;
+    _solved = std::pair< bool, bool> { false , false } ;
 }
 
 /**
@@ -324,6 +325,11 @@ void CIDens::construct_density(bool twordm)
     #ifdef _DEBUG
         //test_invariants(twordm);
     #endif
+    //print_one_dens(cout);
+    if( twordm)
+        _solved = {  true, true} ;
+    else
+        _solved = { true , false} ;//We only solved the onerdm
 }
 
 void CIDens::reset_1rdm()
@@ -340,6 +346,7 @@ void CIDens::reset_density()
 {
     reset_1rdm();
     reset_2rdm();
+    _solved = {false , false};
 }
 
 matrix CIDens::spin_summed_1rdm()const {
@@ -423,9 +430,10 @@ void CIDens::transform_to_ao(bool trdm, bool revert )
     matrix unitary( _cim->get_ham()->get_unitary()->get_full_transformation() , _norb , _norb); //returns full transformation defined by unitary matrix (new basis in rows.)
     if (revert)
     {
-        matrix tran(unitary.getn() , unitary.getm());
-        tran.transpose(unitary);
-        unitary = tran;
+        //matrix tran(unitary.getn() , unitary.getm());
+        //unitary.transpose(tran);
+        //unitary = tran;
+        matrix tran = unitary.invert(); //Remark the ao->mo transformation is not unitary so we cant just transpose we need to take explicitely the inverse for the inverse transformation.
     }
 
     transform_ordm(unitary); //go back to ao basis (we dont need to transpose because unitarymatrix saves in rows and not in columns the new basis)
@@ -521,6 +529,7 @@ void CIDens::get_no(matrix &occupations, matrix &NO )const
 
 void CIDens::build_parallel(bool twordm)
 {
+    //cout << "#We start to construct the density matrix, with trdm: " << twordm << endl;
     #ifdef __OMP__
         int num_t = omp_get_max_threads();
     #else

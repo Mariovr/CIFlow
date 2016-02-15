@@ -170,7 +170,7 @@ class matrix
         //Sets this matrix to zero.
         void reset();
 
-        matrix invert(int overwrite);
+        matrix invert();
 
         matrix matrix_square_root();
         matrix matrix_inv_square_root();

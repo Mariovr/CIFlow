@@ -297,8 +297,8 @@ bool SimulatedAnnealing::accept_function(double e_new, double e_old, double temp
 
 double SimulatedAnnealing::cost_function()
 {
-    return _cim->get_mulliken({0,1,2,3}, 0);
-    //return _cim->get_ci_energy(); //For energy based orbital optimization.
+    //return _cim->get_mulliken({0,1,2,3}, 0);
+    return _cim->get_ci_energy(); //For energy based orbital optimization.
     //Properties prop { _cim->get_eigvec(0)  , _cim->get_l() , _cim->get_perm() };
     //return prop.shannon_ic();
 }
@@ -342,17 +342,17 @@ double SimulatedAnnealing::optimize()
             if (accept_function(e_new, e_old, temp, mt, dist_real))
             {
                 e_old = e_new;
-                cout << "new E: " << e_new << "old E: " << e_old << " at Temp: " << temp << "Angle : " << cur_angle <<endl;
+                //cout << "new E: " << e_new << "old E: " << e_old << " at Temp: " << temp << "Angle : " << cur_angle <<endl;
                 if(e_new < _opt_energy)
                 {
                     _opt_energy = e_new;
                     _opt_unitary.reset(new UnitaryMatrix(_orbtrans->get_unitary()));
                 }
-                if(ll <  1000 && ll % 5 == 0)
-                {
-                    save_ham("sim"+ to_string(ll));
+                //if(ll <  1000 && ll % 5 == 0)
+                //{
+                    //save_ham("sim"+ to_string(ll));
 
-                }
+                //}
                 unaccept = 0;
                 if(_c_steps % 1000 == 0)
                 {
@@ -624,7 +624,7 @@ void Iterative_Subotnik_DIIS::rotate_unitary_from_extrapolated_R()
     for(int i = 0 ; i < overlap.size() ; i++)
     {
         //overlap[i].Print();
-        overlap[i].invert(1);
+        overlap[i].invert();
         //overlap[i].Print();
     }
     matrix inverseoverlap = matrix(overlap);

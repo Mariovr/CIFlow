@@ -96,6 +96,8 @@ class CIMethod{
 		void print_output(std::vector<std::string> vec = {} , int num = 0, bool all = false );
 		void print_ham();
 		void print_rdm(unsigned state = 0, bool trdm = false);
+		void print_one_rdm(std::ostream & os);
+		void print_two_rdm(std::ostream & os);
         void reset_output(std::string sort, bool partial = true);
 
 		//test and check functions

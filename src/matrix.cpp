@@ -436,9 +436,9 @@ void matrix::set_diagonal(matrix& diag)
 
 void matrix::transpose(matrix& trans)
 {
-    for(int i = 0 ; i < n ; i++)
+    for(int j = 0 ; j < m ; j++)
     {
-        for(int j = 0 ; j < m ; j++)
+        for(int i = 0 ; i < n ; i++)
         {
             trans(j,i) = mat[i+j*n]; //mat is column major.
         }
@@ -491,10 +491,10 @@ int matrix::linsolve(double *B, double *x) {
     return info;
 }
 
-matrix matrix::invert(int overwrite){
+matrix matrix::invert(){
     /*  
         Calculates the inverse of the n*n matrix in this: Y = this^-1
-        Does not change the value of this, unless overwrite = 1.
+        It changes the value of this.
     */
     
     int info=0;
@@ -502,15 +502,15 @@ matrix matrix::invert(int overwrite){
     
     matrix resultmat; 
     /*  When overwrite != 1 we want to keep this unchanged, so create new matrix object  */
-    if (overwrite != 1)
-    {
-        resultmat = matrix(n,m);
-        result = resultmat.getpointer();
-    }
-    else
-    {
+    //if (overwrite != 1)
+    //{
+        //resultmat = matrix(*this);
+        //result = resultmat.getpointer();
+    //}
+    //else
+    //{
         result = getpointer();
-    }
+    //}
     
     /*  We need to store the pivot matrix obtained by the LU factorisation  */
     int *ipiv;
@@ -533,14 +533,14 @@ matrix matrix::invert(int overwrite){
     
     /*  Cleanup and exit  */
     free(ipiv);
-    if (overwrite != 1)
-    {
-        return resultmat;
-    }
-    else
-    {
+    //if (overwrite != 1)
+    //{
+        //return resultmat;
+    //}
+    //else
+    //{
         return *this;
-    }
+    //}
 }
 
 matrix::matrix(std::vector<matrix> symvec)

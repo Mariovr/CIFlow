@@ -160,20 +160,14 @@ void CIMethod::print_ham()
 
 void CIMethod::construct_density(unsigned state, bool trdm)
 {
-    if(state != _cid->get_state())//The standard value = 0
+    //_cid->print_one_dens(std::cout);
+    _cid->set_state(state);
+    if(  ! _cid->is_constructed().first ||  (trdm  && !_cid->is_constructed().second ) )
     {
-        //cout << "Density is constructed from the solution in CIMethod because state is changed." << _cid->get_state() << " doesnt equal " << state << "." <<std::endl;
-        _cid->reset_density();
-        _cid->set_state(state);
-        _cid->construct_density(trdm);
-    }
-    else if( !_cid->is_constructed() )
-    {
-        _cid->reset_density();
-        _cid->set_state(state);
         _cid->construct_density(trdm);
         //cout << "Density is constructed from the solution in CIMethod because density was not yet constructed." << std::endl;
     }
+    //_cid->print_one_dens(std::cout);
 }
 
 void CIMethod::reset_density()
@@ -184,9 +178,22 @@ void CIMethod::reset_density()
 void CIMethod::print_rdm(unsigned state, bool trdm)
 {
     construct_density(state, trdm);
-    _output->print_rdm(*_cid , trdm);
+    _output->print_rdm( trdm);
 }
 
+void CIMethod::print_one_rdm(std::ostream & os)
+{
+    os << "#The eigenstate from which the density matrix is constructed: " << _cid->get_state() << endl;
+    os << "#THE 1RDM:"<<  endl;
+    _cid->print_one_dens(os);
+}
+
+void CIMethod::print_two_rdm(std::ostream & os)
+{
+    os << "#THE 2RDM:" << endl;
+    _cid->print_two_dens(os);
+}
+        
 double CIMethod::get_spin_squared(unsigned state)
 {
     construct_density(state, true);
@@ -196,8 +203,9 @@ double CIMethod::get_spin_squared(unsigned state)
 double CIMethod::get_mulliken(std::vector<int> orbs, unsigned state )
 {
     construct_density(state, false);
-    //SCPP_ASSERT(_cid->is_constructed() , "density is not constructed but we extract variables.");
-    return _cid->get_mulliken(orbs);
+    //SCPP_ASSERT(_cid->is_constructed().first , "density is not constructed but we extract variables.");
+    double mul = _cid->get_mulliken(orbs);
+    return mul; 
 }
 
 

@@ -41,7 +41,6 @@ using namespace std;
 Properties::Properties(CIMethod * cim)
 {
     _cim = cim;
-    _cim->construct_density();
 }
 
 double Properties::shannon_ic(int num)
@@ -71,19 +70,27 @@ std::string Properties::get_property(std::string prop, int num)
     if(prop ==  "shannon")
         return std::to_string(shannon_ic(num) );
     else if(prop == "spin_squared")
+    {
         return std::to_string(_cim->get_spin_squared(num));
+    }
     else if(prop == "spin")
+    {
         return std::to_string(_cim->get_spin(num ));
+    }
     else if(prop == "sz")
+    {
         return std::to_string(_cim->get_sz());
+    }
     else if(prop == "mulliken")
+    {
         return std::to_string(_cim->get_mulliken({0,1,2,3,4}, num) ) ;
+    }
     else if(prop == "maxdet")
     {
         return "d";
     }
     else
-        SCPP_ASSERT(1 , "Property " << prop << " is not one of shannon, spin, spin_squared, sz, mulliken, ..." << std::endl);
+        SCPP_ASSERT(0 , "Property " << prop << " is not one of shannon, spin, spin_squared, sz, mulliken, ..." << std::endl);
     return "";
 } 
 

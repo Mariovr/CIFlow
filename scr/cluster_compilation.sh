@@ -13,6 +13,7 @@ module load arpack-ng/3.2.0-intel-2015a-mt
 module load imkl/11.3.1.150-iimpi-8.1.5-GCC-4.9.3-2.25 
 module load iimpi/8.1.5-GCC-4.9.3-2.25
 module load GCC/4.9.3
+module load arpack-ng/3.1.5-ictce-7.1.2-mt
 
 #####module load scripts
 #####module load GCC/4.9.1
