@@ -62,8 +62,8 @@ class File_Collector(object):
             if os.path.islink(filep):
                 pass
             elif os.path.isdir(filep):
-                print m
                 m = re.search(notdir , filep)
+                print m
                 if m is None:
                     self.readfiles(filep , search, notsearch = notsearch, notdir = notdir )
             elif os.path.isfile(filep) and '.swp' not in filep: 

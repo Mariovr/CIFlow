@@ -189,7 +189,8 @@ class Hamiltonian{
 	     void set_overlap(int irrep, int i, int j , double val);
 	     void set_overlap(int i, int j , double val);
          
-         UnitaryMatrix * get_unitary() const {return _unit.get();};
+         UnitaryMatrix * get_unitary() const ;
+
          void load_unitary(const std::string & filename);
          void set_unitary(const std::vector<double> & mat);
 

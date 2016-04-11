@@ -242,7 +242,7 @@ class PsiReader(Reader):
         self.transtables = {'f2c': self.maketranslation()}
         if filename:
             super(PsiReader,self).__init__(filename)
-            self.regexps = {'nalpha': (r'Nalpha\s*=\s*(\d+)', int) , 'nbeta' : (r'Nbeta\s*=\s*(\d+)', int), 'norb' : (r'Number Of \w+ Orbitals\s*=\s*(\d+)', int) , 'nirrep' : (r'Nirreps\s*=\s*(\d+)' ,int ) , 'sym' : (r'(?m)^Symmetry\s*Label\s*=\s*([\d\w]*)' , lambda x: x), 'nucrep' : (r'(?m)^Nuclear Repulsion Energy =\s*([\-+]?\d+\.\d+[eEdD]?[\-+]?\d+)', float), 'irreplist' : (r'Irreps Of \w+ Orbitals\s*=\s*\n([\d\s]+)\n', lambda x : map(int,x.split())), 'hfenergy' : ( '(?m)^\*+\s*HF\s*Energy\s*=\s*([\-+]?\d+\.\d+[eEdD]?[\-+]?\d+)', float), 'DOCC' : ( r'(?m)^DOCC\s+=\s+([\d\s]+)', lambda x: map(int , x.split() ) ) , 'SOCC' : ( r'(?m)^SOCC\s+=\s+([\d\s]+)', lambda x : map(int, x.split() ) ) }
+            self.regexps = {'nalpha': (r'Nalpha\s*=\s*(\d+)', int) , 'nbeta' : (r'Nbeta\s*=\s*(\d+)', int), 'norb' : (r'Number Of \w+ Orbitals\s*=\s*(\d+)', int) , 'nirrep' : (r'Nirreps\s*=\s*(\d+)' ,int ) , 'sym' : (r'(?m)^Symmetry\s*Label\s*=\s*([\d\w]*)' , lambda x: x), 'nucrep' : (r'(?m)^Nuclear Repulsion Energy =\s*([\-+]?\d+\.?\d*[eEdD]?[\-+]?\d*)', float), 'irreplist' : (r'Irreps Of \w+ Orbitals\s*=\s*\n([\d\s]+)\n', lambda x : map(int,x.split())), 'hfenergy' : ( '(?m)^\*+\s*HF\s*Energy\s*=\s*([\-+]?\d+\.*\d*[eEdD]?[\-+]?\d*)', float), 'DOCC' : ( r'(?m)^DOCC\s+=\s+([\d\s]+)', lambda x: map(int , x.split() ) ) , 'SOCC' : ( r'(?m)^SOCC\s+=\s+([\d\s]+)', lambda x : map(int, x.split() ) ) }
 
             self.regint = { 'mo4index' : (r'(?im)^(\d+)\s(\d+)\s(\d+)\s(\d+)\s*([\-+]?\d+\.\d+[eEdD]?[\-+]?\d+)', self.tei_func) , 'mo2index' : (r'(?im)^(\d+)\s*(\d+)\s*([\-+]?\d+\.\d+[eEdD]?[\-+]?\d+)', self.oei_func )}
 
@@ -277,7 +277,7 @@ class PsiReader(Reader):
                         overlap[irrep_num] = irreplist
                     irrep_num = int(re.search(r'(\d+)',line).group())
                     irreplist = []
-                elif re.search(r'([\-+]?\d+\.\d+[eEdD]?[\-+]?\d+)', line):
+                elif re.search(r'([\-+]?\d+\.*\d*[eEdD]?[\-+]?\d*)', line):
                     irreplist.append(np.array(map(float,line.split() ) ) )
                 else:
                     overlap[irrep_num] = irreplist
@@ -456,6 +456,23 @@ class PsiReader(Reader):
         teilist = re.findall(tei , oeilines)
         self.ints['mo2index'] = self.oei_func(oeilist)
         self.ints['mo4index'] = self.tei_func(teilist)
+
+    def add_pierre_mo(self, fname = 'SphInts_2'):
+        with open(fname, 'r') as tofile:
+            intlines = tofile.read()
+
+        oei = r'([\-+]?\d+\.\d*[eEdD]?[\-+]?\d*)\s*(\d+)\s+(\d+)\s+0\s+0'
+        tei = r'([\-+]?\d+\.\d*[eEdD]?[\-+]?\d*)\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)'
+
+        oeilist = [ (a,b,val)    for val , a,b  in re.findall(oei , intlines) ]
+        teilist = [(a,b,c,d , val ) for val , a,b,c,d in re.findall(tei ,  intlines) ]
+        
+        self.ints['mo2index'] = self.oei_func(oeilist)
+        self.ints['mo4index'] = self.tei_func(teilist)
+        self.add_index(-1)
+
+        self.overlap = [None] * 8 #8 is max num of irreps in abelian point groups we consider
+        self.unit = [None] * 8
 
     def oei_func(self,oeilist):
         for index,match in enumerate(oeilist):
@@ -792,6 +809,11 @@ def add_ni_system():
     reader1.add_ni_system(reader2)
     print reader1.values
 
+def test_pierre_format():
+    filename = "psioutput.dat"
+    reader = PsiReader(filename, isbig = False, numorbs = None, read_ints = True)
+    reader.add_pierre_mo( "SphInts_2" )
+    reader.create_output(fname = 'pierreintegrals.dat')
 
 if __name__ == "__main__":
     #reverse_repulsion()
@@ -803,7 +825,8 @@ if __name__ == "__main__":
     #test_mod_ham()
     #generate_random_hams()
     #hdf5_ham()
-    list_test()
+    #list_test()
     #main()
     #test_new_format()
+    test_pierre_format()
     #add_ni_system()

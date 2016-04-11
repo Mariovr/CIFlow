@@ -64,7 +64,7 @@ Hamiltonian::Hamiltonian(const int Norbitals, const int nGroup, const int * OrbI
 
     _nup = nup;
     _ndown = ndown;
-    //SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
+    SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
     _oneOverNMinusOne = 1.0/((_ndown+_nup)-1);
     _filename = "";
 
@@ -103,7 +103,7 @@ Hamiltonian::Hamiltonian(const int Norbitals, const int nGroup, int nup , int nd
 
     _nup = nup;
     _ndown = ndown;
-    //SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
+    SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
     _oneOverNMinusOne = 1.0/((_ndown+_nup)-1);
     _filename = "";
     //Orthogonal atomic orbitals.(for example for model hamiltonians.)
@@ -167,7 +167,7 @@ Hamiltonian::Hamiltonian(const string filename) : _modham{false}
     	read_file(filename);
     }
     _filename = filename; 
-    //SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
+    SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
 }
 
 Hamiltonian& Hamiltonian::operator=(const Hamiltonian &orig)  
@@ -606,6 +606,12 @@ void Hamiltonian::print_overlap(std::ostream & file)
 std::vector<double> Hamiltonian::get_overlap() const
 {
     return _overlap;
+}
+
+
+UnitaryMatrix * Hamiltonian::get_unitary() const 
+{ 
+    return _unit.get();
 }
 
 void Hamiltonian::set_overlap(std::vector<double> overlap)

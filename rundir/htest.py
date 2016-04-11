@@ -61,7 +61,8 @@ def generate_dir(name,infilename = None,args = None, prefix = ''):
             shutil.copy(i,dir)
     print dir        
     if prefix:
-        x = [i for i in os.listdir(os.getcwd()) if re.search(prefix , i)]
+        path, file = os.path.split(prefix)
+        x = [os.path.join(path , i)  for i in os.listdir(path) if re.search(file, i)]
         for a in x:
             shutil.copy(a,dir)
     os.chdir(dir)
@@ -110,6 +111,16 @@ set %(integralname)s filename %(fout)s
 set %(integralname)s save_unitaries %(su)s
 set reference %(ref)s
 set guess %(guess)s
+set {
+#exact ERI
+SCF_TYPE pk
+DF_SCF_GUESS false
+# strict convergence
+E_CONVERGENCE 1e-6
+D_CONVERGENCE 1e-6
+ints_tolerance 1e-10
+}
+
 """%vars()
 
     if hdf5:
@@ -157,6 +168,9 @@ def create_matrix_elements(elemdir, basissets, runlist, atoms, chmult = (0,1) , 
                 positions =  [[0,0,0],[0,0,r],[0,0,2*r],[0,0,3*r],[0,0,4*r],[0,0,5*r], [0,0,6*r] , [0 , 0 , 7*r] ]
             elif moltype == 'but':
                 positions = [[0,0,0],[extrapar,0,0], [0,r,0] , [extrapar,r,0]]
+            elif moltype == 'square': 
+                positions = [[0,0,0 ] , [0,r,0],[0,-r,0],[r,0,0] ,[-r,0,0]]
+
             else:
                 print 'Error: moltype %s is not know' %moltype
 
@@ -428,7 +442,8 @@ def main_opt(*args , **kwargs):
     #methods = ["file" ,detfile1,  "file" , detfile2 , "file", detfile3,"file" , detfile4 ,"file" ,detfile5 ] #, "doci" , "fmmin"]
     methods = ["file" ,detfile20,  "file" , detfile21 , "file", detfile22,"file" , detfile23 ] #, "doci" , "fmmin"]
     methods = ["fci" , "doci" , "file" , detfile1 ,  "file" , detfile2, "file" , detfile3]
-    methods = ["doci" , "fmmin"]
+    methods = ["doci" , "file", detfile1,"fci"]
+    methods = ["fci" , "doci" , "sim"]
     #methods = ["fci", "hmmin" , "no", "sim" ] #, "doci" , "fmmin"]
     #methods = [ "file" , detfile5 ,"mmind"] #, "doci" , "fmmin"]
     #methods = ["fci" , "none"]
@@ -452,7 +467,7 @@ def main_opt(*args , **kwargs):
     #runlist = list(np.arange(2.3,3.1,0.1)) + list(np.arange(3.2,4.2,0.2))
     #runlist = list(np.arange(3. , 50. , 0.1) )
     #runlist = [2]
-    #runlist = np.arange(1,4, 0.2)
+    #runlist = np.arange(1,10, 0.2)
     #runlist = list(np.arange(1,3, 0.3)) + list(np.arange(3, 0.5, 10.1))
     #runlist = list(np.arange(3, 0.5, 10.1))
     #runlist = [ 1.81625952410, 1.97501269880, 2.13376587350] 
@@ -470,11 +485,12 @@ def main_opt(*args , **kwargs):
     import numpy as np
     #runlist = np.append( np.append(np.arange(0.6 , 1.2, 0.2) , np.arange(1.2 , 2. , 0.05)) , np.arange(2.,6., 0.4) )
     runlist = np.arange(0.5 , 10., 0.1) 
-    runlist = np.arange(0.5 , 10, 0.1) 
+    #runlist = np.arange(0.5 , 10, 0.1) 
+    #runlist = [ 3,3.5, 4,4.5,5,5.5 , 6 , 6.5 , 7 , 7.5, 8 ,8.5,  9 ,9.5 ,10]
     #atoms = [6,6] #C2 
     #atoms = [7,6] 
     #atoms = [8,1,1] #H2O
-    atoms = [7 , 8]
+    #atoms = [7 , 8]
     #atoms = [7 , 9]
     #atoms = [6,7]
     #atoms = [4,1,1] #beh2
@@ -483,23 +499,25 @@ def main_opt(*args , **kwargs):
     #atoms = [1,1,1,1,1,1,1,1] #h8
     #atoms = [7,7]
     #atoms = [7,8] #NO+
+    atoms = [6,8] #NO+
     #atoms = [6,6,6,6,6,6,1,1,1,1,1,1] #benzene
     #runlist = [x*math.pi/180. for x in range(55,61) ]#+ [59.5]] #, 60]  ] #angle between two triangles in benzene.
     #runlist = [2.224207488557] 
-    name = 'noplusrangedoci'
-    rootdir = './results/noplusrangenewdoci/' #relative to the directory that contains this script
+    name = 'comol'
+    rootdir = './results/comol/' #relative to the directory that contains this script
     exe = 'ciflow.x'
-    #elemdir = 'matrixelements'
+    elemdir = 'matrixelements'
     #elemdir = 'matrixelements_otherbasis'
     #elemdir = 'random_hamiltonians'
     #elemdir = 'output_run'
-    elemdir = '.'
 
-    #generate_dir(rootdir , exe , prefix = 'hamnoplussto-3gpatrick')
-    generate_dir(rootdir , exe , args= ["ni_system.dat"], prefix = 'hamnoplus')
+    generate_dir(rootdir , exe , prefix = None)
+    #generate_dir(rootdir , exe , args= ["ni_system.dat"], prefix = r'./ham_patrick/hamnoplus')
+    #generate_dir(rootdir , exe )
+    #generate_dir(rootdir , exe , args= ["ni_system.dat"])
     #shutil.copy(exe, rootdir)#When the matrixelements are already present.
     #os.chdir(rootdir) #When the matrixelements are already present.
-    #create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (1,1) , moltype = 'dimer', package = 'psi' , units = 'bohr', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = None, hdf5 = False, guess = 'sad', extrapar = 104.479848, ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
+    create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (0,1) , moltype = 'dimer', package = 'psi' , units = 'bohr', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = None, hdf5 = False, guess = 'sad', extrapar = 104.479848, ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
 
     outputfile = open(ciflowoutputfile , 'w')
     fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?out' , x).group(1))
@@ -510,27 +528,27 @@ def main_opt(*args , **kwargs):
     #fileinfo = lambda x: float(re.search(r'hamnoplussto-3gpatrick([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)new\.out' , x).group(1))
 
     hamfiles = {}
-    #search = r'psi.+%s.+mout' 
-    search = 'hamnoplus.*%s.+out'
+    search = r'psi.+%s.+mout' 
+    #search = 'hamnoplus.*%s.+out'
     #search = r'randomham.+\d+\.dat' 
     #search = r'ham.+%s.+out' 
     #search = r'ham.+%s.+FCIunit\d+\.dat' 
     #search = r'psi.+%s.+orthon.h5'
     for basis in basissets:
-        #hamfiles[basis] = fc.File_Collector(elemdir , search = search %basis ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= 0 and fileinfo(x) < 10000. )
-        hamfiles[basis] = fc.File_Collector(elemdir , search = search %basis ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) <= 10. and fileinfo(x) >= 2  and fileinfo(x) % 2 == 0 and not '.sw' in x  )
+        hamfiles[basis] = fc.File_Collector(elemdir , search = search %basis ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= 0 and fileinfo(x) < 10000. )
+        #hamfiles[basis] = fc.File_Collector( '.', search = search %basis ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) <= 10. and fileinfo(x) >= 2  and fileinfo(x) in runlist  and not '.sw' in x  )
         #hamfiles[basis] = fc.File_Collector(elemdir , search = search ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1 and fileinfo(x) < 1000. )
 
     #fileinfo2 = lambda x: float(re.search(r'psi0_sto-3g1.29outputfciunit(\d+).dat' , x).group(1))
     #search = r'psi.+outputfciunit\d+.dat' 
     #outputfilesfci = fc.File_Collector('output_files', search = search  ,notsearch = r'\.sw\w',sortfunction = fileinfo2, filterf =  lambda x : fileinfo2(x) >= 0 and fileinfo2(x) < 10000. )
-    hamfiles[basissets[0]].plotfiles += ['ni_system.dat']
-    print hamfiles[basissets[0]]
+    #hamfiles[basissets[0]].plotfiles += ['ni_system.dat']
+    #print hamfiles[basissets[0]]
 
     afh = 'R'
     for basis in basissets:
         fname = name + "_" +basis + ".dat"
-        psir = rp.PsiReader(hamfiles[basis].plotfiles[0], isbig = False, numorbs = -1 , read_ints = False) #just to get number of electrons and orbitals
+        #psir = rp.PsiReader(hamfiles[basis].plotfiles[0], isbig = False, numorbs = -1 , read_ints = False) #just to get number of electrons and orbitals
         #reflist = dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'], [1] , [] , pairex = True)
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] , []], [] ,fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2,3] , []], [] ,fname = detfile14 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
@@ -950,7 +968,7 @@ def hub1d(nalpha, options):
 def con_dm_wrap():
     fileinfo = lambda x: float(re.search(r'hamnoplussto-3gpatrick([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)new\.out' , x).group(1))
     search = r'hamnoplussto-3gpatrick.*new\.out' 
-    hamfiles = [i for i in os.listdir('.') if(  ( re.search(search , i) and fileinfo(i) <= 10. and fileinfo(i) >= 2  and fileinfo(i) * 2 % 2 == 0 and not '.sw' in i  and not fileinfo(i) == 5.)) ]
+    hamfiles = [i for i in os.listdir('ham_patrick') if(  ( re.search(search , i) and fileinfo(i) <= 10. and fileinfo(i) >= 2  and fileinfo(i) * 2 % 2 == 0 and not '.sw' in i  and not fileinfo(i) == 5.)) ]
     hamfiles = sorted(hamfiles , key = fileinfo  )
     hamfiles 
     print hamfiles
@@ -965,20 +983,25 @@ def con_dm(mat):
 
     detfile1= "cisddeterminants.dat" 
     ciflowoutputfile = "ciflowoutput.txt" ; flowname = "flow.dat"
-    methods = ["doci" ]
+    #methods = ["file" , detfile1]
+    methods = ["doci", "local"]
+    methods = ["fci"]
     name = 'noconstrainedm'
-    rootdir = './results/noconstraineddmkeepwf' + mat + 'docioutput'  #relative to the directory that contains this script
+    rootdir = './results/cnmin' + mat.translate(None ,'/.') + 'fciconstrainedextra'  #relative to the directory that contains this script
     exe = 'ciflow.x'
     elemdir = 'matrixelements'
     import numpy as np
     #runlist = [6.001 ]+list(np.arange(7.96,8.01,0.01)) + [7.999]
     #runlist = list(np.arange(5.,8.01,0.01)) 
-    runlist = list(np.arange(6.,8.01,0.01)) 
+    runlist = list(np.arange(5.,8.01,0.01)) 
+    runlist = list(np.arange(7.01,7.23,0.01)) 
+    #runlist = list(np.arange(6.54,7.01,0.01)) 
     #runlist = list(np.arange(7.,8.01,0.01)) 
 
 
     olddir = os.getcwd()
-    generate_dir(rootdir , exe, args = [matrixelements] )
+    generate_dir(rootdir , exe,  args = [matrixelements] )
+    matrixelements = os.path.split(matrixelements)[1]
     #shutil.copy(exe, rootdir)#When the matrixelements are already present.
     #os.chdir(rootdir) #When the matrixelements are already present.
     outputfile = open(ciflowoutputfile , 'w')
@@ -1032,13 +1055,15 @@ def con_dm(mat):
                 energies = process_output(ci_flow) 
                 mullikencharge = process_output(ci_flow, regexp = "Mulliken[\s\w]+:\s*([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)") 
                 return (energies , mullikencharge)
+                #return ( mullikencharge, energies )
 
-            if r <  7 :
-                extremumval = gss(func, -0.3 , 100.,tol=1e-8)
-            elif r < 8.1 :
-                extremumval = gss(func,-4 ,0.1,tol=1e-8)
+            if r <  7:
+                extremumval = gss(func, -3. , 4,tol=1e-10)
+            elif r < 9:
+                extremumval = gss(func,-5 ,2,tol=1e-10)
             energies, mullikencharge = func(extremumval)
-            shutil.copy( 'conelementsoutputdoci.dat' , os.path.join('output_files' , 'conelementsoutputdoci' + str(r)+ '.dat') )
+            #shutil.copy( 'conelementsoutputdoci.dat' , os.path.join('output_files' , 'conelementsoutputdoci' + str(r)+ '.dat') )
+            #shutil.copy( 'conelementscisddeterminantsoutputci_file.dat' , os.path.join('output_files' , 'conelementsoutputcisd' + str(r)+ '.dat') )
             #shutil.copy( 'conelementsoutputdocilocal0.dat' , os.path.join('output_files' , 'conelementsoutputdocilocal' + str(r)+ '.dat') )
 
             print_output('searchfor:'+str(r), energies , methods)
@@ -1094,15 +1119,15 @@ def con_dmloop():
     ciflowoutputfile = "ciflowoutput.txt" ; flowname = "flow.dat"
     methods = ["fci" ]
     name = 'noconstrainedm'
-    rootdir = './results/noconstraineddmhermextremaspectrum7.3vervolg'  #relative to the directory that contains this script
+    rootdir = './results/5bohrnoconstrainedscanno=6.8'  #relative to the directory that contains this script
     exe = 'ciflow.x'
     elemdir = 'matrixelements'
     import numpy as np
-    runlist = list(np.arange(-2.9 , 0.5 ,  0.1) )
+    runlist = list(np.arange(-3 , 3 ,  0.1) )
 
     #matrixelements = "psioutput.dat"
     #matrixelements = "hamnoplussto-3gpatrick100.0.out"
-    matrixelements = "ni_system.dat"
+    matrixelements = "./hamnoplussto-3gpatrick5.0new.out"
 
     olddir = os.getcwd()
     generate_dir(rootdir , exe, args = [matrixelements] )
@@ -1112,7 +1137,7 @@ def con_dmloop():
 
     norb  = 10 ;  
     nalpha = 7;
-    modtype = 'Constrained_DM' ; params = [0. , 1. , 2. , 3. , 4. ,  7.3 , 4.]  ; options = [ "lj"]
+    modtype = 'Constrained_DM' ; params = [0. , 1. , 2. , 3. , 4. ,  6.8 , 4.]  ; options = [ "lj"]
     create_modham_input(elemdir,nalpha  , norb , modtype , options , params , runlist ,matrixelements)
 
 
@@ -1249,10 +1274,11 @@ if __name__ == "__main__":
     #main_opt()
     #correct_condm()
     #print create_header("R" , ["fci" , "doci" , "local" , "file" , "dfddf" , "local" , "mmin" , "file" ,"dfdfdf" ], [] )
-    #con_dm("ni_system.dat")
-    #con_dm("psioutputeq.dat")
+    #con_dm("hamhamnoplussto-3gpatrick10.0newDOCIsim0.dat")
+    #con_dm("hamnoplussto-3gpatrick5.0new.out")
+    con_dm("hampsiham002.00cnminorthon.dat")
     #con_dmloop()
-    con_dm_wrap()
+    #con_dm_wrap()
     #farnaz()
     #farnaz2()
     #print benzene(math.pi/3 , 1.398)

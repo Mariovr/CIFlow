@@ -99,7 +99,8 @@ sointegrals(Options &options)
     // Create a basis set parser object.
     shared_ptr<BasisSetParser> parser(new Gaussian94BasisSetParser());
     // Construct a new basis set.
-    shared_ptr<BasisSet> aoBasis = BasisSet::construct(parser, molecule, "BASIS");
+    //shared_ptr<BasisSet> aoBasis = BasisSet::construct(parser, molecule, "BASIS");//Old api
+    shared_ptr<BasisSet> aoBasis= BasisSet::pyconstruct_orbital(molecule, "BASIS", options.get_str("BASIS"));
 
     // The integral factory oversees the creation of integral objects
     shared_ptr<IntegralFactory> integral(new IntegralFactory
@@ -514,7 +515,7 @@ sointegrals(Options &options)
         int lastindex = filename.find_last_of("."); 
         string rawname = filename.substr(0, lastindex); 
         Ham2->save(rawname+"orthon");
-        //Ham2->save_file(rawname+"orthon");
+        Ham2->save_file(rawname+"orthon");
 
     }//end doTei transform to symmetric orthogonal.
 

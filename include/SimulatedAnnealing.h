@@ -126,6 +126,7 @@ class Iterative_Subotnik_DIIS: public Iterative_Subotnik
         void rotate_unitary_from_extrapolated_R();
         void interpolate_unitary();
         void interpolate_R();
+        void transform_R();
         double optimize(); 
         matrix calc_error_matrix();
         void add_unitlist(UnitaryMatrix & val);

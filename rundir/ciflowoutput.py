@@ -507,14 +507,17 @@ def main():
 
 
 def mulliken():
-    #collector = fc.File_Collector(rootdir , r'hamnoplus[-\w\d.]*output[\w_]*.dat', sortfunction = None)
-    rootdir = './results/noconstraineddmhermextrema100angstromloop7/output_files'
-    fileinfo = lambda x: float(re.search(r'run[\=]*([-]?\d+\.\d+[e\-]*\d*)outputfci\.dat' , x).group(1))
-    collector = fc.File_Collector(rootdir , r'Constrained_DM.+run=([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)outputfci\.dat', sortfunction = fileinfo)
+    rootdir = './results/mullikenbeh2rangemulliken/output_files'
+    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-_\w\d]*\.[m]?dat' , x).group(1))
+    collector = fc.File_Collector(rootdir , r'psi0_[-\w\d.]*outputfci[\w_]*.dat', sortfunction =fileinfo)
+    #rootdir = './results/noconstraineddmhermextrema100angstromloop7/output_files'
+    #fileinfo = lambda x: float(re.search(r'run[\=]*([-]?\d+\.\d+[e\-]*\d*)outputfci\.dat' , x).group(1))
+    #collector = fc.File_Collector(rootdir , r'Constrained_DM.+run=([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)outputfci\.dat', sortfunction = fileinfo)
 
-    rootdirmat = './results/noconstraineddmhermextrema100angstromloop7/matrixelements'
-    fileinfomat = lambda x: float(re.search(r'run[\=]*([-]?\d+\.\d+[e\-]*\d*)\.mod' , x).group(1))
-    collectormat = fc.File_Collector(rootdirmat , r'run=([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)\.mod', sortfunction = fileinfomat)
+    rootdirmat = './results/mullikenbeh2rangemulliken/matrixelements'
+    #fileinfomat = lambda x: float(re.search(r'run[\=]*([-]?\d+\.\d+[e\-]*\d*)\.mod' , x).group(1))
+    fileinfo2 = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-_\w\d]*\.[m]?out' , x).group(1))
+    collectormat = fc.File_Collector(rootdirmat , r'psi0_[-\d\w]+([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)\.mout', sortfunction = fileinfo2)
 
     with open(os.path.join(os.path.dirname(rootdirmat ) ,  "mullikendata.dat") , "w" ) as file:
         file.write("#Lambda\tFCI_E\tMulliken_A\tMulliken_rest\n")
@@ -523,16 +526,33 @@ def mulliken():
             #print 'starting with: ' , outfile
             ciffci = CIFlow_Reader( outfile)
             ciffci.read_rdm(twordm=False)
-            #print cifoci.ordm
             
             print 'matrixelements : ' , collectormat.plotfiles[num]
             probinfo = rp.PsiReader(collectormat.plotfiles[num], isbig = False, numorbs = -1 , read_ints = False)
             unitary2 = probinfo.unit
-            unitary2 = np.array([i for i in unitary2[0]])
-            overlap = probinfo.overlap
-            overlap = np.array([i for i in overlap [0]])
+            overlap2 = probinfo.overlap
+
+            unitary = np.zeros((len(ciffci.ordm), len(ciffci.ordm)))
+            overlap = np.zeros((len(ciffci.ordm), len(ciffci.ordm)))
+
+            start = 0
+            for i in unitary2:
+                if i != None:
+                    end = len(i)
+                    #print start, end , i
+                    #print np.array(i)
+                    unitary[start:start+end ,start:start+end] = i
+                    start += end
+
+            start = 0
+            for i in overlap2:
+                if i != None:
+                    end = len(i)
+                    overlap[start:start+end ,start:start+end] = i
+                    start += end
+
             #print ciffci.ordm
-            t2index , t4index = ciffci.transform_rdms(unitary2, twordm = False)
+            t2index , t4index = ciffci.transform_rdms(unitary, twordm = False)
             ciffci.ordm = t2index
             #print 'One rdm in MO basis (after backtransforming to check the seniority non-zero contribution)' , ciffci.ordm 
 
@@ -540,9 +560,9 @@ def mulliken():
             #print unitary
             #print overlap
             density = np.dot(t2index, overlap)
-            mulliken_n = 2*sum([density[i,i] for i in range(5)] ) 
-            mulliken_o = 2*sum([density[i,i] for i in range(5,10)] ) 
-            print 'outputfile: ', outfile, 'mulliken n : ' , mulliken_n  , 'mulliken_o : '  , mulliken_o , ' energy: ' , ciffci.header['energy']
+            mulliken_n = 2*sum([density[i,i] for i in range(9)] ) 
+            mulliken_o = 2*sum([density[i,i] for i in range(9,13)] ) 
+            print 'outputfile: ', outfile, 'mulliken Be : ' , mulliken_n  , 'mulliken_h2 : '  , mulliken_o , ' energy: ' , ciffci.header['energy']
             file.write("%f\t%f\t%f\t%f\n" % (fileinfo(outfile), ciffci.header['energy'] , mulliken_n , mulliken_o  ) )
 
 def back_transform():

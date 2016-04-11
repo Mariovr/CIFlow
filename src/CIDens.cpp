@@ -415,6 +415,7 @@ double CIDens::get_mulliken(std::vector<int> orbs)
     {
         matrix mat = get_oblock(spin); //if equal number of ups and downs.
         matrix prod(_norb , _norb);
+        SCPP_TEST_ASSERT(_cim->get_ham()->get_overlap().size() != 0., "It is not possible to obtain the overlap matrix from the Hamiltonian class.");
         matrix overlap(_cim->get_ham()->get_overlap() , _norb, _norb);
         prod.prod(mat,  overlap);
         for(auto & x: orbs)
@@ -427,6 +428,7 @@ double CIDens::get_mulliken(std::vector<int> orbs)
 
 void CIDens::transform_to_ao(bool trdm, bool revert )
 {
+    SCPP_TEST_ASSERT(_cim->get_ham()->get_unitary() , "It is not possible to obtain the unitary matrix from the Hamiltonian class, because it is not set.");
     matrix unitary( _cim->get_ham()->get_unitary()->get_full_transformation() , _norb , _norb); //returns full transformation defined by unitary matrix (new basis in rows.)
     if (revert)
     {

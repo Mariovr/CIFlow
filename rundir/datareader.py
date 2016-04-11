@@ -38,17 +38,30 @@ class Reader(object):
     """
     Abstract data class that reads in data from files
     """
-    def __init__(self, filename , comment = '#' ):
+    def __init__(self, filename = "NoFile", comment = '#' , read = True):
         self.filename = filename
         self.comment = comment
         self.kind = None
         self.depvar = {'xas' : 'R' , 'yas' : 'CI energies' }
         self.units = {'x' : '(a.u.)' , 'y' : '(a.u.)'}
-        self.read()
+        self.data = np.array([])
+        self.columnheader = []
+        if read:
+            self.read()
   
     def read(self):
         self.read_header()
         self.read_data()
+
+    def copynoread(self):
+        return  Reader(filename = self.filename , comment = self.comment ,  read = False)
+
+    def get_units(self):
+        return self.units
+
+    def set_units(self, x, y ):
+        self.units['x'] = x
+        self.units['y'] = y
 
     def get_xlabel(self):    
         return self.depvar['xas'] + ' ' + self.units['x']
@@ -58,6 +71,9 @@ class Reader(object):
 
     def set_ylabel(self, yasstring):
         self.depvar['yas'] = yasstring
+
+    def set_xlabel(self, xasstring):
+        self.depvar['xas'] = xasstring
 
     def convert_au_to_ang(self , x):
         """
@@ -97,7 +113,15 @@ class Reader(object):
                 else:
                     break #header is finished usefull for long outputfiles
 
-        print 'we have read the information from the header of ', self.filename
+        if len(self.columnheader) == 0:
+            with open(self.filename, 'r') as file:
+                line = file.readline()
+                colnum = len(line.split()) 
+            self.columnheader = ['Depvar'] + [ 'Col_' + str(i) for i in range(colnum)]
+            self.depvar['xas'] = self.columnheader[0]
+            print 'No header was found so we generated a standardheader'
+        else:
+            print 'we have read the information from the header of ', self.filename
         print self.columnheader
     
     def read_data(self):

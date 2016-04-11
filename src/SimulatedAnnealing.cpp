@@ -588,7 +588,7 @@ double Iterative_Subotnik::optimize()
 
 Iterative_Subotnik_DIIS::Iterative_Subotnik_DIIS(CIMethod * cim, double crit, int type): Iterative_Subotnik(cim, crit, type)
 {
-    _diis = new DIIS(8);
+    _diis = new DIIS(5);
     _unitlist.resize(0);
 }
 
@@ -616,6 +616,26 @@ void Iterative_Subotnik_DIIS::interpolate_unitary()
 void Iterative_Subotnik_DIIS::interpolate_R()
 {
     _R = _diis->get_extrapolated();
+}
+
+void Iterative_Subotnik_DIIS::transform_R()
+{
+    std::unique_ptr<CIDens> _cid = _cim->get_density(); //sets 2rdm back to zero. So we can reconstruct it again.
+    _cid->construct_density();
+    matrix c_unitary( _opt_unitary->get_full_transformation() , _cim->get_l(), _cim->get_l());
+    _cid->transform_trdm(c_unitary);
+    std::vector<int> vals {1,1}; //0->u,u,u,u ; 1-> u,d,u,d ; 2=1 -> d,u,d,u ; 2-> d,d,d,d
+    for(int i = 0 ; i < _cim->get_l() ; i++)
+    {
+        for(int j = 0 ; j < _cim->get_l() ; j++)
+        {
+            _R(i,j) = 0;
+            for(auto spin : vals)//spin-summed
+            {
+                _R(i,j) +=  _cid->get_two_rdm(spin,i,j,j,j);
+            }
+        }
+    }
 }
 
 void Iterative_Subotnik_DIIS::rotate_unitary_from_extrapolated_R()
@@ -693,7 +713,8 @@ double Iterative_Subotnik_DIIS::optimize()
                 _diis->do_diis(_R , calc_error_matrix());
                 add_unitlist(_orbtrans->get_unitary()); //We are rotated after rotate_unitary_from_R or extrapolated R.
                 interpolate_unitary();
-                interpolate_R();
+                //interpolate_R();
+                transform_R();
                 rotate_unitary_from_extrapolated_R();
                 _orbtrans->fillHamCI(*_optham);
                 update_cim();//sets ham in cim to _optham and solves.        

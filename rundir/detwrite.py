@@ -341,6 +341,7 @@ if __name__ == "__main__":
     #num_dets()
     #print len(fci( 6, 6, 12))
     #cimain(7, 7, 10, [ [1,2,3,4] , [] ], [ ] , fname = "cisddeterminants.dat" ,ref =  [lambda x , y , z :  get_hf_det(7,7,10)] , add_frozen = 0) #FCI
+    cimain(4, 4, 9, [ [1,2] , [] ], [ ] , fname = "cisddeterminants.dat" ,ref =  [lambda x , y , z :  get_hf_det(4,4,9)] , add_frozen = 0) #FCI
     #biggest_det_ex()
-    generate_all_sen(3,5,6)
-    generate_all_sen(3,5,10, 'sendetextra')
+    #generate_all_sen(3,5,6)
+    #generate_all_sen(3,5,10, 'sendetextra')
