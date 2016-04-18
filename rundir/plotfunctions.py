@@ -103,10 +103,15 @@ class Plot_Files(object):
     def clear_data(self):
         self.data = []
 
-    def adjust_data(self, func):
-        for i in range(len(self.data)):
-            for j in range(1,len(self.data[i].data[0,:])):
-                self.data[i].data[:,j] = func(self.data[i].data[:,j])
+    def adjust_data(self, func , col = None):
+        if col != None:
+            for i in range(len(self.data)):
+                for j in range(1,len(self.data[i].data[0,:])):
+                    self.data[i].data[:,j] = func(self.data[i].data[:,j])
+        else:
+            for i in range(len(self.data)):
+                self.data[i].data[:,col] = func(self.data[i].data[:,col])
+
             
     def procesfiles(self, dirname , search , notsearch = r'\.sw*|\.png', notdir = 'awfwfr', sortfunction = None , rev = False , regexp = None , substr = None , filelist = None , filename = True):
       filecol = fc.File_Collector(dirname , search , notsearch = notsearch ,filelist = filelist , sortfunction = sortfunction , rev =rev )
@@ -123,12 +128,15 @@ class Plot_Files(object):
         ylist = range(0,self.data[0].data.shape[1]) 
         ylist.remove(depcol)
         
+      if label == None:
+          label = self.data[datanum].columnheader
+      
+      if not isinstance(label , list):
+          label = list(label)
 
       for i in ylist:
-          if label == None:
-              label = self.data[datanum].columnheader[i]
-              print label
-          self.plotwrap(depcol, i, 'energy' , name =  exname, xlim = xlimg , ylim = ylimg , prefix = prefix ,save = False, label = label , color = color[i-1], datanum = datanum)
+          self.plotwrap(depcol, i, 'energy' , name =  exname, xlim = xlimg , ylim = ylimg , prefix = prefix ,save = False, label = label[i] , color = color[i-1], datanum = datanum)
+
       self.layout(self.data[datanum].get_xlabel() , self.data[datanum].get_ylabel(), tit = titel, xlim = xlimg , ylim = ylimg )
       if save:
           self.savefig(name+exname,  prefix = prefix, exdir = exdir, samedir =  samedir)  
@@ -303,41 +311,19 @@ def main():
     fname = 'beh2linhybresults.dat'
     fname = 'results/beh2linhyb6-31gdata/beh2linhyb6-31gc1act/ciflowresults_6-31g.dat'
     fname = 'results/cisdc1mminbeh2/overlapanalysisdocicisdmmin.dat'
-    fname = 'results/h26-31gdoci/h26-31gdoci_6-31g.dat'
-    fname = 'results/h2cc-ptzgdoci/h2cc-pqzdocinew_cc-pvtz.dat'
-    fname = 'beh2testdatamoihiallopen.dat'
-    fname = 'results/beh2localtest/beh2localtest_sto-3g.dat'
-    fname = 'results/noconstraineddmhermextrema/noconstrainedm_.dat'
-    #fname = 'results/noplusconstraineddmhermextrema100angstrom/noconstrainedm_.dat'
-    fname = 'results/noconstraineddmhermextrema100angstromgoodtrans/noconstrainedm_.dat'
-    #fname = 'results/noconstraineddmhermextrema0.1angstrom/noconstrainedm_.dat'
-    fname = 'results/noconstraineddmhermextremainfinitedistance/noconstrainedm_.dat'
-    #fname = 'results/noconstraineddmhermextremainfiniteangstromscan7.98/noconstrainedm_.dat'
-    #fname = 'results/noconstraineddmkeepwfni_system.datdocimoresultsinfinitedistance/noconstrainedm_.dat'
-    #fname = 'results/noconstraineddmkeepwfpsioutput.datdocimoresults2.3angstrom/noconstrainedm_.dat'
-    #fname = 'results/noplusrangefcibegin/noplusrangefcibegin_sto-3g.dat'
-    #fname = 'results/noconstraineddmkeepwfni_system.datdocilocalinfinite/noconstrainedm_.dat'
-    #fname = 'results/noplusfcirangenew/noplusfcirange__sto-3g.dat'
-    #fname = 'results/noconstraineddmkeepwfni_system.datdocilocalinfinite/noconstrainedm_.dat'
-    #fname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick5.0new.outfci/noconstrainedmmulliken_.dat'
-    #fname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick4.0new.outdocioutput/noconstrainedm_.dat'
-    #fname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick3.0new.outcisdoutput/noconstrainedm_.dat'
-    #fname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick3.0new.outfci/noconstrainedm_.dat'
-    #fname = 'results/noconstrainded7borhpatrick.outfci/noconstrainedm_.dat'
-    fname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick4.0new.outfci/noconstrainedm_.dat'
-    fname = 'results/noconstraineddmkeepwfhamhamnoplussto-3gpatrick10.0newDOCIsim0.datdocioutput/noconstrainedm_.dat'
-    fname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick10.0new.outcisdoutput/noconstrainedm_.dat'
     fname = 'results/noconstraineddmhermextremainfiniteangstromscan6.8/noconstrainedm_.dat'
     fname = 'results/noconstraineddmkeepwfhamhamnoplussto-3gpatrick5.0newDOCIsim0.datdocioutput/noconstrainedm_.dat'
     fname = 'results/noplussimdocinewextra/noplussimdocinewextraconv_sto-3g.dat'
     fname = 'results/noconstraineddmkeepwfhamhamnoplussto-3gpatrick100newDOCIsim0datdocilocalpathoutputrest/noconstrainedm_.dat'
     fname = 'results/cnminhampsiham00200cnminorthondatfciconstrained/noconstrainedm_.dat'
+    #fname = 'results/exhierbeh26-31g/exhierbeh26-31g_6-31g.dat'
  
     plotter = Plot_Files(fname)
     #title = 'NO$^+$ Infinite Angstrom scan different ham (STO-3G)'
     #title = 'NO$^+$ infinte distance scan at $N_O= 6.8$ (STO-3G)'
     #title = 'NO$^+$  CISD 5 bohr (STO-3G)'
     title = 'CN$^-$  FCI (STO-3G)'
+    #title = ''
     xlim = None
     ylim = None
     #xlim = (0.5,3.5)
@@ -354,8 +340,8 @@ def main():
     #For energy plots in function of bondlength
     #plotter.data[0].depvar['yas'] = 'CI Energy' #change the future y-axis label 
     #plotter.data[0].depvar['xas'] = 'R' #change the future y-axis label 
-    #ylim = ( -128 , -125) 
-    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2,3], titel = title, name = 'plot' , exname = 'cienergies')
+    ##ylim = ( -128 , -125) 
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3,4,5], titel = title, name = 'plot' , exname = 'cienergies')
     #plotter.data[0].depvar['yas'] = 'Mulliken charge' #change the future y-axis label 
     #ylim = None
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [4], titel = title, name = 'plot' , exname = 'mullikencharges')
@@ -448,6 +434,12 @@ def plot_togethermullikenmethods():
     filelist = [ ( fname1, 'DOCI(OO)')  , (fname2 , 'CISD' ) , (fname3 , 'FCI' )]
     togethermullikenmethods(filelist , title = "NO$^+$ methods comparison at 5 bohr")
 
+def plot_togetherenv():
+    fname1 = 'results/cnminhampsiham00300cnminorthondatfciconstrained/noconstrainedm_.dat'
+    fname2 = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick3.0new.outfci/noconstrainedm_.dat'
+    filelist = [ ( fname1, 'CN$^-$')  , (fname2 , 'NO$^+$' ) ]
+    togethermullikenmethods(filelist , title = "CN$^-$ and NO$^+$ at 3 bohr")
+
 def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison'):
     plotter = Plot_Files( [ tup[0] for tup in filelist ] )
     title = title
@@ -456,6 +448,11 @@ def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison'):
     plotter.data[len(plotter.data)-1].depvar['xas'] = 'Mulliken charge on N'#change the future y-axis label 
     plotter.data[len(plotter.data)-1].depvar['yas'] = 'Lambda at extremum'#change the future y-axis label 
     plotter.data[len(plotter.data)-1].units['y'] = r'(a.u.)'
+
+    #normalize
+    for dat in plotter.data:
+        dat.normalize(2)
+
     saveflag = False
     for index, tup in enumerate(filelist):
         plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambdatogether', save = saveflag, datanum = index, label =tup[1])
@@ -500,7 +497,8 @@ def shannon_scatter():
 
 
 if __name__ == '__main__':
-    main()  
+    #main()  
+    plot_togetherenv()
     #makemovie()
     #shannon_scatter()
     #togethermulliken()

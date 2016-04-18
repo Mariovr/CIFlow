@@ -414,8 +414,7 @@ def create_header(afh, methods, psienergies, extra = None):
 
 def main_opt(*args , **kwargs):
     ciflowoutputfile = "ciflowoutput2.txt" 
-    flowname = "flow.dat"; detfile1= "cisddeterminants.dat" ; detfile2 = "sen02determinants.dat" ; detfile3 = "determinants3.dat" ; detfile4 = "determinants4.dat" ; detfile5 = "determinants5.dat" ; detfile6 = "determinants6.dat"; detfile7 = 'frozencisdpibenzene.dat' ; detfile8 = 'cisdpibenzenesigma.dat' ; detfile9= 'CISDirrepref+cisd.dat' ; detfile10 = "CISDT(P).dat" ; detfile11 = "lin_hyb.dat" ;  detfile12 = "ref2.dat"
-    detfile3 = 'cisddocideterminants.dat'
+    flowname = "flow.dat"; detfile1= "determinants1.dat" ; detfile2 = "determinants2.dat" ; detfile3 = "determinants3.dat" ; detfile4 = "determinants4.dat" ; detfile5 = "determinants5.dat" ; detfile6 = "determinants6.dat"; detfile7 = 'frozencisdpibenzene.dat' ; detfile8 = 'cisdpibenzenesigma.dat' ; detfile9= 'CISDirrepref+cisd.dat' ; detfile10 = "CISDT(P).dat" ; detfile11 = "lin_hyb.dat" ;  detfile12 = "ref2.dat"
     detfile14 = 'cisdtdeterminants.dat'
     detfile15 = 'cisdtqdeterminants.dat'
     detfile12 = 'linhybcisdd'
@@ -439,13 +438,14 @@ def main_opt(*args , **kwargs):
     #methods = ["fci" ] + ["unit"] * 1000
     #methods = ["fci" , "sim" ]
     #methods = ["file" ,detfile1, "mmin" , "no" , "sim", "file" , detfile2 ,"mmin" , "no" , "sim", "file", detfile3, "mmin" , "no" , "sim","file" , detfile4 , "mmin" , "no" , "sim","file" ,detfile5 ,  "mmin" , "no" , "sim","file" , detfile6, "mmin" , "no" , "sim", ] #, "doci" , "fmmin"]
-    #methods = ["file" ,detfile1,  "file" , detfile2 , "file", detfile3,"file" , detfile4 ,"file" ,detfile5 ] #, "doci" , "fmmin"]
-    methods = ["file" ,detfile20,  "file" , detfile21 , "file", detfile22,"file" , detfile23 ] #, "doci" , "fmmin"]
-    methods = ["fci" , "doci" , "file" , detfile1 ,  "file" , detfile2, "file" , detfile3]
-    methods = ["doci" , "file", detfile1,"fci"]
-    methods = ["fci" , "doci" , "sim"]
+    #methods = ["file" , detfile2 , "file", detfile3,"file" , detfile4 ,"file" , detfile6]
+    #methods = ["file" ,detfile20,  "fno" , "sdmmin" , "file" , detfile21 ,"fno" ,  "sdmmin" , "file", detfile22,"fno" ,"sdmmin" ,  "file" , detfile23, "fno" ,"sdmmin"    ] #, "doci" , "fmmin"]
+    methods = ["file" ,detfile20, "file" , detfile21 ,  "file", detfile22, detfile23] #, "doci" , "fmmin"]
+    #methods = ["fci" , "doci" , "file" , detfile1 ,  "file" , detfile2, "file" , detfile3]
+    #methods = ["doci" , "file", detfile1,"fci"]
+    #methods = ["fci" , "doci" , "sim"]
     #methods = ["fci", "hmmin" , "no", "sim" ] #, "doci" , "fmmin"]
-    #methods = [ "file" , detfile5 ,"mmind"] #, "doci" , "fmmin"]
+    #methods = [ "file" , "cisddeterminants.dat" ,"mmind"] #, "doci" , "fmmin"]
     #methods = ["fci" , "none"]
     #methods = []
     #methods = ["fci" , "no"]
@@ -456,7 +456,7 @@ def main_opt(*args , **kwargs):
     #extra = [(1,"DOCI_(MMin)")]
     extra = None
     #methods = [  "file" , detfile1, "sim", "file", detfile2 , "sim" ,"file" ,detfile3 , "sim" , "file", detfile4, "sim", "fci"]
-    basissets = ['sto-3g']
+    basissets = ['6-31g']
     #runlist = [0.1 , 0.2 , 0.3, 0.4 , 0.5 , 0.6 , 0.7,  0.86374047590, 0.9, 1. , 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6.] #BeH2 (linear)
     #runlist = [0.86374047590, 0.9, 1.02 , 1.1, 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6. , 7 , 8, 9 , 10, 11, 12, 13, 14, 15 , 20 ,25] #BeH2 (linear)
     #runlist = [1.1, 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6. , 7 , 8, 9 , 10, 11, 12, 13, 14, 15 , 20 ,25] #BeH2 (linear)
@@ -484,7 +484,7 @@ def main_opt(*args , **kwargs):
     #atoms = [7,7] #N2 -> set DOCC = [3, 0, 0, 0, 0, 2, 1, 1]
     import numpy as np
     #runlist = np.append( np.append(np.arange(0.6 , 1.2, 0.2) , np.arange(1.2 , 2. , 0.05)) , np.arange(2.,6., 0.4) )
-    runlist = np.arange(0.5 , 10., 0.1) 
+    runlist = np.arange(1. ,8. , 0.1) 
     #runlist = np.arange(0.5 , 10, 0.1) 
     #runlist = [ 3,3.5, 4,4.5,5,5.5 , 6 , 6.5 , 7 , 7.5, 8 ,8.5,  9 ,9.5 ,10]
     #atoms = [6,6] #C2 
@@ -493,45 +493,46 @@ def main_opt(*args , **kwargs):
     #atoms = [7 , 8]
     #atoms = [7 , 9]
     #atoms = [6,7]
-    #atoms = [4,1,1] #beh2
+    atoms = [4,1,1] #beh2
     #atoms = [1,1]
     #atoms = [1,1,1, 1] #h4 but
     #atoms = [1,1,1,1,1,1,1,1] #h8
     #atoms = [7,7]
     #atoms = [7,8] #NO+
-    atoms = [6,8] #NO+
+    #atoms = [6,8] #NO+
     #atoms = [6,6,6,6,6,6,1,1,1,1,1,1] #benzene
     #runlist = [x*math.pi/180. for x in range(55,61) ]#+ [59.5]] #, 60]  ] #angle between two triangles in benzene.
     #runlist = [2.224207488557] 
-    name = 'comol'
-    rootdir = './results/comol/' #relative to the directory that contains this script
+    name = 'senhierincisdmminbeh26-31g'
+    rootdir = './results/senhierincisdmminbeh26-31g/' #relative to the directory that contains this script
     exe = 'ciflow.x'
     elemdir = 'matrixelements'
     #elemdir = 'matrixelements_otherbasis'
     #elemdir = 'random_hamiltonians'
     #elemdir = 'output_run'
 
-    generate_dir(rootdir , exe , prefix = None)
+    #generate_dir(rootdir , exe , prefix = None)
     #generate_dir(rootdir , exe , args= ["ni_system.dat"], prefix = r'./ham_patrick/hamnoplus')
     #generate_dir(rootdir , exe )
     #generate_dir(rootdir , exe , args= ["ni_system.dat"])
-    #shutil.copy(exe, rootdir)#When the matrixelements are already present.
-    #os.chdir(rootdir) #When the matrixelements are already present.
-    create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (0,1) , moltype = 'dimer', package = 'psi' , units = 'bohr', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = None, hdf5 = False, guess = 'sad', extrapar = 104.479848, ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
+    shutil.copy(exe, rootdir)#When the matrixelements are already present.
+    os.chdir(rootdir) #When the matrixelements are already present.
+    #create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (0,1) , moltype = 'linear', package = 'psi' , units = 'bohr', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = None, hdf5 = False, guess = 'read', extrapar = 104.479848, ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
 
     outputfile = open(ciflowoutputfile , 'w')
-    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?out' , x).group(1))
-    #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?dat' , x).group(1))
+    #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?out' , x).group(1))
+    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d_]*\.[m]?dat' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'FCIunit(\d+)\.[m]?dat' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'.*-[\w\d]*([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)orthon\.h5' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.out' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'hamnoplussto-3gpatrick([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)new\.out' , x).group(1))
 
     hamfiles = {}
-    search = r'psi.+%s.+mout' 
+    #search = r'psi.+%s.+mout' 
     #search = 'hamnoplus.*%s.+out'
     #search = r'randomham.+\d+\.dat' 
     #search = r'ham.+%s.+out' 
+    search = r'ham.+%s.+dat' 
     #search = r'ham.+%s.+FCIunit\d+\.dat' 
     #search = r'psi.+%s.+orthon.h5'
     for basis in basissets:
@@ -548,7 +549,7 @@ def main_opt(*args , **kwargs):
     afh = 'R'
     for basis in basissets:
         fname = name + "_" +basis + ".dat"
-        #psir = rp.PsiReader(hamfiles[basis].plotfiles[0], isbig = False, numorbs = -1 , read_ints = False) #just to get number of electrons and orbitals
+        psir = rp.PsiReader(hamfiles[basis].plotfiles[0], isbig = False, numorbs = -1 , read_ints = False) #just to get number of electrons and orbitals
         #reflist = dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'], [1] , [] , pairex = True)
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] , []], [] ,fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2,3] , []], [] ,fname = detfile14 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
@@ -558,7 +559,7 @@ def main_opt(*args , **kwargs):
         #dw.cimain(7,7,10,[[1,2] ,[]], [0] ,fname = detfile2 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISDDOCI
         #dw.cimain(7,7,10,[[1,2] ,[]], [] ,fname = detfile1 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISD
         #dw.cimain(7,7,10,[[] ,[]], [0,2] ,fname = detfile5 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #seniority two and zero
-        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [[1,2] ,[]], [] , fname = detfile1 ,ref = [ lambda x , y , z : psir.get_hf_orbs()]) #CISD
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [[1,2] ,[]], [] , fname = "cisddeterminants.dat",ref = [ lambda x , y , z : psir.get_hf_orbs()]) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], [[], [1]], [] , fname = detfile3 ,ref =[ lambda x , y , z : psir.get_hf_orbs()] ) #CIS(P)
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[[],[1,2]], [] , fname = detfile4 ,ref =[  lambda x , y , z : psir.get_hf_orbs()] ) #CISD(P)
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[], [0,2] , fname = detfile5 ,ref = [ lambda x , y , z : psir.get_hf_orbs()] ) #SEN0-2
@@ -573,8 +574,9 @@ def main_opt(*args , **kwargs):
             print header
             f.write(header)
             for index , matrixelements in enumerate(hamfiles[basis].plotfiles):
+                #dw.generate_all_ex(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], psir.get_hf_orbs(), aname = 'determinants')
                 #dw.biggest_det_ex(outputfilesfci.plotfiles[index])
-                #dw.generate_all_sen(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], 'sen')
+                dw.generate_all_sen(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], 'sen')
                 print matrixelements
                 if change_ints: #True if you want to change the standard psi4 integrals.    
                     psir = rp.PsiReader(matrixelements, isbig = True, numorbs = 60 , read_ints = True) #for benzene.
@@ -620,12 +622,15 @@ def main_opt(*args , **kwargs):
     shutil.copy('../../htest.py' , '.')
     os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
     outputfile.close()
-    generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
-    os.chdir('..')
-    generate_dir('unitaries', None, prefix = 'unitary_')
-    os.chdir('..')
-    generate_dir('matrixelements_otherbasis', None, prefix = 'hamp')
-    os.chdir('..')
+    try:
+        generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
+        os.chdir('..')
+        generate_dir('unitaries', None, prefix = 'unitary_')
+        os.chdir('..')
+        generate_dir('matrixelements_otherbasis', None, prefix = 'hamp')
+        os.chdir('..')
+    except:
+        pass
     
     if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
         plotter = pf.Plot_Files(fname)
@@ -988,13 +993,14 @@ def con_dm(mat):
     methods = ["fci"]
     name = 'noconstrainedm'
     rootdir = './results/cnmin' + mat.translate(None ,'/.') + 'fciconstrainedextra'  #relative to the directory that contains this script
+    rootdir = './results/n2' + mat.translate(None ,'/.') + 'fciconstrained2bohr'  #relative to the directory that contains this script
     exe = 'ciflow.x'
     elemdir = 'matrixelements'
     import numpy as np
     #runlist = [6.001 ]+list(np.arange(7.96,8.01,0.01)) + [7.999]
     #runlist = list(np.arange(5.,8.01,0.01)) 
     runlist = list(np.arange(5.,8.01,0.01)) 
-    runlist = list(np.arange(7.01,7.23,0.01)) 
+    #runlist = list(np.arange(7.01,7.23,0.01)) 
     #runlist = list(np.arange(6.54,7.01,0.01)) 
     #runlist = list(np.arange(7.,8.01,0.01)) 
 
@@ -1058,9 +1064,9 @@ def con_dm(mat):
                 #return ( mullikencharge, energies )
 
             if r <  7:
-                extremumval = gss(func, -3. , 4,tol=1e-10)
+                extremumval = gss(func, -.1 , 4,tol=1e-7)
             elif r < 9:
-                extremumval = gss(func,-5 ,2,tol=1e-10)
+                extremumval = gss(func,-5 , 0.1,tol=1e-7)
             energies, mullikencharge = func(extremumval)
             #shutil.copy( 'conelementsoutputdoci.dat' , os.path.join('output_files' , 'conelementsoutputdoci' + str(r)+ '.dat') )
             #shutil.copy( 'conelementscisddeterminantsoutputci_file.dat' , os.path.join('output_files' , 'conelementsoutputcisd' + str(r)+ '.dat') )
@@ -1271,12 +1277,14 @@ def correct_condm():
 if __name__ == "__main__":
     #hubloop()
     #hub1d()
-    #main_opt()
+    main_opt()
     #correct_condm()
     #print create_header("R" , ["fci" , "doci" , "local" , "file" , "dfddf" , "local" , "mmin" , "file" ,"dfdfdf" ], [] )
     #con_dm("hamhamnoplussto-3gpatrick10.0newDOCIsim0.dat")
     #con_dm("hamnoplussto-3gpatrick5.0new.out")
-    con_dm("hampsiham002.00cnminorthon.dat")
+    #con_dm("hampsiham002.00cnminorthon.dat")
+    #con_dm("hamnoplussto-3gpatrick2.0new.out")
+    #con_dm("n2_2bohr.dat")
     #con_dmloop()
     #con_dm_wrap()
     #farnaz()

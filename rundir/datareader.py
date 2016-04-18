@@ -141,9 +141,17 @@ class Reader(object):
 
     def save_data(self, fname):
         np.savetxt(fname , self.data)
-            
-  
-  
+
+    def apply_func(self , func , col):
+        self.data[:,col] = func(self.data[:,col])
+
+    def get_min(self, col):
+        return min(self.data[:,col])
+
+    def normalize(self, col):
+        minval = self.get_min(col)
+        self.apply_func(  lambda x : x - minval , col)
+
 
 def main():
     fname =   "./h8output.dat"
