@@ -85,6 +85,10 @@ std::string Properties::get_property(std::string prop, int num)
     {
         return std::to_string(_cim->get_mulliken({0,1,2,3,4}, num) ) ;
     }
+    else if (prop == "seniority")
+    {
+        return std::to_string(_cim->get_seniority(num) ) ;
+    }
     else if(prop == "maxdet")
     {
         return "d";

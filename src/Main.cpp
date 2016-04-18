@@ -97,7 +97,7 @@ Hamiltonian * get_mmin_ham( CIMethod* cimmin, bool diis)
     else
         min_sen = new Iterative_Subotnik( cimmin, 1e-7, 0);
     min_sen->optimize();
-    min_sen->save_unitary();
+    min_sen->save_unitary("mmin");
     Hamiltonian * ham = min_sen->get_ham();
     delete min_sen; 
     return ham;
@@ -235,8 +235,8 @@ void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
     if(printoutput)
     {
         cim->reset_output(sort);
-        cim->print_output();
-        //cim->print_rdm();
+        cim->print_output({ "shannon" , "spin_squared" , "mulliken", "seniority"}, 0 ,false);
+        cim->print_rdm();
         //cim->print_ham();
         //DensDOCI densmat {cim};
         //densmat.construct_density(false);
@@ -361,7 +361,7 @@ int main ( int argc, char ** argv){
                   std::cout << "Mulliken charges first atom: " << cim5->get_mulliken(orbs, i ) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
                   //std::cout << "Spin Squared: " << cim5->get_spin_squared(i) << std::endl;
                 }
-                cim5->print_output({  "spin_squared", "mulliken"}, 0 , false);
+                cim5->print_output({  "spin_squared", "mulliken", "seniority", "shannon" }, 0 , false);
                 //cim5->print_output({  "spin_squared"}, 0 ,false);
                 //Properties prop { cim5->get_eigvec(0)  , cim5->get_l() , cim5->get_perm() };
                 //cout << "shannon entropy "  << prop.shannon_ic() << std::endl;
@@ -373,9 +373,14 @@ int main ( int argc, char ** argv){
                 //cim5->get_ham()->get_unitary()->print_unitary(std::cout);
                 //cim5->print_ham();
 
+                auto begin = std::chrono::high_resolution_clock::now();
+                std::cout <<"start timing." <<std::endl;
+                DensFCI densmatfci {cim5};
+                densmatfci.construct_density();
 
-                //DensFCI densmatfci {cim5};
-                //densmatfci.construct_density();
+                auto end = std::chrono::high_resolution_clock::now();
+                std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() / std::pow(10,9 ) << "seconds" << std::endl;
+
                 //densmatfci.transform_to_ao(true, false); //options: 2rdm , revert
                 //ofstream file(ham->get_short_filename() + "aodens");
                 //densmatfci.print_one_dens(std::cout);
@@ -404,7 +409,7 @@ int main ( int argc, char ** argv){
                 //Properties prop { cim2->get_eigvec(0)  , cim2->get_l() , cim2->get_perm() };
                 //cout << cim2->get_name() + cim2->get_ham()->get_short_filename() << ": shannon entropy: "  << prop.shannon_ic() << std::endl;
             	//cim2->print_output({"shannon", "spin_squared" ,"mulliken" });
-            	cim2->print_output({"shannon", "spin_squared" });
+            	cim2->print_output({"shannon", "spin_squared" , "seniority" });
                 //DensFILE densmatfile {cim2};
                 //densmatfile.construct_density();
                 //std::vector<int> orbs {0,1,2,3,4};

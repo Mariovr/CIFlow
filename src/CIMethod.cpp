@@ -200,6 +200,13 @@ double CIMethod::get_spin_squared(unsigned state)
     return _cid->get_spin_squared();
 }
 
+double CIMethod::get_seniority(unsigned state)
+{
+    construct_density(state, true);
+    return _cid->get_seniority();
+}
+
+
 double CIMethod::get_mulliken(std::vector<int> orbs, unsigned state )
 {
     construct_density(state, false);

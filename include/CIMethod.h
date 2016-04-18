@@ -81,6 +81,7 @@ class CIMethod{
         double get_spin_squared(unsigned state = 0);
         double get_spin(unsigned state = 0);
         double get_mulliken(std::vector<int> orbs, unsigned state = 0);
+        double get_seniority(unsigned state = 0);
         void set_sparsity(double zero);
 
 		//helper functions to construct CI matrices and density matrices.
