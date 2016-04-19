@@ -117,7 +117,7 @@ class Plot_Files(object):
       filecol = fc.File_Collector(dirname , search , notsearch = notsearch ,filelist = filelist , sortfunction = sortfunction , rev =rev )
       self.readdata(filecol.plotfiles, regexp = regexp ,  substr = substr, filename = filename)
   
-    def generate_plot(self, xlimg = None , ylimg =None , exname = '' , prefix = True, titel = None ,name = 'energyplot', depcol = 0, ylist = None , save = True, color = ['','','','','','','','','', '','', '' , '' , '' , ''], exdir = './', samedir = False, datanum = 0, label = None):
+    def generate_plot(self, xlimg = None , ylimg =None , exname = '' , prefix = True, titel = None ,name = 'energyplot', depcol = 0, ylist = None , save = True, color = ['','','','','','','','','', '','', '' , '' , '' , '', '' , ''], exdir = './', samedir = False, datanum = 0, label = None):
       """
       Some nice plots to visualize the data with matplotlib.
       """
@@ -131,11 +131,12 @@ class Plot_Files(object):
       if label == None:
           label = self.data[datanum].columnheader
       
-      if not isinstance(label , list):
-          label = list(label)
-
       for i in ylist:
-          self.plotwrap(depcol, i, 'energy' , name =  exname, xlim = xlimg , ylim = ylimg , prefix = prefix ,save = False, label = label[i] , color = color[i-1], datanum = datanum)
+          if isinstance(label , list) :
+              labeli = label[i]
+          else:
+              labeli = label
+          self.plotwrap(depcol, i, 'energy' , name =  exname, xlim = xlimg , ylim = ylimg , prefix = prefix ,save = False, label = labeli , color = color[i-1], datanum = datanum)
 
       self.layout(self.data[datanum].get_xlabel() , self.data[datanum].get_ylabel(), tit = titel, xlim = xlimg , ylim = ylimg )
       if save:
@@ -317,12 +318,21 @@ def main():
     fname = 'results/noconstraineddmkeepwfhamhamnoplussto-3gpatrick100newDOCIsim0datdocilocalpathoutputrest/noconstrainedm_.dat'
     fname = 'results/cnminhampsiham00200cnminorthondatfciconstrained/noconstrainedm_.dat'
     #fname = 'results/exhierbeh26-31g/exhierbeh26-31g_6-31g.dat'
+    #fname = 'results/cnminhampsiham00200cnminorthondatfciconstrained/noconstrainedm_.dat'
+    fname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick2.0new.outfci/noconstrainedm_.dat'
+    #fname = 'results/copsioutputdatfciconstrained/noconstrainedm_.dat'
+    fname = 'results/copsioutputdatfciconstrained/noconstrainedm_.dat'
+    fname = 'results/n2n2_2bohrdatfciconstrained2bohr/noconstrainedm_.dat'
+    fname = 'results/n2n2_3bohrdatfciconstrained3bohr/noconstrainedm_.dat'
+    #fname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick2.0new.outfcill/noconstrainedm_.dat'
  
     plotter = Plot_Files(fname)
     #title = 'NO$^+$ Infinite Angstrom scan different ham (STO-3G)'
     #title = 'NO$^+$ infinte distance scan at $N_O= 6.8$ (STO-3G)'
-    #title = 'NO$^+$  CISD 5 bohr (STO-3G)'
-    title = 'CN$^-$  FCI (STO-3G)'
+    #title = 'CN$^-$  FCI (STO-3G)'
+    title = 'CO  FCI (STO-3G)'
+    title = 'N$_2$  FCI (STO-3G)'
+    #title = 'NO$^+$  FCI (STO-3G)'
     #title = ''
     xlim = None
     ylim = None
@@ -434,13 +444,23 @@ def plot_togethermullikenmethods():
     filelist = [ ( fname1, 'DOCI(OO)')  , (fname2 , 'CISD' ) , (fname3 , 'FCI' )]
     togethermullikenmethods(filelist , title = "NO$^+$ methods comparison at 5 bohr")
 
-def plot_togetherenv():
+def plot_togetherenv3():
     fname1 = 'results/cnminhampsiham00300cnminorthondatfciconstrained/noconstrainedm_.dat'
     fname2 = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick3.0new.outfci/noconstrainedm_.dat'
-    filelist = [ ( fname1, 'CN$^-$')  , (fname2 , 'NO$^+$' ) ]
-    togethermullikenmethods(filelist , title = "CN$^-$ and NO$^+$ at 3 bohr")
+    fname3 = 'results/copsioutputdatfciconstrained3bohr/noconstrainedm_.dat'
+    fname4 = 'results/n2n2_3bohrdatfciconstrained3bohr/noconstrainedm_.dat'
+    filelist = [ ( fname1, r'CN$^-$')  , (fname2 , r'NO$^+$' ) , (fname3 , r'CO'), (fname4, r'N$_2$')]
+    togethermullikenmethods(filelist , title = ', '.join([ tup[1] for tup in filelist  ])     + " at 3 bohr", exname = '3bohr')
 
-def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison'):
+def plot_togetherenv2():
+    fname1 = 'results/cnminhampsiham00200cnminorthondatfciconstrained/noconstrainedm_.dat'
+    fname2 = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick2.0new.outfcill/noconstrainedm_.dat'
+    fname3 = 'results/copsioutputdatfciconstrained/noconstrainedm_.dat'
+    fname4 = 'results/n2n2_2bohrdatfciconstrained2bohr/noconstrainedm_.dat'
+    filelist = [ ( fname1, r'CN$^-$')  , (fname2 , r'NO$^+$' ) , (fname3 , r'CO'), (fname4 , r'N$_2$')]
+    togethermullikenmethods(filelist , title = ', '.join([ tup[1] for tup in filelist  ])     + " at 2 bohr", exname = '2bohr')
+
+def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison', exname = ''):
     plotter = Plot_Files( [ tup[0] for tup in filelist ] )
     title = title
     xlim = None
@@ -455,7 +475,7 @@ def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison'):
 
     saveflag = False
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambdatogether', save = saveflag, datanum = index, label =tup[1])
+        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot'+ exname , exname = 'mullikenlambdatogether', save = saveflag, datanum = index, label =tup[1])
         if index == len(filelist)-2:
             saveflag = True
 
@@ -464,14 +484,14 @@ def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison'):
     plotter.data[len(plotter.data)-1].depvar['yas'] = 'Energy'#change the future y-axis label 
     plotter.data[len(plotter.data)-1].units['y'] = r'(E$_h$)'
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergytogether', save = saveflag, datanum = index, label = tup[1])
+        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot'+ exname , exname = 'mullikenenergytogether', save = saveflag, datanum = index, label = tup[1])
         if index == len(filelist)-2:
             saveflag = True
 
     saveflag = False
     plotter.data[len(plotter.data)-1].depvar['xas'] = 'Lambda at extremum'#change the future y-axis label 
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergytogether', save = saveflag, datanum = index, label = tup[1])
+        plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot'+ exname , exname = 'lambdaenergytogether', save = saveflag, datanum = index, label = tup[1])
         if index == len(filelist)-2:
             saveflag = True
 
@@ -498,7 +518,8 @@ def shannon_scatter():
 
 if __name__ == '__main__':
     #main()  
-    plot_togetherenv()
+    plot_togetherenv2()
+    plot_togetherenv3()
     #makemovie()
     #shannon_scatter()
     #togethermulliken()
