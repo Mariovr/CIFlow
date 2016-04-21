@@ -373,13 +373,13 @@ int main ( int argc, char ** argv){
                 //cim5->get_ham()->get_unitary()->print_unitary(std::cout);
                 //cim5->print_ham();
 
-                auto begin = std::chrono::high_resolution_clock::now();
-                std::cout <<"start timing." <<std::endl;
-                DensFCI densmatfci {cim5};
-                densmatfci.construct_density();
+                //auto begin = std::chrono::high_resolution_clock::now();
+                //std::cout <<"start timing." <<std::endl;
+                //DensFCI densmatfci {cim5};
+                //densmatfci.construct_density();
 
-                auto end = std::chrono::high_resolution_clock::now();
-                std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() / std::pow(10,9 ) << "seconds" << std::endl;
+                //auto end = std::chrono::high_resolution_clock::now();
+                //std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() / std::pow(10,9 ) << "seconds" << std::endl;
 
                 //densmatfci.transform_to_ao(true, false); //options: 2rdm , revert
                 //ofstream file(ham->get_short_filename() + "aodens");

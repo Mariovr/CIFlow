@@ -588,7 +588,7 @@ double Iterative_Subotnik::optimize()
 
 Iterative_Subotnik_DIIS::Iterative_Subotnik_DIIS(CIMethod * cim, double crit, int type): Iterative_Subotnik(cim, crit, type)
 {
-    _diis = new DIIS(5);
+    _diis = new DIIS(10);
     _unitlist.resize(0);
 }
 
@@ -720,8 +720,8 @@ double Iterative_Subotnik_DIIS::optimize()
                 update_cim();//sets ham in cim to _optham and solves.        
                 double calcval = calc_value();
                 //Make sure we maximize the trace -> minimize the seniority.
-                _diis->reset();
-                _unitlist.resize(0);
+                //_diis->reset();
+                //_unitlist.resize(0);
                 if (calcval > prev)
                 {
                     std::cerr << "DIIS decreased the trace: prev =  " <<  prev << " new = " << calcval <<std::endl;
