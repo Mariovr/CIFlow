@@ -617,16 +617,40 @@ def extract_properties():
     with open('propertiesfci.dat', 'w') as file:
         file.write('\n'.join(map(str,data) )  )
 
+def energy_decomp():
+    rootdir = './results/nisystemnoconstrainedwithwf/'
+    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]+\d+[eEDd]?[\-+]?\d*)\.[m]?dat' , x).group(1))
+    collector = fc.File_Collector(rootdir , r'[-\w\d.]*elementsoutputfci[\.\d\w_]*\d.dat', notsearch = 'rdm_ao' , sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= 0 and fileinfo(x) < 10000. )
+    data = []
+    
+    reader = rp.PsiReader("ni_system.dat", read_ints = True)
+    #print np.array(reader.unit[0]).T
+
+    for outfile in collector.plotfiles:
+        cifread = CIFlow_Reader(outfile)
+        cifread.read_rdm()
+        #print cifread.ordm
+        print cifread.trdm[0][0 , 0, 0, 0]
+        e_n = reader.calc_energy( cifread.ordm , cifread.trdm   )
+        print outfile ,'  ' , e_n
+        data.append( (fileinfo(outfile),  e_n ) )
+
+    os.chdir(rootdir)
+    with open('energiedecompfci.dat', 'w') as file:
+        file.write('\n'.join( [ str(tup[0]) + '\t' +  str(tup[1])  for tup in data  ]  )  )
+
+
 if __name__ == "__main__":
     #main()
     #wavefunction_analysis()
     #wavefunction_analysis_fci()
     #overlap_analysis()
     #overlap_analysis2()
-    mulliken()
+    #mulliken()
     #test_transform()
     #test_density()
     #back_transform()
     #test_max_det()
     #extract_properties()
+    energy_decomp()
 

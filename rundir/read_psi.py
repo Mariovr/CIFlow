@@ -525,6 +525,23 @@ class PsiReader(Reader):
         shutil.copy(newfile,self.filename)
         self.read()
 
+    def calc_energy(self , rdm1 , rdm2, orblist = []):
+        #remark integrals are written in chemical notation, and rdms are in physical notation.
+        energy1 = 0
+        for i , j , integral in self.ints['mo2index']:
+            #print i , j ,integral
+            energy1 += 2*integral * rdm1[i,j]
+        print 'Read psi 1 electron energy : ' , energy1
+
+        energy2 = 0
+        for i , j , k , l, integral in self.ints['mo4index']:
+            energy2 += 2*integral * rdm2[0][i , k ,j  ,l ]
+            energy2 += 2*integral * rdm2[1][i , k , j ,l ]
+
+        print 'Read psi 2 electron energy : ' , energy2/2.
+        print 'total energy = : ' , energy1 + 1/2.* energy2 + self.values['nucrep']
+        return energy1 + 1/2.*  energy2 + self.values['nucrep']
+
     def create_ni_system(self, outname = 'outputsc.dat'):
         oeint =list(self.ints['mo2index'])
         teint =list(self.ints['mo4index'])
@@ -686,7 +703,6 @@ class HDF5Reader(object):
             self.cum.append(self.cum[i-1] + self.occurences[i-1])
         #print self.occurences
         #print self.cum
-         
 
 def hdf5_ham():
     #fname = 'results/beh2_sto_3g_symcomp/hamiltonians/hampsi0_sto-3g0.86DOCIsim.h5'
@@ -823,9 +839,9 @@ if __name__ == "__main__":
     #print_unitary('unitary.txt')
     #test_new_format()
     #test_mod_ham()
-    #generate_random_hams()
+    generate_random_hams()
     #hdf5_ham()
-    list_test()
+    #list_test()
     #main()
     #test_new_format()
     #test_pierre_format()

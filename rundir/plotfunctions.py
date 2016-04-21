@@ -171,7 +171,7 @@ class Plot_Files(object):
         self.data[i].data[:,1:3] = self.data[i].data[:,1:3] - gronddat[:,1:3] #we made sure that the data of the groundstateenergy is first in the rgdata list
       del(self.data[0].data, self.prefix[0])
       
-    def layout(self ,  xlab , ylab , xlim = None , ylim = None , tit = None , legendhand = None , legendlab = None , legendpos = 0 , finetuning = False , axbg = None , fs = 22, ticksize = 14):
+    def layout(self ,  xlab , ylab , xlim = None , ylim = None , tit = None , legendhand = None , legendlab = None , legendpos = 0 , finetuning = True, axbg = None , fs = 30, ticksize = 16):
       """
       In this function we finetune some aspects of the axes for all the tuning possibilitys see: http://matplotlib.org/api/axes_api.html
       especially the set functions ;)
@@ -186,7 +186,7 @@ class Plot_Files(object):
       if tit != None:
         self.fig.axes[self.axnum].set_title(tit , fontsize = fs)
       if legendlab != None:
-        self.fig.axes[self.axnum].legend(legjndhand , legendlab, loc = legendpos)  #if you want to add extra info
+        self.fig.axes[self.axnum].legend(legendhand , legendlab, loc = legendpos)  #if you want to add extra info
       
       #self.fig.axes[self.axnum].ticklabel_format(style='sci', axis='y') #force scientifique notation for y axis
       #self.fig.axes[self.axnum].yaxis.major.formatter.set_powerlimits((0,0))
@@ -220,15 +220,15 @@ class Plot_Files(object):
       if finetuning == True:
         # the matplotlib.patches.Rectangle instance surrounding the legend
         frame  = leg.get_frame()  
-        frame.set_facecolor('0.80')    # set the frame face color to light gray
+        #frame.set_facecolor('0.80')    # set the frame face color to light gray
   
         # matplotlib.text.Text instances you can change all properties of labels
         for t in leg.get_texts():
-          t.set_fontsize('small')    # the legend text fontsize
+          t.set_fontsize(25)    # the legend text fontsize
   
         # matplotlib.lines.Line2D instances
         for l in leg.get_lines():
-          l.set_linewidth(1.5)  # the legend line width
+          l.set_linewidth(2)  # the legend line width
   
     def savefig(self , name , filenum = 0 , samedir = False , prefix = True, exdir = './', typ = 'pdf'):
       """
@@ -252,18 +252,19 @@ class Plot_Files(object):
       if filenumwrite:
           name += str(filenum)
       if prefix == True:
+        pref = [ os.path.split( pre)[0] + '/'  for pre  in self.prefix ]
         if samedir:
           """
           Making use of some implementation detail of savefig, if we read in files from all different directory's, the prefixes contain the path of those files relative to the rootdirectory. So if you save the file we save it with first the prefix and then the name , so the figures end up in the same directory as the files. If you don't want this behaviour we need to remove the / in the prefixs so fig.savefig will not recognize it as a path so all the figures end up in the current working directory. Remark we only remove the / because if all the figures end up in same dir we need the path information to distinguish them.
           """
-          self.prefix = [pre.translate(None , '/.')  for pre  in self.prefix]
-        return '%s%s%s.%s' %(exdir , self.prefix[filenum], name , typ)
+          pref = [pre.translate(None , '/.')  for pre  in self.prefix]
+        return '%s%s%s.%s' %(exdir , pref[filenum], name , typ)
 
       else:
         return '%s%s.%s' %(exdir, name, typ)
   
     def writetext(self ,text , pos , axnum = 0, hor = None  ,ver = None , rot = None ,fs =14 , transform = None):
-      self.fig.axes[self.axnum].text(pos[0] ,pos[1] ,text , rotation = rot ,horizontalalignment = hor, verticalalignment = ver , fontsize = fs, transform = transform) #, color = 'black', style = 'italic')
+        self.fig.axes[self.axnum].text(pos[0] ,pos[1] ,text , rotation = rot ,horizontalalignment = hor, verticalalignment = ver , fontsize = fs, transform = transform) #, color = 'black', style = 'italic')
   
     def least_sqr_fit(self,x, y):
       """
@@ -325,14 +326,15 @@ def main():
     fname = 'results/n2n2_2bohrdatfciconstrained2bohr/noconstrainedm_.dat'
     fname = 'results/n2n2_3bohrdatfciconstrained3bohr/noconstrainedm_.dat'
     #fname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick2.0new.outfcill/noconstrainedm_.dat'
+    fname = 'results/nisystemnoconstrainedwithwf/results.dat'
  
     plotter = Plot_Files(fname)
     #title = 'NO$^+$ Infinite Angstrom scan different ham (STO-3G)'
     #title = 'NO$^+$ infinte distance scan at $N_O= 6.8$ (STO-3G)'
     #title = 'CN$^-$  FCI (STO-3G)'
-    title = 'CO  FCI (STO-3G)'
-    title = 'N$_2$  FCI (STO-3G)'
-    #title = 'NO$^+$  FCI (STO-3G)'
+    #title = 'CO  FCI (STO-3G)'
+    #title = 'N$_2$  FCI (STO-3G)'
+    title = 'NO$^+$  FCI (STO-3G)'
     #title = ''
     xlim = None
     ylim = None
@@ -444,21 +446,32 @@ def plot_togethermullikenmethods():
     filelist = [ ( fname1, 'DOCI(OO)')  , (fname2 , 'CISD' ) , (fname3 , 'FCI' )]
     togethermullikenmethods(filelist , title = "NO$^+$ methods comparison at 5 bohr")
 
+def plot_togetherenv4():
+    fname1 = 'results/cnminhampsiham00400cnminorthonatfci/noconstrainedm_.dat'
+    fname2 = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick4.0new.outfci/noconstrainedm_.dat'
+    fname3 = 'results/copsioutputdatfciconstrained4bohr/noconstrainedm_.dat'
+    fname4 = 'results/n2n2_4bohrdatfciconstrained4bohr/noconstrainedm_.dat'
+    filelist = [ ( fname1, r'CN$^-$')  , (fname4, r'N$_2$'), (fname2 , r'NO$^+$' ) , (fname3 , r'CO') ]
+    #togethermullikenmethods(filelist , title = ', '.join([ tup[1] for tup in filelist  ])     + " at 4 bohr", exname = 'nenv4comp')
+    togethermullikenmethods(filelist , title = "", exname = 'nenv4comp')
+
 def plot_togetherenv3():
     fname1 = 'results/cnminhampsiham00300cnminorthondatfciconstrained/noconstrainedm_.dat'
     fname2 = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick3.0new.outfci/noconstrainedm_.dat'
     fname3 = 'results/copsioutputdatfciconstrained3bohr/noconstrainedm_.dat'
     fname4 = 'results/n2n2_3bohrdatfciconstrained3bohr/noconstrainedm_.dat'
-    filelist = [ ( fname1, r'CN$^-$')  , (fname2 , r'NO$^+$' ) , (fname3 , r'CO'), (fname4, r'N$_2$')]
-    togethermullikenmethods(filelist , title = ', '.join([ tup[1] for tup in filelist  ])     + " at 3 bohr", exname = '3bohr')
+    filelist = [ ( fname1, r'CN$^-$')  , (fname4, r'N$_2$') , (fname2 , r'NO$^+$' ) , (fname3 , r'CO')]
+    #togethermullikenmethods(filelist , title = ', '.join([ tup[1] for tup in filelist  ])     + " at 3 bohr", exname = 'nenv3comp')
+    togethermullikenmethods(filelist , title = "", exname = 'nenv3comp')
 
 def plot_togetherenv2():
     fname1 = 'results/cnminhampsiham00200cnminorthondatfciconstrained/noconstrainedm_.dat'
     fname2 = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick2.0new.outfcill/noconstrainedm_.dat'
     fname3 = 'results/copsioutputdatfciconstrained/noconstrainedm_.dat'
     fname4 = 'results/n2n2_2bohrdatfciconstrained2bohr/noconstrainedm_.dat'
-    filelist = [ ( fname1, r'CN$^-$')  , (fname2 , r'NO$^+$' ) , (fname3 , r'CO'), (fname4 , r'N$_2$')]
-    togethermullikenmethods(filelist , title = ', '.join([ tup[1] for tup in filelist  ])     + " at 2 bohr", exname = '2bohr')
+    filelist = [ ( fname1, r'CN$^-$'), (fname4 , r'N$_2$')  , (fname2 , r'NO$^+$' ) , (fname3 , r'CO')]
+    #togethermullikenmethods(filelist , title = ', '.join([ tup[1] for tup in filelist  ])     + " at 2 bohr", exname = 'nenv2comp')
+    togethermullikenmethods(filelist , title = "", exname = 'nenv2comp')
 
 def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison', exname = ''):
     plotter = Plot_Files( [ tup[0] for tup in filelist ] )
@@ -475,7 +488,7 @@ def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison', exn
 
     saveflag = False
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot'+ exname , exname = 'mullikenlambdatogether', save = saveflag, datanum = index, label =tup[1])
+        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = exname , exname = 'mullikenlambda', save = saveflag, datanum = index, label =tup[1])
         if index == len(filelist)-2:
             saveflag = True
 
@@ -484,14 +497,14 @@ def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison', exn
     plotter.data[len(plotter.data)-1].depvar['yas'] = 'Energy'#change the future y-axis label 
     plotter.data[len(plotter.data)-1].units['y'] = r'(E$_h$)'
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot'+ exname , exname = 'mullikenenergytogether', save = saveflag, datanum = index, label = tup[1])
+        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = exname , exname = 'mullikenenergy', save = saveflag, datanum = index, label = tup[1])
         if index == len(filelist)-2:
             saveflag = True
 
     saveflag = False
     plotter.data[len(plotter.data)-1].depvar['xas'] = 'Lambda at extremum'#change the future y-axis label 
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot'+ exname , exname = 'lambdaenergytogether', save = saveflag, datanum = index, label = tup[1])
+        plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = exname , exname = 'lambdaenergy', save = saveflag, datanum = index, label = tup[1])
         if index == len(filelist)-2:
             saveflag = True
 
@@ -517,9 +530,10 @@ def shannon_scatter():
 
 
 if __name__ == '__main__':
-    #main()  
-    plot_togetherenv2()
-    plot_togetherenv3()
+    main()  
+    #plot_togetherenv2()
+    #plot_togetherenv3()
+    #plot_togetherenv4()
     #makemovie()
     #shannon_scatter()
     #togethermulliken()
