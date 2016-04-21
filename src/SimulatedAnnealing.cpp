@@ -425,7 +425,7 @@ void Iterative_Subotnik::fill_R_mmin()
 void Iterative_Subotnik::fill_R_ER(int all)
 {
    int max_orb;
-   if(all = 0)//HF det is invariant through unitary transformations of occupied orbitals so we can keep the HF energy, but localize the occupied orbitals.
+   if(all == 0)//HF det is invariant through unitary transformations of occupied orbitals so we can keep the HF energy, but localize the occupied orbitals.
    {
        max_orb =  _cim->gNup() > _cim->gNdown()?  _cim->gNup(): _cim->gNdown() ;
    }

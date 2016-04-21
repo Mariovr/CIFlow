@@ -57,11 +57,11 @@ std::pair<double,double> VarHam::optimize_g(double crit)
     double gend = 1.+ _redbcs->get_g() ;
     
     double ref = _redbcs->calculate_energy();
-    int it;
+    int it = 0;
     while(energy_from_g(gend) < ref && it < 10)
     {
     	gend += 0.5;
-	it +=1 ;
+	    it +=1 ;
     }
 
     int numit = std::ceil(std::log(crit/(gend-gstart))/std::log(0.618));
