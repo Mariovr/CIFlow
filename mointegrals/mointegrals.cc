@@ -230,7 +230,6 @@ mointegrals(Options &options)
      SharedMatrix ca = factory->create_shared_matrix("Transformationao->mo: ");
      ca = Process::environment.wavefunction()->Ca();
      fprintf(integralfile, "CIFlowTransformation: \n");
-     //saves transformation from symmetric orthogonal orbitals to MO in HDF5 format.
      for (int irrep=0; irrep< nirrep; irrep++)
      {
          int norb = dimension[irrep];

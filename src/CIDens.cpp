@@ -894,10 +894,12 @@ void CIDens::fill_density_matrix_one(TYPE up1 , TYPE down1 , TYPE up2 , TYPE dow
     }		    
 }
 
-double CIDens::get_one_electron_energy(){
+double CIDens::get_one_electron_energy(int maxorb){
+    if (maxorb <= 0 )
+        maxorb = dim();
     double energy = 0.0;
-    for (int i = 0; i < dim(); i++) {
-        for (int j = 0; j < dim(); j++) {
+    for (int i = 0; i < maxorb; i++) {
+        for (int j = 0; j < maxorb; j++) {
             energy += _cim->get_ham()->getTmat(i,j) * get_one_rdm(0,i,j, _one_dens);
             energy += _cim->get_ham()->getTmat(i,j) * get_one_rdm(1,i,j, _one_dens);
         }
@@ -905,12 +907,14 @@ double CIDens::get_one_electron_energy(){
     return energy;
 }
 
-double CIDens::get_two_electron_energy() {
+double CIDens::get_two_electron_energy(int maxorb) {
+    if (maxorb <= 0 )
+        maxorb = dim();
     double energy = 0.0;
-    for (int i = 0; i < dim(); i++) {
-        for (int j = 0; j < dim(); j++) {
-            for (int k = 0; k < dim(); k++) {
-                for (int l = 0; l < dim(); l++) {
+    for (int i = 0; i < maxorb; i++) {
+        for (int j = 0; j < maxorb; j++) {
+            for (int k = 0; k < maxorb; k++) {
+                for (int l = 0; l < maxorb; l++) {
                     double vmat = _cim->get_ham()->getVmat(i,j,k,l);
                     energy +=  vmat * get_two_rdm(0,i,j,k,l,_two_dens);
                     energy +=  2*vmat * get_two_rdm(1,i,j,k,l,_two_dens); //for u,d,u,d and d,u,d,u which are equal.
@@ -922,8 +926,8 @@ double CIDens::get_two_electron_energy() {
     return 0.5*energy;
 }
 
-double CIDens::get_dens_energy() {
-    return get_one_electron_energy() + get_two_electron_energy() + _cim->get_econst(); 
+double CIDens::get_dens_energy(int maxorb) {
+    return get_one_electron_energy(maxorb) + get_two_electron_energy(maxorb) + _cim->get_econst(); 
 }
 
 void CIDens::print_one_dens(std::ostream & os, const valarray<valarray<double>> & onerdm)const{
