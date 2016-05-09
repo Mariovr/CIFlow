@@ -61,10 +61,9 @@ def generate_dir(name,infilename = None,args = None, prefix = ''):
             shutil.copy(i,dir)
     print dir        
     if prefix:
-        path, file = os.path.split(prefix)
-        x = [os.path.join(path , i)  for i in os.listdir(path) if re.search(file, i)]
+        x = [i for i in os.listdir(os.getcwd()) if re.search(prefix , i)]
         for a in x:
-            shutil.copy(a,dir)
+            shutil.move(a,dir)
     os.chdir(dir)
     
 def convert_au_to_ang(x):
@@ -111,16 +110,6 @@ set %(integralname)s filename %(fout)s
 set %(integralname)s save_unitaries %(su)s
 set reference %(ref)s
 set guess %(guess)s
-set {
-#exact ERI
-SCF_TYPE pk
-DF_SCF_GUESS false
-# strict convergence
-E_CONVERGENCE 1e-9
-D_CONVERGENCE 1e-9
-ints_tolerance 1e-10
-}
-
 """%vars()
 
     if hdf5:
@@ -166,13 +155,8 @@ def create_matrix_elements(elemdir, basissets, runlist, atoms, chmult = (0,1) , 
                 positions = benzene(r, extrapar) #REMARK we run over the angle -> r in runlist, and keep the radius of the circle on which all the C atoms are placed constant to extrapar, (extrapar = 1.398 A is standard)
             elif moltype == 'h8':
                 positions =  [[0,0,0],[0,0,r],[0,0,2*r],[0,0,3*r],[0,0,4*r],[0,0,5*r], [0,0,6*r] , [0 , 0 , 7*r] ]
-            elif moltype == 'h6':
-                positions =  [[0,0,0],[0,0,r],[0,0,2*r],[0,0,3*r],[0,0,4*r],[0,0,5*r]]  
             elif moltype == 'but':
                 positions = [[0,0,0],[extrapar,0,0], [0,r,0] , [extrapar,r,0]]
-            elif moltype == 'square': 
-                positions = [[0,0,0 ] , [0,r,0],[0,-r,0],[r,0,0] ,[-r,0,0]]
-
             else:
                 print 'Error: moltype %s is not know' %moltype
 
@@ -188,8 +172,6 @@ def create_matrix_elements(elemdir, basissets, runlist, atoms, chmult = (0,1) , 
 
 def create_ciflow_input_file(matrixelements , methods , fname = "flow.dat"):
     with open(fname, 'w') as file:
-        if matrixelements == '.':
-            matrixelements = matrixelements.lstrip('.')
         file.write(matrixelements+'\n')
         file.write(methods[0]+'\n')
         for cimethod in methods[1:]:
@@ -373,12 +355,12 @@ def mainsize(*args , **kwargs):
                     #f.write("%.15f\t%.15f\t%.15f\t%.15f\t%.15f\n" %(float(match_hf.group(1)), float(match_doci.group(1)), float(match_cisd.group(1)),float(match_cisddoci.group(1)), float(match_fci.group(1))))
                     f.write("\t%.15f\t%.15f\t%.15f\t%.15f\n" %(float(match_hf.group(1)), float(match_doci.group(1)), float(match_cisd.group(1)),float(match_cisddoci.group(1))))
 
-def process_output(ciflow_out, regexp =r'[\w\s\d.()]*[eE]nergy[\w\s\d\-.()+]*:\s*([\-+]?\d*[\.,]?\d+[eEDd]?[\-+]?\d*)' , func = lambda x : float(x)):
+def process_output(ciflow_out):
     energies = []
     for line in ciflow_out.split('\n'):
-        match = re.search(regexp ,line)
+        match = re.search(r'[\w\s\d.()]*[eE]nergy[\w\s\d\-.()+]*:\s*([\-+]?\d*[\.,]?\d+[eEDd]?[\-+]?\d*)' ,line)
         if match:
-            energies.append('%.15f' % func(match.group(1)))
+            energies.append('%.15f' % float(match.group(1)))
         else:
             #print 'No match'
             pass
@@ -400,10 +382,10 @@ def create_header(afh, methods, psienergies, extra = None):
             calculation =  method.upper()   
             if method == "file" or  method == "big":
                 method = itmethods.next()
-                calculation += '(' + method.upper() + ')'
+                calculation += calculation + '(' + method.upper() + ')'
             methodstring.append(calculation)
             method = itmethods.next()    
-            while  method != "doci" and method != "fci" and method != "file" and method != "big":
+            while  method != "doci" or method != "fci" or method != "file" or method != "big":
                     methodstring.append(calculation+ '$_{'+method.upper()+'}$')
                     method = itmethods.next()    
     except StopIteration:
@@ -439,21 +421,24 @@ def main_opt(*args , **kwargs):
     methods = ["fci", "fno" , "fci" , "hmmin" , "file" , detfile1 , "fno" ,"file" , detfile1 , "fmmin" , "file" ,detfile14 , "fmmin" , "file" ,detfile14 ,"fno" , "file" , detfile15 ,"fmmin" ,"file",  detfile15 , "fno"] #, "doci" , "fmmin"]
     methods = ["file" , detfile1 , "none" ,"file" , detfile1 , "fmmin" , "file" ,detfile14 , "none" , "file",  detfile15 , "none"] #, "doci" , "fmmin"]
     methods = ["fci" , "unit" , "fmmin", "doci" , "fno" , "file" , detfile1 , "fmmin" , "fno"]
-    #methods = ["fci" ] + ["unit"] * 1000
+    methods = ["fci" ] + ["unit"] * 1000
     #methods = ["fci" , "sim" ]
     #methods = ["file" ,detfile1, "mmin" , "no" , "sim", "file" , detfile2 ,"mmin" , "no" , "sim", "file", detfile3, "mmin" , "no" , "sim","file" , detfile4 , "mmin" , "no" , "sim","file" ,detfile5 ,  "mmin" , "no" , "sim","file" , detfile6, "mmin" , "no" , "sim", ] #, "doci" , "fmmin"]
-    #methods = ["file" , detfile1 , "file", detfile2 , "file", detfile3,"file" , detfile4 ,"file" , detfile5 , "file" , detfile6]
-    #methods = ["doci" , "local", " sim" ]#,  "file" , detfile23, "local" ] #, "doci" , "fmmin"]
-    methods = [  "file", detfile2 , "hmmin","file" , detfile3 ] + ["doci"  , "local" , "file" , detfile21, "file" , detfile22 ]
-    methods = ["fci" , "hmmin"]
-    #methods =  ["doci"  , "local" , "file" , detfile21, "file" , detfile22 ]
-    #methods =  ["doci" , "loadham" , "file" , detfile21, "loadham" , "file" , detfile22 ,  "loadham"  ]
-    #methods = ["file" , detfile21,  "file", detfile22] #, "doci" , "fmmin"]
+    #methods = ["file" ,detfile1,  "file" , detfile2 , "file", detfile3,"file" , detfile4 ,"file" ,detfile5 ] #, "doci" , "fmmin"]
+    #methods = ["file" ,detfile20,  "file" , detfile21 , "file", detfile22,"file" , detfile23 ] #, "doci" , "fmmin"]
+    #methods = ["fci", "hmmin" , "no", "sim" ] #, "doci" , "fmmin"]
+    #methods = [ "file" , detfile5 ,"mmind"] #, "doci" , "fmmin"]
+    #methods = ["fci" , "none"]
+    #methods = []
+    #methods = ["fci" , "no"]
+    #methods = ["doci", "fmmin", "fci" , "none"] #, "file" , detfile4 , "loadham"]
+    #methods = ["doci", "fmmin"] #, "file" , detfile4 , "loadham"]
+    #methods = ["file", detfile1, "fno", "file",detfile1, "sim" , "file" ,detfile1 , "hmmin"] #, "file" , detfile4 , "loadham"]
+    #methods = ["file", detfile1, "hmmin"]
     #extra = [(1,"DOCI_(MMin)")]
     extra = None
     #methods = [  "file" , detfile1, "sim", "file", detfile2 , "sim" ,"file" ,detfile3 , "sim" , "file", detfile4, "sim", "fci"]
-    basissets = ['6-31g']
-    basissets = ['cc-pvdz']
+    basissets = ['sto-3g']
     #runlist = [0.1 , 0.2 , 0.3, 0.4 , 0.5 , 0.6 , 0.7,  0.86374047590, 0.9, 1. , 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6.] #BeH2 (linear)
     #runlist = [0.86374047590, 0.9, 1.02 , 1.1, 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6. , 7 , 8, 9 , 10, 11, 12, 13, 14, 15 , 20 ,25] #BeH2 (linear)
     #runlist = [1.1, 1.18124682530, 1.2, 1.34000000000, 1.38, 1.4, 1.45, 1.49875317470, 1.65750634940, 1.81625952410, 1.97501269880, 2.13376587350,2.2 ,  2.29251904820, 2.35 , 2.45127222290, 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0 ,  3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6. , 7 , 8, 9 , 10, 11, 12, 13, 14, 15 , 20 ,25] #BeH2 (linear)
@@ -464,113 +449,101 @@ def main_opt(*args , **kwargs):
     #runlist = list(np.arange(2.3,3.1,0.1)) + list(np.arange(3.2,4.2,0.2))
     #runlist = list(np.arange(3. , 50. , 0.1) )
     #runlist = [2]
-    #runlist = np.arange(1,10, 0.2)
+    #runlist = np.arange(1,4, 0.2)
     #runlist = list(np.arange(1,3, 0.3)) + list(np.arange(3, 0.5, 10.1))
     #runlist = list(np.arange(3, 0.5, 10.1))
     #runlist = [ 1.81625952410, 1.97501269880, 2.13376587350] 
     #runlist = [1.1 , 1.2 , 1.23 , 1.3 , 1.35 , 1.4 , 1.55 , 1.6 , 1.7 , 1.75, 1.85]
     #runlist = [ 2.5 , 2.61002539760,2.7 ,  2.76877857230, 2.92753174700, 3.0, 3.08628492170, 3.1 , 3.2, 3.3 , 3.4 , 3.5 , 3.6 ,3.7 , 3.8 , 3.9 , 4. , 4.5 , 5. , 6.] #BeH2 extra (linear)
-    #runlist = [0.6402695456, 0.7 , 0.7461049954, 0.8 , 0.8519404452, 0.9 , 0.957775895, 1. , 1.0636113448, 1.1, 1.1694467946, 1.2 , 1.2752822444, 1.3, 1.3811176942, 1.4, 1.486953144, 1.5, 1.5927885938, 1.6, 1.6986240436 , 1.72 , 1.8 , 1.85 , 1.9 , 1.95 , 2. , 2.05, 2.2278012926]#, 2.1 , 2.15, 2.2278012926 ]#, 1.8044594934, 1.9102949432, 2.016130393, 2.1219658428, 2.2278012926, 2.3336367424 ] #H2O (c2v)
-    #runlist = [ 1.2 , 1.2752822444, 1.3, 1.3811176942, 1.4, 1.486953144]#, 2.1 , 2.15, 2.2278012926 ]#, 1.8044594934, 1.9102949432, 2.016130393, 2.1219658428, 2.2278012926, 2.3336367424 ] #H2O (c2v)
-    #runlist = [1,  1.5, 2.3 ]
-    #import numpy as np
-    #runlist = list(np.arange(0.5,2, 0.1)) + list(np.arange(2, 4 , 0.1) )
+    runlist = [0.6402695456, 0.7 , 0.7461049954, 0.8 , 0.8519404452, 0.9 , 0.957775895, 1. , 1.0636113448, 1.1, 1.1694467946, 1.2 , 1.2752822444, 1.3, 1.3811176942, 1.4, 1.486953144, 1.5, 1.5927885938, 1.6, 1.6986240436 , 1.72 , 1.8 , 1.85 , 1.9 , 1.95 , 2. , 2.05, 2.2278012926]#, 2.1 , 2.15, 2.2278012926 ]#, 1.8044594934, 1.9102949432, 2.016130393, 2.1219658428, 2.2278012926, 2.3336367424 ] #H2O (c2v)
+    runlist = [ 1.2 , 1.2752822444, 1.3, 1.3811176942, 1.4, 1.486953144]#, 2.1 , 2.15, 2.2278012926 ]#, 1.8044594934, 1.9102949432, 2.016130393, 2.1219658428, 2.2278012926, 2.3336367424 ] #H2O (c2v)
+    runlist = [1.291]
+    #runlist = range(0,1000)
     #runlist = [0.848, 0.973, 1.098, 1.223, 1.348, 1.473, 1.598, 1.723, 1.848, 1.973, 2.224207488557] #N2 (dimer)
     #runlist = [0.6 , 0.8 , 1.0 , 1.2, 1.4 , 1.6 , 1.8 , 2 , 2.2 , 2.4, 2.6 , 2.8, 3. , 3.2, 3.4, 3.6 , 3.8,4., 5. , 6., 7., 8., 9. ,10.]
     #runlist = map( lambda x : x/100. , range(70 , 800 , 10) ) 
     #atoms = [7,7] #N2 -> set DOCC = [3, 0, 0, 0, 0, 2, 1, 1]
-    import numpy as np
+    #import numpy as np
     #runlist = np.append( np.append(np.arange(0.6 , 1.2, 0.2) , np.arange(1.2 , 2. , 0.05)) , np.arange(2.,6., 0.4) )
-    #runlist = np.arange(5.1 ,8. , 0.1) 
-    #runlist = [0.0]
-    #runlist = np.arange(0.3 , 8.1, 0.1) 
-    runlist = [0.]
-    #runlist = [ 3,3.5, 4,4.5,5,5.5 , 6 , 6.5 , 7 , 7.5, 8 ,8.5,  9 ,9.5 ,10]
+    #runlist = np.arange(0.6 , 1.1, 0.03) 
     #atoms = [6,6] #C2 
     #atoms = [7,6] 
     #atoms = [8,1,1] #H2O
-    #atoms = [6 , 8]
-    atoms = [4]
-    #atoms = [1,1,1,1 , 1, 1]
-    #atoms = [7 , 9]
+    #atoms = [7 , 8]
     #atoms = [6,7]
-    #atoms = [4,1,1] #beh2
-    #atoms = [10] #be
+    atoms = [4,1,1] #beh2
     #atoms = [1,1]
     #atoms = [1,1,1, 1] #h4 but
     #atoms = [1,1,1,1,1,1,1,1] #h8
     #atoms = [7,7]
     #atoms = [7,8] #NO+
-    #atoms = [6,8] #NO+
     #atoms = [6,6,6,6,6,6,1,1,1,1,1,1] #benzene
     #runlist = [x*math.pi/180. for x in range(55,61) ]#+ [59.5]] #, 60]  ] #angle between two triangles in benzene.
     #runlist = [2.224207488557] 
-    name = 'phdsenebeccpvdzfcimminc1'
-    #rootdir = './results/phdsenhierh66-31g' #relative to the directory that contains this script
-    rootdir = './results/phdsenebeccpvdzfcimminc1' #relative to the directory that contains this script
+    name = 'noplusbond'
+    name = 'shannonbeh2smallvirtual6'
+    rootdir = './results/shannonebeh2smallvirtual6/' #relative to the directory that contains this script
     exe = 'ciflow.x'
     elemdir = 'matrixelements'
-    #elemdir = 'matrixelements_otherbasis'
+    elemdir = 'matrixelements_otherbasis'
     #elemdir = 'random_hamiltonians'
     #elemdir = 'output_run'
-    #elemdir = '.'
 
-    generate_dir(rootdir , exe  )
-    #generate_dir(rootdir , exe , args= ["ni_system.dat"], prefix = r'./ham_patrick/hamnoplus')
-    #generate_dir(rootdir , exe )
-    #generate_dir(rootdir , exe , args= ["ni_system.dat"])
+    generate_dir(rootdir , exe)
     #shutil.copy(exe, rootdir)#When the matrixelements are already present.
     #os.chdir(rootdir) #When the matrixelements are already present.
-    #create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (0,1) , moltype = 'h6', package = 'psi' , units = 'angstrom', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = 'c1', hdf5 = False, guess = 'read', extrapar = 0.741, ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance , extrapar = 104.479848 for angle h2o, 0.741 = extrapar for h2 equilibrium geometry in but
-    create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (0,1) , moltype = 'atom', package = 'psi' , units = 'angstrom', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = 'c1', hdf5 = False, guess = 'read', extrapar = 0.741, ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance , extrapar = 104.479848 for angle h2o, 0.741 = extrapar for h2 equilibrium geometry in but
+    create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (0,1) , moltype = 'linear', package = 'psi' , units = 'angstrom', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = 'c1', hdf5 = False, guess = 'sad', extrapar = 104.479848, ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance
 
     outputfile = open(ciflowoutputfile , 'w')
     fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?out' , x).group(1))
-    #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]+\d+[eEd]?[\-+]?\d*)[-\w\d_]*\.[m]?dat' , x).group(1))
+    #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?dat' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'FCIunit(\d+)\.[m]?dat' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'.*-[\w\d]*([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)orthon\.h5' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.out' , x).group(1))
-    #fileinfo = lambda x: float(re.search(r'hamnoplussto-3gpatrick([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)new\.out' , x).group(1))
-
     hamfiles = {}
     search = r'psi.+%s.+mout' 
-    #search = r'hampsi0_%s.+sdmmin3.dat'
-    #search = r'hampsi0_%s.+local2.dat'
-    #search = 'hamnoplus.*%s.+out'
-    #search = r'hampsi.+%s.+.FCIhmmin0.dat'
     #search = r'randomham.+\d+\.dat' 
     #search = r'ham.+%s.+out' 
-    #search = r'hampsi0.+%s.+smmind0.dat' 
     #search = r'ham.+%s.+FCIunit\d+\.dat' 
     #search = r'psi.+%s.+orthon.h5'
     for basis in basissets:
-        hamfiles[basis] = fc.File_Collector(elemdir , search = search %basis ,notsearch = r'(\.sw\w)|(unitary)',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1 and fileinfo(x) <= 1000. )
-        #hamfiles[basis] = fc.File_Collector( '.', search = search %basis ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) <= 10. and fileinfo(x) >= 2  and fileinfo(x) in runlist  and not '.sw' in x  )
+        hamfiles[basis] = fc.File_Collector(elemdir , search = search %basis ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= 0 and fileinfo(x) < 10000. )
         #hamfiles[basis] = fc.File_Collector(elemdir , search = search ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1 and fileinfo(x) < 1000. )
 
     #fileinfo2 = lambda x: float(re.search(r'psi0_sto-3g1.29outputfciunit(\d+).dat' , x).group(1))
     #search = r'psi.+outputfciunit\d+.dat' 
     #outputfilesfci = fc.File_Collector('output_files', search = search  ,notsearch = r'\.sw\w',sortfunction = fileinfo2, filterf =  lambda x : fileinfo2(x) >= 0 and fileinfo2(x) < 10000. )
-    #hamfiles[basissets[0]].plotfiles += ['ni_system.dat']
-    #print hamfiles[basissets[0]]
 
     afh = 'R'
     for basis in basissets:
         fname = name + "_" +basis + ".dat"
         psir = rp.PsiReader(hamfiles[basis].plotfiles[0], isbig = False, numorbs = -1 , read_ints = False) #just to get number of electrons and orbitals
-        #dw.generate_all_ex(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], ( psir.get_hf_orbs()[0][:], psir.get_hf_orbs()[1][:] )  , aname = 'determinants', addfrozen = 0)
-        #dw.biggest_det_ex(outputfilesfci.plotfiles[index])
-        #dw.generate_all_sen(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], 'sen', addfrozen = 0)
         #reflist = dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'], [1] , [] , pairex = True)
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] , []], [] ,fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2,3] , []], [] ,fname = detfile14 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2,3,4] , []], [] ,fname = detfile15 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
-        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[] ,[]], [0,2] ,fname = detfile2 ,ref = [lambda x , y , z : dw.get_hf_det(x,y,z)]) #SEN0-2
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] ,[0]], [] ,fname = detfile2 ,ref = [lambda x , y , z : dw.get_hf_det(x,y,z)]) #CISDDOCI
+        #dw.cimain(7,7,10,[[1,2] ,[]], [0] ,fname = detfile2 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISDDOCI
+        #dw.cimain(7,7,10,[[1,2] ,[]], [] ,fname = detfile1 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #CISD
+        #dw.cimain(7,7,10,[[] ,[]], [0,2] ,fname = detfile5 ,ref = [lambda x , y , z : dw.get_hf_det(x,y ,z)]) #seniority two and zero
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'], [[1,2] ,[]], [] , fname = detfile1 ,ref = [ lambda x , y , z : psir.get_hf_orbs()]) #CISD
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], [[], [1]], [] , fname = detfile3 ,ref =[ lambda x , y , z : psir.get_hf_orbs()] ) #CIS(P)
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[[],[1,2]], [] , fname = detfile4 ,ref =[  lambda x , y , z : psir.get_hf_orbs()] ) #CISD(P)
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[], [0,2] , fname = detfile5 ,ref = [ lambda x , y , z : psir.get_hf_orbs()] ) #SEN0-2
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[1,2], [] , fname = detfile4 ,ref = [ lambda x , y , z : psir.get_hf_orbs() ]) #
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[[1,2],[2]], [] , fname = detfile11 ,ref = [ lambda x , y , z : psir.get_hf_orbs() ]) #hyb_lin
+        #dw.cimain(7,7, 10,[[1,2],[2]], [] , fname = detfile11 ,ref = [ lambda x , y , z : dw.get_hf_det(x,y ,z)]) #hyb_lin
+        #dw.cimain(7,7, 10,[[1,2,3,4,5,6],[]], [] , fname = detfile6  ,ref = [ lambda x , y , z : dw.get_hf_det(x,y ,z)]) #hyb_lin
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'], psir.values['norb'],[1,2], [] , fname = detfile12 ,ref = [ lambda x , y , z : psir.get_hf_orbs(), lambda x,y,z : (psir.get_hf_orbs()[0][::-1], psir.get_hf_orbs()[1][::-1] ) ], pairex = True, both = False) #hyb_lin
+        #dw.cimain(3,3, 12,[], [0] , fname = detfile7 , ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0) #FROZENDOCI
         with open(fname , 'w') as f:
             header = create_header(afh , methods, psienergies, extra = extra)
             print header
             f.write(header)
             for index , matrixelements in enumerate(hamfiles[basis].plotfiles):
+                #dw.biggest_det_ex(outputfilesfci.plotfiles[index])
+                #dw.generate_all_sen(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], 'sen')
+
                 print matrixelements
                 if change_ints: #True if you want to change the standard psi4 integrals.    
                     psir = rp.PsiReader(matrixelements, isbig = True, numorbs = 60 , read_ints = True) #for benzene.
@@ -603,28 +576,23 @@ def main_opt(*args , **kwargs):
                         print ci_flow
                         pass
                 energies = process_output(ci_flow) 
-                mullikencharge = process_output(ci_flow, regexp = "Mulliken[\s\w]+:\s*([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)") 
                 if psienergies: #True if the list is not empty 
                     psir = rp.PsiReader(matrixelements, isbig = False, numorbs = -1 , read_ints = False)
                     energies +=  [x[1] for x in psir.extract_energies()]
 
                 print_output(matrixelements, energies , methods)
-                f.write("%.15f\t%s\t%s\n" %(runlist[index], '\t'.join(energies ), '\t'.join(mullikencharge)) )
+                f.write("%.15f\t%s\n" %(runlist[index], '\t'.join(energies )) )
                 if change_ints:
                     os.remove(matrixelements)
   
-    shutil.copy('../../htest.py' , '.')
     os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
     outputfile.close()
-    try:
-        generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
-        os.chdir('..')
-        generate_dir('unitaries', None, prefix = 'unitary_')
-        os.chdir('..')
-        generate_dir('matrixelements_otherbasis', None, prefix = 'hamp')
-        os.chdir('..')
-    except:
-        pass
+    generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
+    os.chdir('..')
+    generate_dir('unitaries', None, prefix = 'unitary_')
+    os.chdir('..')
+    generate_dir('matrixelements_otherbasis', None, prefix = 'hamp')
+    os.chdir('..')
     
     if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
         plotter = pf.Plot_Files(fname)
@@ -710,7 +678,7 @@ def test_benzene():
 def farnaz(*args , **kwargs):
     ciflowoutputfile = "ciflowoutput.txt" ; flowname = "flow.dat"; psienergies = [] ;  extra = None
     methods = ["doci" , "local" , "doci" , "fmmin" ]
-    basissets = ['6-31g++']
+    basissets = ['6-31g']
     atoms = [2,2]
     name = 'he2varrg'
     rootdir = './results/he2varrg/' #relative to the directory that contains this script
@@ -857,15 +825,14 @@ def farnaz2(*args , **kwargs):
     generate_dir('matrixelements_otherbasis', None, prefix = 'hamp')
     os.chdir('..')
 
-def create_modham_input(elemdir, nalpha , norb , modtype , options , params , runlist, filename = None):
+def create_modham_input(elemdir, nalpha , norb , modtype , options , params , runlist):
     olddir = os.getcwd()
-    generate_dir(elemdir,None, args = [filename])
-    #generate_dir(elemdir,None)
+    generate_dir(elemdir,None)
     filenum = 0
     for r in runlist:
-        params[-1] = r
-        hub1d = rp.ModHam(nalpha, nalpha,norb,modtype , options , params, matrixelements = filename)
-        hub1d.write_file(fname = str(filenum) + modtype + 'nalpha' + str(nalpha) + '_' + 'norb' + str(norb)+ '_'  + '_'.join(map(str,params)) +'run=' + str(r)+ '.mod')
+        params[1] = r
+        hub1d = rp.ModHam(nalpha, nalpha,norb,modtype , options , params)
+        hub1d.write_file(fname = str(filenum) + modtype + 'nalpha' + nalpha + '_' + 'norb' + norb+ '_'  +options[2]+ '_'.join(map(str,params)) +'run=' + str(r)+ '.mod')
 
         filenum += 1        
 
@@ -927,7 +894,7 @@ def hub1d(nalpha, options):
         f.write(header)
         for index , matrixelements in enumerate(hamfiles.plotfiles):
             print matrixelements
-            create_ciflow_input_file(matrixelements , methods , fname = flowname )
+            create_ciflow_input_file(matrixelements , methods , fname = flowname)
             ci_flow =""
             if methods:
                 try:
@@ -964,433 +931,17 @@ def hub1d(nalpha, options):
     os.chdir(olddir)
 
 
-def con_dm_wrap():
-    fileinfo = lambda x: float(re.search(r'hamnoplussto-3gpatrick([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)new\.out' , x).group(1))
-    search = r'hamnoplussto-3gpatrick.*new\.out' 
-    hamfiles = [i for i in os.listdir('ham_patrick') if(  ( re.search(search , i) and fileinfo(i) <= 10. and fileinfo(i) >= 2  and fileinfo(i) * 2 % 2 == 0 and not '.sw' in i  and not fileinfo(i) == 5.)) ]
-    hamfiles = sorted(hamfiles , key = fileinfo  )
-    hamfiles 
-    print hamfiles
-    for mat in hamfiles:
-        con_dm(mat)
-
-def con_dm(mat):
-    matrixelements = "psioutput.dat"
-    #matrixelements = "hamnoplussto-3gpatrick100.0.out"
-    #matrixelements = "ni_system.dat"
-    matrixelements = mat
-
-    detfile1= "cisddeterminants.dat" 
-    ciflowoutputfile = "ciflowoutput.txt" ; flowname = "flow.dat"
-    #methods = ["file" , detfile1]
-    methods = ["doci", "local"]
-    methods = ["fci"]
-    name = 'noconstrainedm'
-    rootdir = './results/cnmin' + mat.translate(None ,'/.') + 'fciconstrainedextra'  #relative to the directory that contains this script
-    rootdir = './results/n2' + mat.translate(None ,'/.') + 'fciconstrained2bohr'  #relative to the directory that contains this script
-    rootdir = './results/5bohrnatomnopluspatrickhamfci2/'
-    exe = 'ciflow.x'
-    elemdir = 'matrixelements'
-    import numpy as np
-    #runlist = [6.001 ]+list(np.arange(7.96,8.01,0.01)) + [7.999]
-    #runlist = list(np.arange(5.,8.01,0.01)) 
-    runlist = list(np.arange(6.,8.01,0.01)) 
-    #runlist = list(np.arange(7.01,7.23,0.01)) 
-    #runlist = list(np.arange(6.54,7.01,0.01)) 
-    #runlist = list(np.arange(7.,8.01,0.01)) 
-
-
-    olddir = os.getcwd()
-    generate_dir(rootdir , exe,  args = [matrixelements] )
-    matrixelements = os.path.split(matrixelements)[1]
-    #shutil.copy(exe, rootdir)#When the matrixelements are already present.
-    #os.chdir(rootdir) #When the matrixelements are already present.
-    outputfile = open(ciflowoutputfile , 'w')
-
-    #norb  = 10 ;  
-    #nalpha = 7;
-    #modtype = 'Constrained_DM' ; params = [0. , 1. , 2. , 3. , 4. ,  8 , 4.]  ; options = [ "lj"]
-    #create_modham_input(elemdir,nalpha  , norb , modtype , options , params , runlist ,matrixelements)
-
-
-    #fileinfo = lambda x: float(re.search(r'run[\=]*([-]?\d+\.\d+[e\-]*\d*)\.mod' , x).group(1))
-    #hamfiles = {}
-    #search = modtype+ '.+mod' 
-    #hamfiles= fc.File_Collector(elemdir , search = search  ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1000 and fileinfo(x) < 1000. )
-    generate_dir('output_files', None)
-    os.chdir('..')
-  
-    afh = 'R'
-    fname = name + "_" + ".dat"
-    with open(fname , 'w') as f:
-        header = create_header(afh , methods, [] , extra = None).replace('\n', '') + "\tlambda" +"\tMulliken_A\n"
-        print header
-        f.write(header)
-        #psir = rp.PsiReader(matrixelements, isbig = False, numorbs = -1 , read_ints = False) #just to get number of electrons and orbitals
-        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] , []], [] ,fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
-        #for index , matrixelements in enumerate(hamfiles.plotfiles):
-        for r in runlist:
-            norb  = 10 ;  
-            nalpha = 7;
-
-            def func(x):
-                modtype = 'Constrained_DM' ; params = [0. , 1. , 2. , 3. , 4. ,  r , x]  ; options = [ "lj"]
-                condm = rp.ModHam(nalpha, nalpha,norb,modtype , options , params, matrixelements =matrixelements)
-                condm.write_file(fname = 'conelements.mod')
-                create_ciflow_input_file('conelements.mod', methods , fname = flowname)
-                ci_flow =""
-                if methods:
-                    try:
-                        ci_flow =""
-                        process = subprocess.Popen(["./ciflow.x" ] , stdin =open(flowname , 'r'), stdout = subprocess.PIPE)
-                        for line in iter(process.stdout.readline, ''):
-                            sys.stdout.write(line) #writes intermediate output to screen.
-                            outputfile.write(line)
-                            outputfile.flush()
-                            ci_flow += line
-                    except Exception as e:    
-                        print 'Ciflow gave the following error', e
-                        print ci_flow
-                        pass
-
-                energies = process_output(ci_flow) 
-                mullikencharge = process_output(ci_flow, regexp = "Mulliken[\s\w]+:\s*([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)") 
-                return (energies , mullikencharge)
-                #return ( mullikencharge, energies )
-
-            if r <  6.92:
-                extremumval = gss(func, -0.1 , 4.,tol=1e-8)
-            elif r < 9:
-                extremumval = gss(func,-4. , 0.1,tol=1e-8)
-            energies, mullikencharge = func(extremumval)
-            #shutil.copy( 'conelementsoutputdoci.dat' , os.path.join('output_files' , 'conelementsoutputdoci' + str(r)+ '.dat') )
-            shutil.copy( 'conelementsoutputfci.dat' , os.path.join('output_files' , 'conelementsoutputfci' + str(r)+ '.dat') )
-            #shutil.copy( 'conelementscisddeterminantsoutputci_file.dat' , os.path.join('output_files' , 'conelementsoutputcisd' + str(r)+ '.dat') )
-            #shutil.copy( 'conelementsoutputdocilocal0.dat' , os.path.join('output_files' , 'conelementsoutputdocilocal' + str(r)+ '.dat') )
-
-            print_output('searchfor:'+str(r), energies , methods)
-            f.write("%.15f\t%s\t%f\t%s\n" %(r, '\t'.join(energies ), extremumval , '\t'.join(mullikencharge ) ) )
-  
-    os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
-
-    generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
-    os.chdir('..')
- 
-    if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
-        plotter = pf.Plot_Files(fname)
-        plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
-        plotter.data[0].depvar['xas'] = '$R$'  #is normally set to the column header 0
-        plotter.data[0].units['x'] = r'(\AA)'
-        plotter.data[0].units['y'] = r'(E$_h$)'
-        #plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
-    os.chdir(olddir)
-
-'''python program for golden section search'''
-gr=(math.sqrt(5)-1)/2
-def gss(f,a,b,tol=1e-5):
-    '''
-    golden section search
-    to find the minimum of f on [a,b]
-    f: a strictly unimodal function on [a,b]
-
-    example:
-    >>> f=lambda x:(x-2)**2
-    >>> x=gss(f,1,5)
-    >>> x
-    2.000009644875678
-
-    '''
-    c=b-gr*(b-a)
-    d=a+gr*(b-a)
-    fc=f(c)[0][-1];fd=f(d)[0][-1]
-    while abs(c-d)>tol:       
-        if fc<fd:
-            b=d
-            d=c  
-            c=b-gr*(b-a)
-            fd=fc;fc=f(c)[0][-1]
-        else:
-            a=c
-            c=d  
-            d=a+gr*(b-a)
-            fc=fd;fd=f(d)[0][-1]
-    return (b+a)/2 
-
-
-def con_dmloop():
-    ciflowoutputfile = "ciflowoutput.txt" ; flowname = "flow.dat"
-    methods = ["fci" ]
-    name = 'noconstrainedm'
-    rootdir = './results/5bohrnoconstrainedscanno=6.8'  #relative to the directory that contains this script
-    exe = 'ciflow.x'
-    elemdir = 'matrixelements'
-    import numpy as np
-    runlist = list(np.arange(-3 , 3 ,  0.1) )
-
-    #matrixelements = "psioutput.dat"
-    #matrixelements = "hamnoplussto-3gpatrick100.0.out"
-    matrixelements = "./hamnoplussto-3gpatrick5.0new.out"
-
-    olddir = os.getcwd()
-    generate_dir(rootdir , exe, args = [matrixelements] )
-    #shutil.copy(exe, rootdir)#When the matrixelements are already present.
-    #os.chdir(rootdir) #When the matrixelements are already present.
-    outputfile = open(ciflowoutputfile , 'w')
-
-    norb  = 10 ;  
-    nalpha = 7;
-    modtype = 'Constrained_DM' ; params = [0. , 1. , 2. , 3. , 4. ,  6.8 , 4.]  ; options = [ "lj"]
-    create_modham_input(elemdir,nalpha  , norb , modtype , options , params , runlist ,matrixelements)
-
-
-    fileinfo = lambda x: float(re.search(r'run[\=]*([-]?\d+\.\d+[e\-]*\d*)\.mod' , x).group(1))
-    hamfiles = {}
-    search = modtype+ '.+mod' 
-    hamfiles= fc.File_Collector(elemdir , search = search  ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1000 and fileinfo(x) < 1000. )
-  
-    afh = 'R'
-    fname = name + "_" + ".dat"
-    with open(fname , 'w') as f:
-        header = create_header(afh , methods, [] , extra = None)
-        print header
-        f.write(header)
-        for index , matrixelements in enumerate(hamfiles.plotfiles):
-            create_ciflow_input_file(matrixelements, methods , fname = flowname)
-            ci_flow =""
-            if methods:
-                try:
-                    ci_flow =""
-                    process = subprocess.Popen(["./ciflow.x" ] , stdin =open(flowname , 'r'), stdout = subprocess.PIPE)
-                    for line in iter(process.stdout.readline, ''):
-                        sys.stdout.write(line) #writes intermediate output to screen.
-                        outputfile.write(line)
-                        outputfile.flush()
-                        ci_flow += line
-                except Exception as e:    
-                    print 'Ciflow gave the following error', e
-                    print ci_flow
-                    pass
-
-            energies = process_output(ci_flow) 
-            mullikencharge = process_output(ci_flow, regexp = "Mulliken[\s\w]+:\s*([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)") 
-            #mullikencharge = float(re.search("Mulliken[\s\w]+:\s*([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)", ci_flow).group(1) )
-
-            print_output('R:'+str(runlist[index]), energies , methods)
-            f.write("%.15f\t%s\t%s\n" %(fileinfo(matrixelements), '\t'.join(energies ) , '\t'.join(mullikencharge ) ) )
-  
-    os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
-
-    generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
-    os.chdir('..')
- 
-    if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
-        plotter = pf.Plot_Files(fname)
-        plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
-        plotter.data[0].depvar['xas'] = '$R$'  #is normally set to the column header 0
-        plotter.data[0].units['x'] = r'(\AA)'
-        plotter.data[0].units['y'] = r'(E$_h$)'
-        #plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
-    os.chdir(olddir)
-
-def correct_condm():
-    dirname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick5.0new.outfci'
-    shutil.copy('ciflow.x', dirname)#When the matrixelements are already present.
-    matrixelements = "hamnoplussto-3gpatrick5.0new.out"
-    #shutil.copy('ni_system.dat', dirname)#When the matrixelements are already present.
-    os.chdir(dirname)
-
-    with open('noconstrainedm_.dat' , 'r') as file:
-        data = file.read()
-        lambdalist = re.findall(r'\s(-?\d*\.\d+)\s*$', data, re.M)
-
-    ciflowoutputfile = "ciflowoutput.txt" ; flowname = "flow.dat"
-    methods = ["fci" ]
-    name = 'noconstrainedmmulliken'
-    elemdir = 'matrixelements'
-    import numpy as np
-    mullikenlist = list(np.arange(5. , 8.01 ,  0.01) )
-
-    assert(len(mullikenlist) == len(lambdalist) )
-
-    runlist = zip(mullikenlist , lambdalist)
-    print runlist
-
-
-    outputfile = open(ciflowoutputfile , 'w')
-
-    afh = 'lambda'
-    fname = name + "_" + ".dat"
-    with open(fname , 'w') as f:
-        header = create_header(afh , methods, [] , extra = None)
-        print header
-        f.write(header)
-        for  mul ,  lam in runlist:
-            norb  = 10 ;  
-            nalpha = 7;
-            modtype = 'Constrained_DM' ; params = [0. , 1. , 2. , 3. , 4. ,  mul , lam]  ; options = [ "lj"]
-            condm = rp.ModHam(nalpha, nalpha,norb,modtype , options , params, matrixelements =matrixelements)
-            condm.write_file(fname = 'conelements.mod')
-            create_ciflow_input_file('conelements.mod', methods , fname = flowname)
-            ci_flow =""
-            if methods:
-                try:
-                    ci_flow =""
-                    process = subprocess.Popen(["./ciflow.x" ] , stdin =open(flowname , 'r'), stdout = subprocess.PIPE)
-                    for line in iter(process.stdout.readline, ''):
-                        sys.stdout.write(line) #writes intermediate output to screen.
-                        outputfile.write(line)
-                        outputfile.flush()
-                        ci_flow += line
-                except Exception as e:    
-                    print 'Ciflow gave the following error', e
-                    print ci_flow
-                    pass
-
-            energies = process_output(ci_flow) 
-            mullikencharge = process_output(ci_flow, regexp = "Mulliken[\s\w]+:\s*([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)") 
-            #mullikencharge = float(re.search("Mulliken[\s\w]+:\s*([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)", ci_flow).group(1) )
-
-            print_output('R:'+str(mul)+'\t' + str(lam), energies , methods)
-            f.write("%.15f\t%s\t%f\t%s\n" %(float(mul) , '\t'.join(energies ) , float(lam) , '\t'.join(mullikencharge ) ) )
-  
-    os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
-
-    generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
-    os.chdir('..')
- 
-    if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
-        plotter = pf.Plot_Files(fname)
-        plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
-        plotter.data[0].depvar['xas'] = '$R$'  #is normally set to the column header 0
-        plotter.data[0].units['x'] = r'(\AA)'
-        plotter.data[0].units['y'] = r'(E$_h$)'
-        #plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
-    os.chdir(olddir)
-
-
-def main_benzene(*args , **kwargs):
-    ciflowoutputfile = "ciflowoutput.txt" 
-    flowname = "flow.dat"
-    change_ints = True #if you changed the standard psi4 integrals somewhere during the process
-    extra = None
-    detfile1 = "pisystemfci"
-    psienergies = []
-    methods = [  "file" , detfile1, "hmmin"]
-
-    basissets = ['6-31g']
-    runlist = [x*math.pi/180. for x in range(55,61) ] #+ [59.5]] #, 60]  ] #angle between two triangles in benzene.
-
-    atoms = [6,6,6,6,6,6,1,1,1,1,1,1] #benzene
-
-    name = 'benzenefcipisystem'
-    rootdir = './results/benzenepisystemdeformfci2sad' #relative to the directory that contains this script
-    exe = 'ciflow.x'
-    elemdir = 'matrixelements'
-
-    generate_dir(rootdir , exe , prefix = None)
-    #shutil.copy(exe, rootdir)#When the matrixelements are already present.
-    #os.chdir(rootdir) #When the matrixelements are already present.
-    create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (0,1) , moltype = 'benzene', package = 'psi' , units = 'angstrom', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = None, hdf5 = False, guess = 'sad', extrapar = 1.398 , ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v (for h2o extrapar = 104.479848) , benzene extrapar = 1.398 C-C distance
-
-    outputfile = open(ciflowoutputfile , 'w')
-    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?out' , x).group(1))
-
-    hamfiles = {}
-    search = r'psi.+%s.+mout' 
-    for basis in basissets:
-        hamfiles[basis] = fc.File_Collector(elemdir , search = search %basis ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1. and fileinfo(x) < 10000. )
-
-    afh = 'R'
-    for basis in basissets:
-        fname = name + "_" +basis + ".dat"
-        psir = rp.PsiReader(hamfiles[basis].plotfiles[0], isbig = False, numorbs = -1 , read_ints = False) #just to get number of electrons and orbitals
-        #dw.cimain(7,7, 10,[[1,2,3,4,5,6],[]], [] , fname = detfile6  ,ref = [ lambda x , y , z : dw.get_hf_det(x,y ,z)]) #hyb_lin
-        with open(fname , 'w') as f:
-            header = create_header(afh , methods, psienergies, extra = extra)
-            print header
-            f.write(header)
-            for index , matrixelements in enumerate(hamfiles[basis].plotfiles):
-                print matrixelements
-                if change_ints: #True if you want to change the standard psi4 integrals.    
-                    psir = rp.PsiReader(matrixelements, isbig = True, numorbs = 60 , read_ints = True) #for benzene.
-                    if '1.05' not in matrixelements:
-                        psir.set_active_space([1,2] , [] , [] , detfile1) #for pisystem of deformed benzene
-                    else:
-                        psir.set_active_space([2,3,4,5] , [] , [] , detfile1) #for pisystem of benzene
-                    #psir.keep_orbs(56)
-                    newname = os.path.basename(matrixelements)+ 'new.dat'
-                    psir.create_output(newname)
-                    matrixelements = newname
-
-                create_ciflow_input_file(matrixelements , methods , fname = flowname)
-                ci_flow =""
-                if methods:
-                    try:
-                        ci_flow =""
-                        process = subprocess.Popen(["./ciflow.x" ] , stdin =open(flowname , 'r'), stdout = subprocess.PIPE)
-                        for line in iter(process.stdout.readline, ''):
-                            sys.stdout.write(line) #writes intermediate output to screen.
-                            outputfile.write(line)
-                            outputfile.flush()
-                            ci_flow += line
-                    except Exception as e:    
-                        print 'Ciflow gave the following error', e
-                        print ci_flow
-                        pass
-                energies = process_output(ci_flow) 
-                mullikencharge = process_output(ci_flow, regexp = "Mulliken[\s\w]+:\s*([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)") 
-                if psienergies: #True if the list is not empty 
-                    psir = rp.PsiReader(matrixelements, isbig = False, numorbs = -1 , read_ints = False)
-                    energies +=  [x[1] for x in psir.extract_energies()]
-
-                print_output(matrixelements, energies , methods)
-                f.write("%.15f\t%s\t%s\n" %(runlist[index], '\t'.join(energies ), '\t'.join(mullikencharge)) )
-                if change_ints:
-                    os.remove(matrixelements)
-  
-    shutil.copy('../../htest.py' , '.')
-    os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
-    outputfile.close()
-    try:
-        generate_dir('output_files', None, prefix = r'output[\w_]+.dat')
-        os.chdir('..')
-        generate_dir('unitaries', None, prefix = 'unitary_')
-        os.chdir('..')
-        generate_dir('matrixelements_otherbasis', None, prefix = 'hamp')
-        os.chdir('..')
-    except:
-        pass
-    
-    if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
-        plotter = pf.Plot_Files(fname)
-        plotter.data[0].depvar['yas'] = 'Energy'  #change the future y-axis label 
-        plotter.data[0].depvar['xas'] = '$R$'  #is normally set to the column header 0
-        plotter.data[0].units['x'] = r'(\AA)'
-        plotter.data[0].units['y'] = r'(E$_h$)'
-        plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
-
-
 if __name__ == "__main__":
     #hubloop()
     #hub1d()
-    #main_opt()
-    #main_benzene()
-    #correct_condm()
-    #print create_header("R" , ["fci" , "doci" , "local" , "file" , "dfddf" , "local" , "mmin" , "file" ,"dfdfdf" ], [] )
-    #con_dm("hamhamnoplussto-3gpatrick10.0newDOCIsim0.dat")
-    con_dm("hamnoplussto-3gpatrick5.0new.out")
-    #con_dm("hampsiham002.00cnminorthon.dat")
-    #con_dm("hamnoplussto-3gpatrick2.0new.out")
-    #con_dm("n2_2bohr.dat")
-    #con_dm("psioutput.dat")
-    #con_dmloop()
-    #con_dm_wrap()
+    main_opt()
     #farnaz()
     #farnaz2()
     #print benzene(math.pi/3 , 1.398)
     #test_benzene()
     #prepare_dmrg('dmrginput.dat')
     #input_psi('input.dat', 'sto-3g' ,name= ' ' , charge_mult = (0,1) , atomlist = [4] , positions = [[0,0,0]] , units = 'au' , ref = 'rhf' , userbasis = False , functional = None, path_to_plugin = '../mointegrals/mointegrals.so', DOCC = None, sym = None, energies = ['cisd', 'ccsd' , 'fci'])
+    #main()
     #mainsize()
     #atom_main()
     #gkci()

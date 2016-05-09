@@ -190,8 +190,8 @@ class ModHam(CIFlow_Input):
             self.modtype = modtype
             self.make_mod_strings()
         else:
-            psireader = PsiReader(matrixelements, isbig = False , numorbs = -1 , read_ints = True, valdict = {}, intdict = {})
-            super(ModHam , self).__init__(psireader.values['nalpha'],psireader.values['nbeta'],psireader.values['nucrep'],psireader.values['norb'] ,psireader.values['sym'] ,psireader.values['nirrep'] ,psireader.values['irreplist'],psireader.ints['mo2index'],psireader.ints['mo4index'],psireader.values['hfenergy'],psireader.values['DOCC'] ,psireader.values['SOCC'],psireader.overlap ,psireader.unit)
+            self.psireader = PsiReader(matrixelements, isbig = False , numorbs = -1 , read_ints = True, valdict = {}, intdict = {})
+            super(ModHam , self).__init__(self.psireader.values['nalpha'],self.psireader.values['nbeta'],self.psireader.values['nucrep'],self.psireader.values['norb'] ,self.psireader.values['sym'] ,self.psireader.values['nirrep'] ,self.psireader.values['irreplist'],self.psireader.ints['mo2index'],self.psireader.ints['mo4index'],self.psireader.values['hfenergy'],self.psireader.values['DOCC'] ,self.psireader.values['SOCC'],self.psireader.overlap ,self.psireader.unit)
             self.options = options
             self.params = params
             self.modtype = modtype
@@ -200,6 +200,12 @@ class ModHam(CIFlow_Input):
     def make_mod_strings(self):
         self.optionsstring = '\n'.join(self.options)
         self.paramsstring = '\n'.join(map(str , self.params ) )
+
+    def transform_integrals(self, unitary):
+        return self.psireader.transform_integrals(unitary)
+
+    def matrix_to_list(self , t2, t4):
+        self.psireader.matrix_to_list(t2 , t4)
 
     def __str__(self):
         text = super(ModHam , self).__str__()
@@ -251,6 +257,9 @@ class PsiReader(Reader):
             self.values = copy.deepcopy(self.values)
             self.overlap = self.read_ao_info(filename, "CIFlowOverlap")
             self.unit = self.read_ao_info(filename, "CIFlowTransformation")
+            for i in range(len(self.unit) ):
+                if self.unit[i] != None:
+                    self.unit[i] = np.array(self.unit[i]).T #save in columns the new basis
 
             if isbig:
                 self.delete_lines(numorbs) #numorbs is the number of orbitals you wanna keep
@@ -280,13 +289,23 @@ class PsiReader(Reader):
                 elif re.search(r'([\-+]?\d+\.*\d*[eEdD]?[\-+]?\d*)', line):
                     irreplist.append(np.array(map(float,line.split() ) ) )
                 else:
-                    overlap[irrep_num] = irreplist
+                    overlap[irrep_num] = np.array(irreplist )
                     #print "finished reading in ao information this is the result:"
                     #print overlap
                     break 
 
         return overlap
 
+    def get_unitary(self):
+        #At this moment point group symmetry is not yet supported
+        unit = np.zeros((self.values['norb'], self.values['norb']))
+        pos = 0
+        for irrep in range(len(self.unit)):
+            if self.unit[irrep] != None:
+                dim = self.unit[irrep].shape[0] 
+                unit[pos:pos+dim , pos:pos+dim] = self.unit[irrep][:,:]
+                pos += dim
+        return unit        
 
     def extract_values(self):
         for key, value in self.regexps.iteritems():
@@ -527,16 +546,20 @@ class PsiReader(Reader):
 
     def calc_energy(self , rdm1 , rdm2, orblist = []):
         #remark integrals are written in chemical notation, and rdms are in physical notation.
+        if orblist == []:
+            orblist = range(0, self.values['norb'])
         energy1 = 0
         for i , j , integral in self.ints['mo2index']:
             #print i , j ,integral
-            energy1 += 2*integral * rdm1[i,j]
+            if i in orblist: # and j in orblist:
+                energy1 += 2*integral * rdm1[i,j]
         print 'Read psi 1 electron energy : ' , energy1
 
         energy2 = 0
         for i , j , k , l, integral in self.ints['mo4index']:
-            energy2 += 2*integral * rdm2[0][i , k ,j  ,l ]
-            energy2 += 2*integral * rdm2[1][i , k , j ,l ]
+            if i in orblist and k in orblist: # and l in orblist and j in orblist :
+                energy2 += 2*integral * rdm2[0][i , k ,j  ,l ]
+                energy2 += 2*integral * rdm2[1][i , k , j ,l ]
 
         print 'Read psi 2 electron energy : ' , energy2/2.
         print 'total energy = : ' , energy1 + 1/2.* energy2 + self.values['nucrep']
@@ -656,7 +679,7 @@ class PsiReader(Reader):
         virtual = upstring[:-1*(self.cum[irreplist[-1] + 1 ] ) ]
         print 'frozen' , frozen , 'virtual' , virtual
 
-        dw.cimain(nup,ndown ,norb ,exlist , senlist ,fname = detfile ,ref = [lambda x , y, z : activehf ], add_frozen = 0, frozenstring = frozen , virtualstring = virtual) 
+        dw.cimain(nup,ndown ,norb , [range(1,nup+ndown+1), [] ] , senlist ,fname = detfile ,ref = [lambda x , y, z : activehf ], add_frozen = 0, frozenstring = frozen , virtualstring = virtual) 
 
 class HDF5Reader(object):
     def __init__(self,fname):

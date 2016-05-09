@@ -28,6 +28,7 @@
 #include "UnitaryMatrix.h"
 #include "Options.h"
 #include "scpp_assert.h"
+#include "OrbitalTransform.h"
 
 #ifdef __OMP__
 #include <omp.h>
@@ -928,6 +929,50 @@ double CIDens::get_two_electron_energy(int maxorb) {
 
 double CIDens::get_dens_energy(int maxorb) {
     return get_one_electron_energy(maxorb) + get_two_electron_energy(maxorb) + _cim->get_econst(); 
+}
+
+double CIDens::get_one_pare(vector<int> vw ){
+    double energy = 0.0;
+    for ( auto & i  : vw) {
+        for (auto &  j  : vw) {
+            energy += _cim->get_ham()->getTmat(i,j) * get_one_rdm(0,i,j, _one_dens);
+            energy += _cim->get_ham()->getTmat(i,j) * get_one_rdm(1,i,j, _one_dens);
+        }
+    }
+    return energy;
+}
+
+double CIDens::get_two_pare(vector<int> vw) {
+    double energy = 0.0;
+    for (auto & i : vw ) {
+        for (auto & j : vw ) {
+            for (auto &  k : vw ) {
+                for (auto &  l : vw ) {
+                    double vmat = _cim->get_ham()->getVmat(i,j,k,l);
+                    energy +=  vmat * get_two_rdm(0,i,j,k,l,_two_dens);
+                    energy +=  2*vmat * get_two_rdm(1,i,j,k,l,_two_dens); //for u,d,u,d and d,u,d,u which are equal.
+                    energy +=  vmat * get_two_rdm(2,i,j,k,l,_two_dens);
+                }
+            }
+        }
+    }
+    return 0.5*energy;
+}
+
+double CIDens::get_dens_pare(vector<int> vw) {
+    //transform_to_ao(true, false); //Transforms ordm to the ao basis.
+    //UnitaryMatrix unit(*_cim->get_ham()->get_unitary());
+    ////matrix unitary( _cim->get_ham()->get_unitary()->get_full_transformation() , _norb , _norb); //returns full transformation defined by unitary matrix (new basis in rows.)
+    ////matrix utran = unitary.invert(); //Remark the ao->mo transformation is not unitary so we cant just transpose we need to take explicitely the inverse for the inverse transformation.
+    //// we save a copy of the original ham in the orbital transformation object.
+    //OrbitalTransform orbtrans =  OrbitalTransform(_cim->get_ham() );
+    //std::unique_ptr<Hamiltonian> optham;
+    //optham.reset(new Hamiltonian(*_cim->get_ham()) ) ;
+    //orbtrans.set_unitary(unit);
+    //orbtrans.fillHamCI(*optham);
+    //_cim->set_ham(optham.get());
+    cout << "#Partial energy:  " << get_one_pare(vw) + get_two_pare(vw) + _cim->get_econst()  <<std::endl ; 
+    return get_one_pare(vw) + get_two_pare(vw) + _cim->get_econst(); 
 }
 
 void CIDens::print_one_dens(std::ostream & os, const valarray<valarray<double>> & onerdm)const{

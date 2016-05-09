@@ -34,10 +34,10 @@ import datareader as dr
 import filecollector as fc
 
 ## for Palatino and other serif fonts use:
-#matplotlib.rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']}) #adjust fonts
+matplotlib.rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']}) #adjust fonts
 #matplotlib.rc('font',**{'family':'serif','serif':['Palatino']})
 #matplotlib.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-#matplotlib.rc('text', usetex=True)
+matplotlib.rc('text', usetex=True)
 
 def makemovie(name = None):
   # makes a movie from all the .png files in the current directory
@@ -117,7 +117,7 @@ class Plot_Files(object):
       filecol = fc.File_Collector(dirname , search , notsearch = notsearch ,filelist = filelist , sortfunction = sortfunction , rev =rev )
       self.readdata(filecol.plotfiles, regexp = regexp ,  substr = substr, filename = filename)
   
-    def generate_plot(self, xlimg = None , ylimg =None , exname = '' , prefix = True, titel = None ,name = 'energyplot', depcol = 0, ylist = None , save = True, color = ['','','','','','','','','', '','', '' , '' , '' , '', '' , ''], exdir = './', samedir = False, datanum = 0, label = None):
+    def generate_plot(self, xlimg = None , ylimg =None , exname = '' , prefix = True, titel = None ,name = 'energyplot', depcol = 0, ylist = None , save = True, color = ['', '','', '','','','','','','','','', '','', '' , '' , '' , '', '' , ''], exdir = './', samedir = False, datanum = 0, label = None):
       """
       Some nice plots to visualize the data with matplotlib.
       """
@@ -133,6 +133,7 @@ class Plot_Files(object):
       
       for i in ylist:
           if isinstance(label , list) :
+              print label
               labeli = label[i]
           else:
               labeli = label
@@ -171,7 +172,7 @@ class Plot_Files(object):
         self.data[i].data[:,1:3] = self.data[i].data[:,1:3] - gronddat[:,1:3] #we made sure that the data of the groundstateenergy is first in the rgdata list
       del(self.data[0].data, self.prefix[0])
       
-    def layout(self ,  xlab , ylab , xlim = None , ylim = None , tit = None , legendhand = None , legendlab = None , legendpos = 0 , finetuning = True, axbg = None , fs = 30, ticksize = 16):
+    def layout(self ,  xlab , ylab , xlim = None , ylim = None , tit = None , legendhand = None , legendlab = None , legendpos = 0 , finetuning = False, axbg = None , fs = 30, ticksize = 16):
       """
       In this function we finetune some aspects of the axes for all the tuning possibilitys see: http://matplotlib.org/api/axes_api.html
       especially the set functions ;)
@@ -192,7 +193,7 @@ class Plot_Files(object):
       #self.fig.axes[self.axnum].yaxis.major.formatter.set_powerlimits((0,0))
       self.fig.axes[self.axnum].yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter(useOffset=False))
       #self.fig.axes[self.axnum].yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%.1f'))
-      self.fig.axes[self.axnum].xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%.1f'))
+      self.fig.axes[self.axnum].xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%.3f'))
       #self.fig.axes[self.axnum].locator_params(tight=True, nbins=3)
       #self.fig.axes[self.axnum].xaxis.major.locator.set_params(nbins=3)
 
@@ -326,15 +327,20 @@ def main():
     fname = 'results/n2n2_2bohrdatfciconstrained2bohr/noconstrainedm_.dat'
     fname = 'results/n2n2_3bohrdatfciconstrained3bohr/noconstrainedm_.dat'
     #fname = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick2.0new.outfcill/noconstrainedm_.dat'
-    fname = 'results/nisystemnoconstrainedwithwf/results.dat'
+    #fname = 'results/nisystemnoconstrainedwithwfnatom/results.dat'
+    fname = 'results/benzene_deformation/benzene_deformationpisystemsymopt_6-31g.dat'
+    fname = 'results/n2plusconstrained10bohrreadyforpare/noconstrainedm_.dat'
+    fname = 'results/phdsenhierbut6-31g/phdsenhierbut6-31g_6-31g*.dat'
+    fname = 'n_atom_e2.dat'
  
     plotter = Plot_Files(fname)
     #title = 'NO$^+$ Infinite Angstrom scan different ham (STO-3G)'
     #title = 'NO$^+$ infinte distance scan at $N_O= 6.8$ (STO-3G)'
     #title = 'CN$^-$  FCI (STO-3G)'
     #title = 'CO  FCI (STO-3G)'
-    #title = 'N$_2$  FCI (STO-3G)'
-    title = 'NO$^+$  FCI (STO-3G)'
+    title = 'H$_6$  FCI (6-31g*)'
+    title = 'N atom in (NO+)'
+    #title = 'benzene  (6-31g)'
     #title = ''
     xlim = None
     ylim = None
@@ -350,26 +356,38 @@ def main():
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'cienergiesscanlambda')
     
     #For energy plots in function of bondlength
-    #plotter.data[0].depvar['yas'] = 'CI Energy' #change the future y-axis label 
-    #plotter.data[0].depvar['xas'] = 'R' #change the future y-axis label 
-    ##ylim = ( -128 , -125) 
-    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3,4,5], titel = title, name = 'plot' , exname = 'cienergies')
+    plotter.data[0].depvar['yas'] = 'CI Energy' #change the future y-axis label 
+    plotter.data[0].units['y'] = r'(E$_h$)'
+    plotter.data[0].depvar['xas'] = 'R' #change the future y-axis label 
+    #plotter.data[0].units['x'] = r'(rad)' #change the future y-axis label 
+    plotter.data[0].units['x'] = r'(\AA)' #change the future y-axis label 
+    #ylim = ( -2.4 , -2.2) 
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'cienergies')
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2,4,5,6, 7, 8, 9], titel = title, name = 'plot' , exname = 'cienergies')
     #plotter.data[0].depvar['yas'] = 'Mulliken charge' #change the future y-axis label 
     #ylim = None
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [4], titel = title, name = 'plot' , exname = 'mullikencharges')
 
     #For plots in function of changed atomic charge.
-    plotter.data[0].depvar['xas'] = 'Mulliken charge on N'#change the future y-axis label 
-    plotter.data[0].depvar['yas'] = 'Extremum lambda'#change the future y-axis label 
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambda')
-    plotter.data[0].depvar['yas'] = 'Energy'#change the future y-axis label 
-    plotter.data[0].units['y'] = r'(E$_h$)'
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergy')
-    plotter.data[0].depvar['xas'] = 'Extremum lambda'#change the future y-axis label 
-    plotter.data[0].units['x'] = r'(a.u.)'
-    plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergy')
-    option = None
+    #plotter.data[0].depvar['xas'] = 'Mulliken charge on N'#change the future y-axis label 
+    #plotter.data[0].depvar['yas'] = 'Extremum lambda'#change the future y-axis label 
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambda')
+    #plotter.data[0].depvar['yas'] = 'Energy'#change the future y-axis label 
+    #plotter.data[0].units['y'] = r'(E$_h$)'
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergy')
+    #plotter.data[0].depvar['xas'] = 'Extremum lambda'#change the future y-axis label 
+    #plotter.data[0].units['x'] = r'(a.u.)'
+    #plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergy')
+
+
+    ##For plots in function of changed atomic charge.
+    #plotter.data[0].depvar['xas'] = 'Mulliken charge on N'#change the future y-axis label 
+    #plotter.data[0].depvar['yas'] = 'Energy'#change the future y-axis label 
+    #plotter.data[0].units['y'] = r'(E$_h$)'
+    #title = 'N FCI (STO-3G)'
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [5], titel = title, name = 'plot' , exname = 'mullikenenergyn')
     #here under is an example to show the flexibility of the plotclass
+    option = None
     if option == 'inset':
         """
         Example of how you need to draw a small inset in a larger plot of a particular
@@ -529,8 +547,45 @@ def shannon_scatter():
         plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [i], titel = title, name = 'plot' , exname = 'seniorityscattereqsto-3g', exdir= '', prefix = True)
 
 
+def sen_hier_plot():
+    #7,11,12 plot senhier beh2
+    fname = './results/senhierfcifnocisdmminbeh26-31g/wavefunctionanalysisfcino.dat'
+    plotter = Plot_Files(fname)
+    plotter.data[0].depvar['yas'] = 'Partitions'#change the future y-axis label 
+    plotter.data[0].depvar['xas'] = 'R'#change the future y-axis label 
+    plotter.data[0].units['x'] = r'(bohr)'
+    plotter.data[0].units['y'] = r''
+    #xlim = (0. , 10.)
+    #ylim = (None , None)
+    xlim = None
+    ylim = None
+    title = ''
+    seniorities = ['0','2','4']
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [1 ,5, 9], titel = 'seniority 0 determinants', name = '' , exname = 'seniorityhier0', exdir= '', prefix = True)
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2 ,6, 10], titel = 'seniority 2  determinants', name = '' , exname = 'seniorityhier2', exdir= '', prefix = True)
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [3 ,7, 11], titel = 'seniority 4 determinants', name = '' , exname = 'seniorityhier4', exdir= '', prefix = True)
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [1,2, 3 ,5 ,6 ,7, 9, 10, 11], titel = '', name = '' , exname = 'seniorityallseniorities', exdir= '', prefix = True)
+
+def sen_hier_plot2():
+    #7,11,12 plot senhier beh2
+    fname = './results/phdsenhierbeh26-31g/phdsenhierbeh26-31gnext_6-31g.dat'
+    plotter = Plot_Files(fname)
+    plotter.data[0].depvar['yas'] = 'CI Energies'#change the future y-axis label 
+    plotter.data[0].depvar['xas'] = 'R'#change the future y-axis label 
+    plotter.data[0].units['x'] = r'(\AA)'
+    plotter.data[0].units['y'] = r'(E$_h$)'
+    #xlim = (0. , 10.)
+    #ylim = (None , None)
+    xlim = None
+    ylim = None
+    title = ''
+    seniorities = ['0','2','4']
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [7,11,12] , titel = '', name = '' , exname = 'senhier', exdir= '', prefix = True)
+
 if __name__ == '__main__':
     main()  
+    #sen_hier_plot()
+    #sen_hier_plot2()
     #plot_togetherenv2()
     #plot_togetherenv3()
     #plot_togetherenv4()

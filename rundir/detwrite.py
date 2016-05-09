@@ -296,7 +296,10 @@ def num_dets():
         for value in detmethods:
             file.write("%f    %.9f\n" % (value[0] , value[1]))
 
-def generate_all_ex(nup ,ndown , norb , refdet, aname = 'determinants'):
+def generate_all_ex(nup ,ndown , norb , refdet, aname = 'determinants', addfrozen = 0):
+    nup = nup - addfrozen 
+    ndown = ndown - addfrozen
+    norb = norb - addfrozen
     exlist = [[],[] ] #single ex, pair ex
     maxex = 2*norb-nup-ndown
     maxex = max(maxex , nup+ndown)
@@ -304,10 +307,13 @@ def generate_all_ex(nup ,ndown , norb , refdet, aname = 'determinants'):
         exlist[0] = range(1,ex_max+1) #
         print exlist
         name = aname + str(ex_max) +".dat"
-        cimain(nup , ndown , norb ,exlist,  [], fname = name , ref = [lambda x , y , z : refdet ])
+        cimain(nup , ndown , norb ,exlist,  [], fname = name , ref = [lambda x , y , z : refdet ], add_frozen = addfrozen)
 
-def generate_all_sen(nup ,ndown , norb , aname = 'sendeterminants'):
+def generate_all_sen(nup ,ndown , norb , aname = 'sendeterminants', addfrozen = 0 ):
     senlist = [] #single ex, pair ex
+    nup = nup - addfrozen 
+    ndown = ndown - addfrozen
+    norb = norb - addfrozen
     startsen = abs(nup-ndown)
     numpair = min(nup, ndown)
     maxpairbreaking = min(numpair , norb - max(nup , ndown) )
@@ -317,7 +323,7 @@ def generate_all_sen(nup ,ndown , norb , aname = 'sendeterminants'):
         senlist = range(startsen,sen +1,2) #
         print senlist
         name = aname + str(sen) +".dat"
-        cimain(nup , ndown , norb , [[],[]],  senlist, fname = name , ref = [lambda x , y , z : get_hf_det() ])
+        cimain(nup , ndown , norb , [[],[]],  senlist, fname = name , ref = [lambda x , y , z : get_hf_det() ], add_frozen = addfrozen)
 
 def biggest_det_ex(wffile = 'psioutputoutputfci.dat'):
     cifread = co.CIFlow_Reader(wffile)

@@ -547,6 +547,8 @@ double Iterative_Subotnik::optimize()
         {
             std::cout  << "Trace(R): " << calc_value() << " (should increase) " <<std::endl;
         }
+        if(i > 100)
+            break;
         /*  
         if(!notconverged)
         {
@@ -588,7 +590,7 @@ double Iterative_Subotnik::optimize()
 
 Iterative_Subotnik_DIIS::Iterative_Subotnik_DIIS(CIMethod * cim, double crit, int type): Iterative_Subotnik(cim, crit, type)
 {
-    _diis = new DIIS(10);
+    _diis = new DIIS(20);
     _unitlist.resize(0);
 }
 

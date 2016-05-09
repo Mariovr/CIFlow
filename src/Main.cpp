@@ -93,9 +93,9 @@ Hamiltonian * get_mmin_ham( CIMethod* cimmin, bool diis)
     Iterative_Subotnik * min_sen;
     diis = 0;
     if(diis)
-        min_sen = new Iterative_Subotnik_DIIS(cimmin  , 1e-7, 0);
+        min_sen = new Iterative_Subotnik_DIIS(cimmin  , 1e-8, 0);
     else
-        min_sen = new Iterative_Subotnik( cimmin, 1e-7, 0);
+        min_sen = new Iterative_Subotnik( cimmin, 1e-8, 0);
     min_sen->optimize();
     min_sen->save_unitary("mmin");
     Hamiltonian * ham = min_sen->get_ham();
@@ -116,8 +116,8 @@ double get_fci_mmin_energy(CIMethod * cim , bool diis)
 
 double get_cisd_mmin_energy(CIMethod * cim , bool diis)
 {
-    std::cout  << "Make sure the cisd determinants for this problem are writen in the file cisddeterminants.dat : " << std::endl;
-    FCI_File cisd{cim->get_ham(), "cisddeterminants.dat"};
+    std::cout  << "Make sure the cisd determinants for this problem are writen in the file determinants2.dat : " << std::endl;
+    FCI_File cisd{cim->get_ham(), "determinants2.dat"};
     Hamiltonian * mminham = get_mmin_ham(&cisd, diis);
     double cisdmmine = e_in_ham(mminham , cim );
     std::cout  << "E in cisd mmin basis is : " << cisdmmine << std::endl;
@@ -193,7 +193,13 @@ void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
     {
     	//string hamname = "matrixelements_otherbasis/ham" + cim->get_ham()->get_short_filename()+"FCI_Filecisddeterminantsmmin.h5" ; 
     	//string hamname = "hamiltonians/ham" + cim->get_ham()->get_short_filename()+"FCI_Filecisddeterminantsmmin.h5" ; 
-    	string hamname = "ham" + cim->get_ham()->get_short_filename() + "FCI_Filecisddeterminantsmmin.h5";
+        std::string t = cim->get_ham()->get_short_filename();
+        std::string s = "DOCIlocal2";
+        std::string::size_type i = t.find(s);
+        if (i != std::string::npos) //make sure substring is contained in t
+               t.erase(i, s.length());
+    	string hamname =  t + "FCI_Filedeterminants2hmmin0.dat";
+    	//string hamname = "hampsi0_cc-pvdz0.00DOCIlocal0.dat" ;
     	//string hamname = "matrixelements_otherbasis/ham" + cim->get_ham()->get_short_filename() + "FCImmin.h5";
 	    cout << hamname << endl;
 	    cim->load_ham(hamname);
@@ -359,9 +365,9 @@ int main ( int argc, char ** argv){
                   //std::cout << "FCI energy: " << cim5->get_ci_energy(i) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
                   std::vector<int> orbs {0,1,2,3,4};
                   std::cout << "Mulliken charges first atom: " << cim5->get_mulliken(orbs, i ) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
-                  //std::cout << "Spin Squared: " << cim5->get_spin_squared(i) << std::endl;
                 }
-                cim5->print_output({  "spin_squared", "mulliken", "seniority", "shannon" , "parenergy"}, 0 , false);
+                //std::cout << "Partial energy: " << cim5->get_pare(5) << std::endl;
+                cim5->print_output({  "spin_squared", "mulliken", "seniority", "shannon" }, 0 , false);
                 //cim5->print_output({  "spin_squared"}, 0 ,false);
                 //Properties prop { cim5->get_eigvec(0)  , cim5->get_l() , cim5->get_perm() };
                 //cout << "shannon entropy "  << prop.shannon_ic() << std::endl;
@@ -409,7 +415,7 @@ int main ( int argc, char ** argv){
                 //Properties prop { cim2->get_eigvec(0)  , cim2->get_l() , cim2->get_perm() };
                 //cout << cim2->get_name() + cim2->get_ham()->get_short_filename() << ": shannon entropy: "  << prop.shannon_ic() << std::endl;
             	//cim2->print_output({"shannon", "spin_squared" ,"mulliken" });
-            	cim2->print_output({"shannon", "spin_squared" , "seniority" });
+            	//cim2->print_output({"shannon", "spin_squared" , "seniority" });
                 //DensFILE densmatfile {cim2};
                 //densmatfile.construct_density();
                 //std::vector<int> orbs {0,1,2,3,4};

@@ -228,16 +228,19 @@ class CIFlow_Reader(Reader):
     def get_properties(self):
         properties = {}
         with open(self.filename , 'r') as file:
+            bc = 0
             for line in file:
                 #print line
                 if '#' == line[0] or '-' == line[0] or '\n' == line[0] or ' ' == line[0]:
-                    regexp = r'^#Property\s*(\w+)\s*=\s*([\-+]?\d+\.\d+[eEdD]?[\-+]?\d*)\s*$'
+                    regexp = r'^#Property\s*eigvec\s*:\s*\d+\s*(\w+)\s*=\s*([\-+]?\d+\.\d+[eEdD]?[\-+]?\d*)\s*$'
                     match = re.search(regexp , line)
                     if match:
                         properties[match.group(1)] = match.group(2)
                         print 'we extracted property:' , match.group(1) , ' with value : '  , match.group(2)
                 else:
-                    break
+                    bc += 1
+                    if bc > 15: #take into account model hamiltonians their parameters don't start with comment
+                        break
         self.properties = properties
         return self.properties
 
@@ -451,32 +454,61 @@ def wavefunction_analysis():
         pf.plot_data(outputname, ylabel = 'partitions', xlabel = 'R', name = 'partitionanalyse')
     
 def wavefunction_analysis_fci():
-    outputname = 'wavefunctionanalysisfcino.dat'
-    regexham = r'\s+\((\d+,\s*\d+)\)\s+([\-+]?\d+\.\d+[eEdD]?[\-+]?\d+)' #to extract the Hamiltonian.
-    root = './results/buttestfci/'
-    fname = 'output_files/'
-    matrixelements = 'matrixelements/psi0_cc-pvdz2.40.mout'
-
+    outputname = 'wavefunctionanalysisfciii.dat'
+    root = './results/phdsenebeccpvdzfcimminc1/'
+    fname = '.'
     os.chdir(root)
-    psir = rp.PsiReader(matrixelements, isbig = False, numorbs = -1, read_ints = False)
-    runlist = [2.5]
-    import numpy as np
-    runlist = list(np.arange(1,2.5,0.2)) + [2.5] + list(np.arange(2.6,4,0.2))
-    #runlist = map( lambda x : x/100. , range(60 , 172 , 1) )  #h2o
-    fileinfo = lambda x: float(re.search(r'[\w\d\-]*([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)output[\w_]+\.dat' , x).group(1))
-    collector = fc.File_Collector(fname , r'outputfcino.dat', sortfunction = fileinfo)
+
+    fileinfo = lambda x: float(re.search(r'[\w\d\-]*([\-+]?\d*[\.,]?\d*[eEDd]?[\-+]?\d*)outputfci[-\d\w_]+\.dat' , x).group(1))
+    fileinfo = lambda x : len(x) 
+    collector = fc.File_Collector(fname , r'outputfci.*.dat', sortfunction = fileinfo)
+
     with open(outputname , 'w') as to_file:
-        to_file.write('#R\t%s\n' %'\t'.join(['sen'+str(i) for i in range(0,psir.values['nalpha']*2+1,2 ) ]) )
+        to_file.write('#R\t%s\n' %'\t'.join(['sen'+str(i) for i in range(0,5, 2 ) ]) )
         for index, file in enumerate(collector.plotfiles):
-            cif = CIFlow_Reader(file, regexp = regexham )
+            print file
+            cif = CIFlow_Reader(file)
             overlaplist = []
-            for ex in range(0,cif.header['nup']*2+1 ,2):
-                ciplist = dw.cimain(cif.header['nup'] , cif.header['ndown'] , cif.header['norbs'] , [[],[]], [ex] ,ref = lambda x , y , z :psir.get_hf_orbs(),  write = False)
-                ciplist = [det[0]+'|' + det[1]  for det in ciplist] #remove HF det which is already included in the CI(P) method.
+            for ex in range(0,6 ,2):
+                ciplist = dw.cimain(cif.header['nup'] , cif.header['ndown'] , cif.header['norbs'] , [[],[]],[ex ] ,  write = False)
+                ciplist = [ up + '|' + down for    up , down in ciplist] 
                 overlaplist.append(cif.get_selected_coef(ciplist))
             print overlaplist
             print 'conservation of probability: ' , sum(overlaplist)
-            to_file.write("%f\t%s\n" %(runlist[index], '\t'.join(map(str,overlaplist) ))  )
+            to_file.write("%s\t%s\n" %(file , '\t'.join(map(str,overlaplist) ))  )
+
+    if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
+        pf.plot_data(outputname, ylabel = 'partitions', xlabel = 'R', name = 'partitionanalyse')
+
+def wavefunction_analysis_fcibeh2():
+    outputname = 'wavefunctionanalysisfcino.dat'
+    root = './results/senhierfcifnocisdmminbeh26-31g/'
+    fname = 'output_files'
+    os.chdir(root)
+
+    fileinfo = lambda x: float(re.search(r'[\w\d\-]*([\-+]?\d+[\.,]+\d+[eEDd]?[\-+]?\d*)[\d\w_]*outputfci[-\d\w_]*\.dat' , x).group(1))
+    fileinfo2 = lambda x : len(x)
+    sortf = lambda x: ( fileinfo(x) , fileinfo2(x) )
+    #fileinfo = lambda x : len(x)
+    collector = fc.File_Collector(fname , r'outputfci.*.dat', sortfunction = sortf)
+
+    with open(outputname , 'w') as to_file:
+        to_file.write('#R\t%s\n' %'\t'.join(['sen'+str(i) for i in range(0,5, 2 ) ]) )
+        #for index, file in enumerate(collector.plotfiles):
+        for index in range(0, len(collector.plotfiles), 3 ) :
+            cif1 = CIFlow_Reader(collector.plotfiles[index])
+            cif2 = CIFlow_Reader(collector.plotfiles[index+1])
+            cif3 = CIFlow_Reader(collector.plotfiles[index+2])
+            ciflist = [cif1 , cif2 , cif3]
+            overlaplist = []
+            for cif in ciflist:
+                for ex in range(0,8 ,2):
+                    ciplist = dw.cimain(cif.header['nup'] , cif.header['ndown'] , cif.header['norbs'] , [[],[]],[ex ] ,  write = False)
+                    ciplist = [ up + '|' + down for    up , down in ciplist] 
+                    overlaplist.append(cif.get_selected_coef(ciplist))
+            print overlaplist
+            print 'conservation of probability: ' , sum(overlaplist)
+            to_file.write("%s\t%s\n" %(fileinfo(collector.plotfiles[index]) , '\t'.join(map(str,overlaplist) ))  )
 
     if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
         pf.plot_data(outputname, ylabel = 'partitions', xlabel = 'R', name = 'partitionanalyse')
@@ -605,24 +637,106 @@ def test_max_det():
     print maxdet
 
 def extract_properties():
-    rootdir = './results/shannonebeh2smallvirtual6/output_files'
-    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)\.[m]?dat' , x).group(1))
-    collector = fc.File_Collector(rootdir , r'[-\w\d.]*outputfci[\w_]*\d.dat', notsearch = 'rdm_ao' , sortfunction = fileinfo)
+    #rootdir = './results/shannonebeh2smallvirtual6/output_files'
+    rootdir = './results/nisystemnoconstrainedwithwfnatom/'
+    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)\.[m]?dat[\d]*' , x).group(1))
+    collector = fc.File_Collector(rootdir , r'[-\w\d.]*outputfci[\d\w_\.]+.dat[\d]*', notsearch = 'rdm_ao' , sortfunction = fileinfo)
     data = []
     for outfile in collector.plotfiles:
         cifread = CIFlow_Reader(outfile)
         cifread.get_properties()
-        data.append(cifread.properties['shannon'])
+        #print cifread.properties
+        data.append(cifread.properties['parenergy'])
     os.chdir(rootdir)
     with open('propertiesfci.dat', 'w') as file:
         file.write('\n'.join(map(str,data) )  )
 
-def energy_decomp():
-    rootdir = './results/nisystemnoconstrainedwithwf/'
-    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]+\d+[eEDd]?[\-+]?\d*)\.[m]?dat' , x).group(1))
-    collector = fc.File_Collector(rootdir , r'[-\w\d.]*elementsoutputfci[\.\d\w_]*\d.dat', notsearch = 'rdm_ao' , sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= 0 and fileinfo(x) < 10000. )
+def energy_rdm():
+    nameham = "hamnoplussto-3gpatrick5.0new.out"
+    namewf = "conelementsoutputfci6.0.dat"
+    #nameham = "ni_system.dat"
+    #namewf = "ni_systemoutputfci.dat"
+    rootdir = '.'
+
+    reader = rp.PsiReader(nameham, read_ints = True)
+    cifread = CIFlow_Reader(namewf)
+
+    cifread.read_rdm()
+    e_n = reader.calc_energy( cifread.ordm , cifread.trdm   )
+    print e_n
+    e_nn = reader.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [0,1,2,3,4]  )
+    e_no = reader.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [5,6,7,8,9]  )
+    print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_n - e_nn - e_no
+
+    import numpy
+    unitary = reader.get_unitary().T 
+    #unitary = numpy.linalg.inv(reader.get_unitary() ).T
+    #unitary = rp.generate_random_unitary(reader.values['norb'])
+    print unitary
+    t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
+    np.savetxt('rdm_ao.dat' , t2index)
+    #unitary = numpy.linalg.inv(reader.get_unitary() ).T
+    unitary = numpy.linalg.inv(reader.get_unitary() )
+    t2 , t4 =  reader.transform_integrals(unitary)
+    reader.matrix_to_list(t2 , t4)
+    e_all = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4,5,6,7,8,9]  )
+    e_nn = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4]  )
+    e_no = reader.calc_energy( t2index , t4index , orblist = [5,6,7,8,9]  )
+    print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_n - e_nn - e_no
+    print 'e all check: ' , e_all
+
+    reader.create_output(fname = 'newoutput.dat')
+
+def energy_atom():
+    #nameham = './results/n2plusconstrained10bohrreadyforpare/psioutput.dat' 
+    #rootdir = './results/n2plusconstrained10bohrreadyforpare/output_files/'
+    nameham = './results/noplusconstrained5bohrreadyforpare/psioutput.dat' 
+    rootdir = './results/5bohrnatomnopluspatrickhamfci/output_files/'
+    nameham = './ham_patrick/hamnoplussto-3gpatrick5.0new.out' 
+    #rootdir = './results/5bohrnoplusnatom/'
+    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)\.[m]?dat[\d]*' , x).group(1))
+    collector = fc.File_Collector(rootdir , r'[-\w\d.]*outputfci[\d\w_\.]+.dat[\d]*', notsearch = 'rdm_ao' , sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= 0 and fileinfo(x) < 10000)
+
     data = []
-    
+    for outfile in collector.plotfiles:
+
+        reader = rp.PsiReader(nameham, read_ints = True)
+        cifread = CIFlow_Reader(outfile)
+        cifread.read_rdm()
+        #e_n = reader.calc_energy( cifread.ordm , cifread.trdm   )
+        #print e_n
+        #e_nn = reader.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [0,1,2,3,4]  )
+        #e_no = reader.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [5,6,7,8,9]  )
+        #print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_n - e_nn - e_no
+
+        import numpy
+        unitary = reader.get_unitary().T
+        #unitary = numpy.linalg.inv(reader.get_unitary() ).T
+        #unitary = rp.generate_random_unitary(reader.values['norb'])
+        print unitary
+        t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
+        #np.savetxt('rdm_ao.dat' , t2index)
+        unitary = numpy.linalg.inv(reader.get_unitary() )
+        #unitary = numpy.linalg.inv(reader.get_unitary() )
+        t2 , t4 =  reader.transform_integrals(unitary)
+        reader.matrix_to_list(t2 , t4)
+        e_all = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4,5,6,7,8,9]  )
+        e_nn = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4]  )
+        e_no = reader.calc_energy( t2index , t4index , orblist = [5,6,7,8,9]  )
+        print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_all - e_nn - e_no
+        print 'e all check: ' , e_all
+        data.append( (fileinfo(outfile) ,  e_nn , e_no , e_all - e_nn - e_no , 0 , e_all
+ )   )
+    with open('n_atom_e2.dat' , 'w' ) as file:
+        file.write( '\n'.join([ str(dat[0]) + '\t' + str(dat[1]) + '\t' + str(dat[2]) + '\t' + str(dat[3]) + '\t' + str(dat[4]) + '\t' + str(dat[5])  for dat in data   ]  ) )
+
+
+
+def energy_decomp():
+    rootdir = './results/nisystemnoconstrainedwithwfnatom/'
+    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)\.[m]?dat[\d]*' , x).group(1))
+    collector = fc.File_Collector(rootdir , r'[-\w\d.]*outputfci[\d\w_\.]+.dat[\d]*', notsearch = 'rdm_ao' , sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= 0 and fileinfo(x) < 10000)
+    data = []
     reader = rp.PsiReader("ni_system.dat", read_ints = True)
     #print np.array(reader.unit[0]).T
 
@@ -644,6 +758,7 @@ if __name__ == "__main__":
     #main()
     #wavefunction_analysis()
     #wavefunction_analysis_fci()
+    #wavefunction_analysis_fcibeh2()
     #overlap_analysis()
     #overlap_analysis2()
     #mulliken()
@@ -652,5 +767,6 @@ if __name__ == "__main__":
     #back_transform()
     #test_max_det()
     #extract_properties()
-    energy_decomp()
-
+    #energy_decomp()
+    #energy_rdm()
+    energy_atom()

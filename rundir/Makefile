@@ -9,7 +9,7 @@
 
 program:
 	cd ../ && $(MAKE) program
-	cp ../bin/ciflow.x .
+	cp ../bin/ciflow.x ciflow.x
 
 clean:
 	rm -rf ciflow.x

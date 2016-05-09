@@ -87,7 +87,7 @@ std::string Properties::get_property(std::string prop, int num)
     }
     else if(prop == "parenergy")
     {
-        return std::to_string(_cim->get_pare(5) ) ;
+        return std::to_string(_cim->get_pare( {0,1,2,3,4} ) ) ;
     }
     else if (prop == "seniority")
     {

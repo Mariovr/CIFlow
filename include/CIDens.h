@@ -45,6 +45,9 @@ class CIDens
 		double get_one_electron_energy(int maxorb = -1);
 		double get_two_electron_energy(int maxorb = -1);
 		double get_dens_energy(int maxorb = -1);
+		double get_one_pare(std::vector<int> vw); //energy decomposition of orbitals defined by vw
+		double get_two_pare(std::vector<int> vw);
+		double get_dens_pare(std::vector<int> vw);
         CIMethod * get_cim()const{return _cim;};
         std::vector<Vector2d >  get_two_dm(){return _two_dens;} 
         std::valarray<std::valarray<double> > get_one_dm(){return _one_dens;}

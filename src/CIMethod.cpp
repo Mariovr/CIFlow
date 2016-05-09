@@ -206,10 +206,10 @@ double CIMethod::get_seniority(unsigned state)
     return _cid->get_seniority();
 }
 
-double CIMethod::get_pare(int maxorb, unsigned state)
+double CIMethod::get_pare(vector<int> vw, unsigned state)
 {
     construct_density(state, true);
-    return _cid->get_dens_energy(maxorb);
+    return _cid->get_dens_pare( vw);
 }
 
 double CIMethod::get_mulliken(std::vector<int> orbs, unsigned state )
