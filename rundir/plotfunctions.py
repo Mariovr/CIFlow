@@ -331,7 +331,7 @@ def main():
     fname = 'results/benzene_deformation/benzene_deformationpisystemsymopt_6-31g.dat'
     fname = 'results/n2plusconstrained10bohrreadyforpare/noconstrainedm_.dat'
     fname = 'results/phdsenhierbut6-31g/phdsenhierbut6-31g_6-31g*.dat'
-    fname = 'n_atom_e2.dat'
+    fname = 'results/5bohrnoplusconstrainednatomdd/n_atom_e2.dat'
  
     plotter = Plot_Files(fname)
     #title = 'NO$^+$ Infinite Angstrom scan different ham (STO-3G)'
@@ -362,7 +362,7 @@ def main():
     #plotter.data[0].units['x'] = r'(rad)' #change the future y-axis label 
     plotter.data[0].units['x'] = r'(\AA)' #change the future y-axis label 
     #ylim = ( -2.4 , -2.2) 
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'cienergies')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3,4], titel = title, name = 'plot' , exname = 'cienergies')
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2,4,5,6, 7, 8, 9], titel = title, name = 'plot' , exname = 'cienergies')
     #plotter.data[0].depvar['yas'] = 'Mulliken charge' #change the future y-axis label 
     #ylim = None

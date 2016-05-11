@@ -691,7 +691,7 @@ def energy_atom():
     #nameham = './results/n2plusconstrained10bohrreadyforpare/psioutput.dat' 
     #rootdir = './results/n2plusconstrained10bohrreadyforpare/output_files/'
     nameham = './results/noplusconstrained5bohrreadyforpare/psioutput.dat' 
-    rootdir = './results/5bohrnatomnopluspatrickhamfci/output_files/'
+    rootdir = './results/5bohrnoplusconstrainednatomdd/output_files/'
     nameham = './ham_patrick/hamnoplussto-3gpatrick5.0new.out' 
     #rootdir = './results/5bohrnoplusnatom/'
     fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)\.[m]?dat[\d]*' , x).group(1))
@@ -727,7 +727,7 @@ def energy_atom():
         print 'e all check: ' , e_all
         data.append( (fileinfo(outfile) ,  e_nn , e_no , e_all - e_nn - e_no , 0 , e_all
  )   )
-    with open('n_atom_e2.dat' , 'w' ) as file:
+    with open('./results/5bohrnoplusconstrainednatomdd/n_atom_e2.dat' , 'w' ) as file:
         file.write( '\n'.join([ str(dat[0]) + '\t' + str(dat[1]) + '\t' + str(dat[2]) + '\t' + str(dat[3]) + '\t' + str(dat[4]) + '\t' + str(dat[5])  for dat in data   ]  ) )
 
 
