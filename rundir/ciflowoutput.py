@@ -132,23 +132,23 @@ class CIFlow_Reader(Reader):
             self.matrix[int(re.match(r'(\d+),',dat[0]).group(1)), int(re.match(r'\d+,\s+(\d+)',dat[0]).group(1))] = float(dat[1])
     
     def read_rdm(self, twordm = True):
-        self.ordm = np.zeros((self.header['norbs'] ,self.header['norbs']) , dtype=np.float )
+        self.ordm = [np.zeros((self.header['norbs'] ,self.header['norbs']) , dtype=np.float ) for i in range(2) ]
         if twordm:
             self.trdm = [np.zeros((self.header['norbs'] ,self.header['norbs'], self.header['norbs'] ,self.header['norbs']) , dtype=np.float ) for i in range(3) ] 
         reg1rdm = r'^(\d+)\s(\d+)\s([\-+]?\d+\.*\d*[eEdD]?[\-+]?\d*)'  #onerdm
         reg2rdm = r'^(\d+)\s(\d+)\s(\d+)\s(\d+)\s([\-+]?\d+\.*\d*[eEdD]?[\-+]?\d*)'  #twordm
-        startrdm = 0 
+        startrdm = -1 
         with open(self.filename,"r") as file:
             for line in file:
-                if 'THE 1RDM' in line:
-                    startrdm = 1
+                if 'rdm of the' in line:
+                    startrdm += 1
                 elif 'rdm case' in line:
                     startrdm += 1
-                if startrdm == 1:
+                if startrdm in [0,1]:
                     match = re.search(reg1rdm , line)
                     if match:
-                        self.ordm[int(match.group(1)) , int(match.group(2)) ] = float(match.group(3))
-                        self.ordm[int(match.group(2)), int(match.group(1)) ] = float(match.group(3))
+                        self.ordm[startrdm][int(match.group(1)) , int(match.group(2)) ] = float(match.group(3))
+                        self.ordm[startrdm][int(match.group(2)), int(match.group(1)) ] = float(match.group(3))
                 if startrdm >= 2:
                     if twordm:
                         match = re.search(reg2rdm , line)
@@ -303,8 +303,8 @@ class CIFlow_Reader(Reader):
                                 for sig in range(0,dim):
                                     t4index[i][p,q,r,s] += unitary[sig,s]*temp3[p,q,r,sig]
         
-        t2index = np.dot(self.ordm, unitary)
-        t2index = np.dot(unitary.T , t2index)
+        t2index = [np.dot(self.ordm[0], unitary),   np.dot(self.ordm[1], unitary)   ]
+        t2index = [ np.dot(unitary.T , t2index[0]) ,  np.dot(unitary.T , t2index[1]) ]
 
         return t2index , t4index 
 
@@ -481,9 +481,10 @@ def wavefunction_analysis_fci():
         pf.plot_data(outputname, ylabel = 'partitions', xlabel = 'R', name = 'partitionanalyse')
 
 def wavefunction_analysis_fcibeh2():
-    outputname = 'wavefunctionanalysisfcino.dat'
-    root = './results/senhierfcifnocisdmminbeh26-31g/'
+    outputname = 'wavefunctionanalysisfcihmmin.dat'
+    root = './results/phdsenbeh26-31gmminwfc1/'
     fname = 'output_files'
+    fname = '.'
     os.chdir(root)
 
     fileinfo = lambda x: float(re.search(r'[\w\d\-]*([\-+]?\d+[\.,]+\d+[eEDd]?[\-+]?\d*)[\d\w_]*outputfci[-\d\w_]*\.dat' , x).group(1))
@@ -492,14 +493,14 @@ def wavefunction_analysis_fcibeh2():
     #fileinfo = lambda x : len(x)
     collector = fc.File_Collector(fname , r'outputfci.*.dat', sortfunction = sortf)
 
+    numsorts = 2
+    
     with open(outputname , 'w') as to_file:
         to_file.write('#R\t%s\n' %'\t'.join(['sen'+str(i) for i in range(0,5, 2 ) ]) )
         #for index, file in enumerate(collector.plotfiles):
-        for index in range(0, len(collector.plotfiles), 3 ) :
-            cif1 = CIFlow_Reader(collector.plotfiles[index])
-            cif2 = CIFlow_Reader(collector.plotfiles[index+1])
-            cif3 = CIFlow_Reader(collector.plotfiles[index+2])
-            ciflist = [cif1 , cif2 , cif3]
+        #for index in range(0, len(collector.plotfiles), 3 ) :
+        for index in range(0, len(collector.plotfiles), numsorts ) :
+            ciflist = [CIFlow_Reader(collector.plotfiles[index+i])  for i in range(numsorts)  ] 
             overlaplist = []
             for cif in ciflist:
                 for ex in range(0,8 ,2):
@@ -652,8 +653,10 @@ def extract_properties():
         file.write('\n'.join(map(str,data) )  )
 
 def energy_rdm():
-    nameham = "hamnoplussto-3gpatrick5.0new.out"
-    namewf = "conelementsoutputfci6.0.dat"
+    #nameham = "hamnoplussto-3gpatrick10.0new.out"
+    #namewf = "hamnoplussto-3gpatrick10.0newoutputfci.dat"
+    nameham = "5psioutput.dat"
+    namewf =  "5psioutputoutputfci.dat"
     #nameham = "ni_system.dat"
     #namewf = "ni_systemoutputfci.dat"
     rootdir = '.'
@@ -662,6 +665,7 @@ def energy_rdm():
     cifread = CIFlow_Reader(namewf)
 
     cifread.read_rdm()
+    print cifread.ordm
     e_n = reader.calc_energy( cifread.ordm , cifread.trdm   )
     print e_n
     e_nn = reader.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [0,1,2,3,4]  )
@@ -669,14 +673,14 @@ def energy_rdm():
     print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_n - e_nn - e_no
 
     import numpy
-    unitary = reader.get_unitary().T 
+    unitary = reader.get_unitary().T
     #unitary = numpy.linalg.inv(reader.get_unitary() ).T
     #unitary = rp.generate_random_unitary(reader.values['norb'])
     print unitary
     t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
-    np.savetxt('rdm_ao.dat' , t2index)
-    #unitary = numpy.linalg.inv(reader.get_unitary() ).T
+    np.savetxt('rdm_ao.dat' , t2index[0] )
     unitary = numpy.linalg.inv(reader.get_unitary() )
+    #unitary = numpy.linalg.inv(reader.get_unitary() )
     t2 , t4 =  reader.transform_integrals(unitary)
     reader.matrix_to_list(t2 , t4)
     e_all = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4,5,6,7,8,9]  )
@@ -692,7 +696,9 @@ def energy_atom():
     #rootdir = './results/n2plusconstrained10bohrreadyforpare/output_files/'
     nameham = './results/noplusconstrained5bohrreadyforpare/psioutput.dat' 
     rootdir = './results/5bohrnoplusconstrainednatomdd/output_files/'
+    rootdir = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/'
     nameham = './ham_patrick/hamnoplussto-3gpatrick5.0new.out' 
+    nameham = './5psioutput.dat' 
     #rootdir = './results/5bohrnoplusnatom/'
     fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)\.[m]?dat[\d]*' , x).group(1))
     collector = fc.File_Collector(rootdir , r'[-\w\d.]*outputfci[\d\w_\.]+.dat[\d]*', notsearch = 'rdm_ao' , sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= 0 and fileinfo(x) < 10000)
@@ -725,9 +731,8 @@ def energy_atom():
         e_no = reader.calc_energy( t2index , t4index , orblist = [5,6,7,8,9]  )
         print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_all - e_nn - e_no
         print 'e all check: ' , e_all
-        data.append( (fileinfo(outfile) ,  e_nn , e_no , e_all - e_nn - e_no , 0 , e_all
- )   )
-    with open('./results/5bohrnoplusconstrainednatomdd/n_atom_e2.dat' , 'w' ) as file:
+        data.append( (fileinfo(outfile) ,  e_nn , e_no , e_all - e_nn - e_no ,  e_all , e_nn + (e_all - e_nn - e_no)/2. )   )
+    with open(os.path.join(rootdir, 'n_atom_e2.dat') , 'w' ) as file:
         file.write( '\n'.join([ str(dat[0]) + '\t' + str(dat[1]) + '\t' + str(dat[2]) + '\t' + str(dat[3]) + '\t' + str(dat[4]) + '\t' + str(dat[5])  for dat in data   ]  ) )
 
 
@@ -768,5 +773,5 @@ if __name__ == "__main__":
     #test_max_det()
     #extract_properties()
     #energy_decomp()
-    #energy_rdm()
-    energy_atom()
+    energy_rdm()
+    #energy_atom()

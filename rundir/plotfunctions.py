@@ -34,7 +34,7 @@ import datareader as dr
 import filecollector as fc
 
 ## for Palatino and other serif fonts use:
-matplotlib.rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']}) #adjust fonts
+#matplotlib.rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']}) #adjust fonts
 #matplotlib.rc('font',**{'family':'serif','serif':['Palatino']})
 #matplotlib.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 matplotlib.rc('text', usetex=True)
@@ -104,7 +104,10 @@ class Plot_Files(object):
         self.data = []
 
     def adjust_data(self, func , col = None):
-        if col != None:
+        #for i in range(len(self.data)):
+            #self.data[i].data[:,col] = self.data[i].data[:,col]  +  self.data[i].data[:,3]
+
+        if col is None:
             for i in range(len(self.data)):
                 for j in range(1,len(self.data[i].data[0,:])):
                     self.data[i].data[:,j] = func(self.data[i].data[:,j])
@@ -172,7 +175,7 @@ class Plot_Files(object):
         self.data[i].data[:,1:3] = self.data[i].data[:,1:3] - gronddat[:,1:3] #we made sure that the data of the groundstateenergy is first in the rgdata list
       del(self.data[0].data, self.prefix[0])
       
-    def layout(self ,  xlab , ylab , xlim = None , ylim = None , tit = None , legendhand = None , legendlab = None , legendpos = 0 , finetuning = False, axbg = None , fs = 30, ticksize = 16):
+    def layout(self ,  xlab , ylab , xlim = None , ylim = None , tit = None , legendhand = None , legendlab = None , legendpos = 0 , finetuning = True, axbg = None , fs = 40, ticksize = 25):
       """
       In this function we finetune some aspects of the axes for all the tuning possibilitys see: http://matplotlib.org/api/axes_api.html
       especially the set functions ;)
@@ -209,6 +212,10 @@ class Plot_Files(object):
     
       self.fig.subplots_adjust(hspace=.5)
   
+      #handles, labels  = self.fig.axes[self.axnum].get_legend_handles_labels()
+      #reg = r'SEN(\d+)'
+      #handles , labels = zip(*sorted(zip(handles , labels), key=lambda t: float(re.search( reg , t[1] ).group(1))    ))
+      #self.fig.axes[self.axnum].legend(handles, labels, loc = 0, fontsize = 25)
       leg = self.fig.axes[self.axnum].legend(loc = legendpos) #draws the legend on axes[axnum] all the plots that you labeled are now depicted in legend
   
       if axbg != None:
@@ -332,6 +339,7 @@ def main():
     fname = 'results/n2plusconstrained10bohrreadyforpare/noconstrainedm_.dat'
     fname = 'results/phdsenhierbut6-31g/phdsenhierbut6-31g_6-31g*.dat'
     fname = 'results/5bohrnoplusconstrainednatomdd/n_atom_e2.dat'
+    fname = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/n_atom_e2.dat'
  
     plotter = Plot_Files(fname)
     #title = 'NO$^+$ Infinite Angstrom scan different ham (STO-3G)'
@@ -350,7 +358,6 @@ def main():
         plotter.reader.convert(0) #converts angstrom to au.
         plotter.reader.units['x'] = '(a.u.)'
 
-
     #plotter.data[0].depvar['yas'] = 'CI Energy' #change the future y-axis label 
     #plotter.data[0].depvar['xas'] = '$\lambda$' #change the future y-axis label 
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'cienergiesscanlambda')
@@ -362,7 +369,14 @@ def main():
     #plotter.data[0].units['x'] = r'(rad)' #change the future y-axis label 
     plotter.data[0].units['x'] = r'(\AA)' #change the future y-axis label 
     #ylim = ( -2.4 , -2.2) 
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3,4], titel = title, name = 'plot' , exname = 'cienergies')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'cienergiesn')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'cienergieso')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'cienergiescor')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [4], titel = title, name = 'plot' , exname = 'cienergiesnoplus')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3,4,5], titel = title, name = 'plot' , exname = 'cienergiesall')
+    for i in range(len(plotter.data)):
+        plotter.data[i].data[:, 1] =plotter.data[i].data[:, 1]   + plotter.data[i].data[:,2] #+ plotter.data[i].data[:,3]/2.
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'ciennpluscoralone')
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2,4,5,6, 7, 8, 9], titel = title, name = 'plot' , exname = 'cienergies')
     #plotter.data[0].depvar['yas'] = 'Mulliken charge' #change the future y-axis label 
     #ylim = None
@@ -561,10 +575,10 @@ def sen_hier_plot():
     ylim = None
     title = ''
     seniorities = ['0','2','4']
-    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [1 ,5, 9], titel = 'seniority 0 determinants', name = '' , exname = 'seniorityhier0', exdir= '', prefix = True)
-    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2 ,6, 10], titel = 'seniority 2  determinants', name = '' , exname = 'seniorityhier2', exdir= '', prefix = True)
-    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [3 ,7, 11], titel = 'seniority 4 determinants', name = '' , exname = 'seniorityhier4', exdir= '', prefix = True)
-    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [1,2, 3 ,5 ,6 ,7, 9, 10, 11], titel = '', name = '' , exname = 'seniorityallseniorities', exdir= '', prefix = True)
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [1 ,5, 9 ], titel = 'seniority 0 determinants', name = '' , exname = 'seniorityhier0', exdir= '', prefix = True, color = ['r-.','','','','b--','','','','g','','','','','','',''])
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2 ,6, 10 ], titel = 'seniority 2  determinants', name = '' , exname = 'seniorityhier2', exdir= '', prefix = True , color = ['','r-.','','','','b--','','','','g','','','','','',''])
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [3 ,7, 11], titel = 'seniority 4 determinants', name = '' , exname = 'seniorityhier4', exdir= '', prefix = True , color = ['','','r-.','','','','b--','','','','g','','','','',''])
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [1,2, 3 ,5 ,6 ,7, 9, 10, 11], titel = '', name = '' , exname = 'seniorityallseniorities', exdir= '', prefix = True, color = ['r','g','b','','r--','g--','b--','','r-.','g-.','b-.','','','','',''])
 
 def sen_hier_plot2():
     #7,11,12 plot senhier beh2

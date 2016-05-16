@@ -362,13 +362,13 @@ int main ( int argc, char ** argv){
                 std::cout  << "FCI energy:" << cim5->get_ci_energy() << " Per site: " << cim5->get_ci_energy() / (double) ham->getL() <<std::endl;
                 for(int i = 0 ; i < neigval ; i ++)
                 {
-                  //std::cout << "FCI energy: " << cim5->get_ci_energy(i) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
+                  std::cout << "FCI energy: " << cim5->get_ci_energy(i) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
                   std::vector<int> orbs {0,1,2,3,4};
                   std::cout << "Mulliken charges first atom: " << cim5->get_mulliken(orbs, i ) << endl;//Make sure the Hamiltonian contains the overlap of the ao, and the transformation from ao to current matrixelements.
                 }
                 //std::cout << "Partial energy: " << cim5->get_pare(5) << std::endl;
-                cim5->print_output({  "spin_squared", "mulliken", "seniority", "shannon" }, 0 , false);
-                //cim5->print_output({  "spin_squared"}, 0 ,false);
+                //cim5->print_output({  "spin_squared", "mulliken", "seniority", "shannon" }, 0 , false);
+                cim5->print_output({  "spin_squared"}, 0 ,false);
                 //Properties prop { cim5->get_eigvec(0)  , cim5->get_l() , cim5->get_perm() };
                 //cout << "shannon entropy "  << prop.shannon_ic() << std::endl;
                 //cim5->print_output({ "shannon" , "mulliken", "spin_squared"}, 0 , false);
@@ -384,14 +384,15 @@ int main ( int argc, char ** argv){
                 //DensFCI densmatfci {cim5};
                 //densmatfci.construct_density();
 
-                //auto end = std::chrono::high_resolution_clock::now();
-                //std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() / std::pow(10,9 ) << "seconds" << std::endl;
+                ////auto end = std::chrono::high_resolution_clock::now();
+                ////std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() / std::pow(10,9 ) << "seconds" << std::endl;
 
-                //densmatfci.transform_to_ao(true, false); //options: 2rdm , revert
-                //ofstream file(ham->get_short_filename() + "aodens");
+                ////densmatfci.transform_to_ao(true, false); //options: 2rdm , revert
+                ////ofstream file(ham->get_short_filename() + "aodens");
                 //densmatfci.print_one_dens(std::cout);
-                //densmatfci.print_two_dens(file);
-                //file.close();
+                ////densmatfci.print_two_dens(file);
+                //densmatfci.print_two_dens(std::cout);
+                ////file.close();
                 //std::cout << "FCI-DENS one-electron energy: " << densmatfci.get_one_electron_energy() << std::endl;
                 //std::cout << "FCI-DENS two-electron energy: " << densmatfci.get_two_electron_energy() << std::endl;
                 //std::cout << "FCI-DENS total energy: " << densmatfci.get_dens_energy() << std::endl;

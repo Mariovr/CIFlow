@@ -324,7 +324,7 @@ void CIDens::construct_density(bool twordm)
 {
     build_parallel(twordm);
     #ifdef _DEBUG
-        //test_invariants(twordm);
+        test_invariants(twordm);
     #endif
     //print_one_dens(cout);
     if( twordm)
@@ -362,7 +362,7 @@ matrix CIDens::spin_summed_1rdm()const {
     return spinsummed;
 }
 
-void CIDens::test_invariants(bool twordm)
+void CIDens::test_invariants(bool twordm) const
 {
     double som = 0;
     int N = _cim->gNup() + _cim->gNdown();
@@ -401,8 +401,8 @@ void CIDens::test_invariants(bool twordm)
 
         if(_cim->get_name() == "FCI")
         {
-            double spinsq = get_spin_squared();
-            SCPP_TEST_ASSERT(spinsq -round(fabs(spinsq))  < 1e-9 || fabs(4*(spinsq -round(fabs(spinsq)) ) - 3) < 1e-9, setprecision(14) << "Error in density matrices: Spin squared is not an integer number, or has .75 as decimal numbers:  spin squared: " <<  spinsq << std::endl );
+            //double spinsq = get_spin_squared();
+            //SCPP_TEST_ASSERT(spinsq -round(fabs(spinsq))  < 1e-9 || fabs(4*(spinsq -round(fabs(spinsq)) ) - 3) < 1e-9, setprecision(14) << "Error in density matrices: Spin squared is not an integer number, or has .75 as decimal numbers:  spin squared: " <<  spinsq << std::endl );
         }
     }
 
@@ -895,7 +895,7 @@ void CIDens::fill_density_matrix_one(TYPE up1 , TYPE down1 , TYPE up2 , TYPE dow
     }		    
 }
 
-double CIDens::get_one_electron_energy(int maxorb){
+double CIDens::get_one_electron_energy(int maxorb)const {
     if (maxorb <= 0 )
         maxorb = dim();
     double energy = 0.0;
@@ -908,7 +908,7 @@ double CIDens::get_one_electron_energy(int maxorb){
     return energy;
 }
 
-double CIDens::get_two_electron_energy(int maxorb) {
+double CIDens::get_two_electron_energy(int maxorb) const {
     if (maxorb <= 0 )
         maxorb = dim();
     double energy = 0.0;
@@ -927,7 +927,7 @@ double CIDens::get_two_electron_energy(int maxorb) {
     return 0.5*energy;
 }
 
-double CIDens::get_dens_energy(int maxorb) {
+double CIDens::get_dens_energy(int maxorb) const{
     return get_one_electron_energy(maxorb) + get_two_electron_energy(maxorb) + _cim->get_econst(); 
 }
 
@@ -976,6 +976,7 @@ double CIDens::get_dens_pare(vector<int> vw) {
 }
 
 void CIDens::print_one_dens(std::ostream & os, const valarray<valarray<double>> & onerdm)const{
+   test_invariants(false);
    SCPP_TEST_ASSERT(_one_dens[0].size() > 0, "Error the size of the onerdm is equal to zero");
    for (int j = 0; j < 2; j++) {
      os <<"#One rdm of the " << j << " spin electrons." <<std::endl;
@@ -993,6 +994,7 @@ void CIDens::print_one_dens(std::ostream & os, const valarray<valarray<double>> 
 }
 
 void CIDens::print_two_dens(std::ostream & os,const  vector<Vector2d > & twordm)const{
+   test_invariants(true);
    for (int j = 0; j < 3; j++) {
      os << "#Two rdm case : " << j << "---------------------------------------------" << std::endl;
      int count = 0;

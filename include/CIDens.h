@@ -41,10 +41,10 @@ class CIDens
 		virtual ~CIDens(){};
 		//1rdm and 2rdm routines.
         void construct_density(bool twordm = true);
-        void test_invariants(bool twordm = true);
-		double get_one_electron_energy(int maxorb = -1);
-		double get_two_electron_energy(int maxorb = -1);
-		double get_dens_energy(int maxorb = -1);
+        void test_invariants(bool twordm = true) const;
+		double get_one_electron_energy(int maxorb = -1)const;
+		double get_two_electron_energy(int maxorb = -1)const;
+		double get_dens_energy(int maxorb = -1)const;
 		double get_one_pare(std::vector<int> vw); //energy decomposition of orbitals defined by vw
 		double get_two_pare(std::vector<int> vw);
 		double get_dens_pare(std::vector<int> vw);

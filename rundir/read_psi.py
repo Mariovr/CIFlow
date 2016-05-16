@@ -551,15 +551,17 @@ class PsiReader(Reader):
         energy1 = 0
         for i , j , integral in self.ints['mo2index']:
             #print i , j ,integral
-            if i in orblist: # and j in orblist:
-                energy1 += 2*integral * rdm1[i,j]
+            if i in orblist and j in orblist:
+                energy1 += integral * rdm1[0][i,j]
+                energy1 += integral * rdm1[1][i,j]
         print 'Read psi 1 electron energy : ' , energy1
 
         energy2 = 0
         for i , j , k , l, integral in self.ints['mo4index']:
-            if i in orblist and k in orblist: # and l in orblist and j in orblist :
-                energy2 += 2*integral * rdm2[0][i , k ,j  ,l ]
+            if i in orblist and j in orblist and k in orblist and l in orblist :
+                energy2 += integral * rdm2[0][i , k ,j  ,l ]
                 energy2 += 2*integral * rdm2[1][i , k , j ,l ]
+                energy2 += integral * rdm2[2][i , k ,j  ,l ]
 
         print 'Read psi 2 electron energy : ' , energy2/2.
         print 'total energy = : ' , energy1 + 1/2.* energy2 + self.values['nucrep']
