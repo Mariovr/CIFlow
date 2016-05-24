@@ -368,7 +368,7 @@ int main ( int argc, char ** argv){
                 }
                 //std::cout << "Partial energy: " << cim5->get_pare(5) << std::endl;
                 //cim5->print_output({  "spin_squared", "mulliken", "seniority", "shannon" }, 0 , false);
-                cim5->print_output({  "spin_squared"}, 0 ,false);
+                cim5->print_output({  "spin_squared", "mulliken" ,"seniority"}, 0 ,false);
                 //Properties prop { cim5->get_eigvec(0)  , cim5->get_l() , cim5->get_perm() };
                 //cout << "shannon entropy "  << prop.shannon_ic() << std::endl;
                 //cim5->print_output({ "shannon" , "mulliken", "spin_squared"}, 0 , false);

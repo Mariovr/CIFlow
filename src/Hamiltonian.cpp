@@ -64,7 +64,7 @@ Hamiltonian::Hamiltonian(const int Norbitals, const int nGroup, const int * OrbI
 
     _nup = nup;
     _ndown = ndown;
-    SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
+    //SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
     _oneOverNMinusOne = 1.0/((_ndown+_nup)-1);
     _filename = "";
 
@@ -120,7 +120,7 @@ Hamiltonian::Hamiltonian(const Hamiltonian & HamIn){
         Econst = HamIn.getEconst();
 	_nup = HamIn.getnup();
 	_ndown = HamIn.getndown();
-    SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
+    //SCPP_ASSERT(_nup == _ndown , "Error: At this moment CIFlow only works when nup = ndown, make sure this is the case. nup = " << _nup << " ndown = " << _ndown << std::endl);
 	_oneOverNMinusOne = 1.0/((_ndown+_nup)-1);
     _hf_energy = HamIn.get_hf_energy();
 

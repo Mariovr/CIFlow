@@ -502,6 +502,9 @@ def wavefunction_analysis_fcibeh2():
         for index in range(0, len(collector.plotfiles), numsorts ) :
             ciflist = [CIFlow_Reader(collector.plotfiles[index+i])  for i in range(numsorts)  ] 
             overlaplist = []
+            for i in range(numsorts):
+                print 'work with ' , collector.plotfiles[index+i]
+                print fileinfo(collector.plotfiles[index+i]) ,fileinfo2(collector.plotfiles[index+i]) 
             for cif in ciflist:
                 for ex in range(0,8 ,2):
                     ciplist = dw.cimain(cif.header['nup'] , cif.header['ndown'] , cif.header['norbs'] , [[],[]],[ex ] ,  write = False)
@@ -655,87 +658,97 @@ def extract_properties():
 def energy_rdm():
     #nameham = "hamnoplussto-3gpatrick10.0new.out"
     #namewf = "hamnoplussto-3gpatrick10.0newoutputfci.dat"
-    nameham = "5psioutput.dat"
-    namewf =  "5psioutputoutputfci.dat"
+    nameham = "100psioutput.dat"
+    namewf =  "100psioutputoutputfci.dat"
+    readermo = rp.PsiReader(nameham, read_ints = True)
+    namehamn = "5natomhammo.dat"
+    namehamo = "5oatomhammo.dat"
     #nameham = "ni_system.dat"
     #namewf = "ni_systemoutputfci.dat"
     rootdir = '.'
 
-    reader = rp.PsiReader(nameham, read_ints = True)
+    readern = rp.PsiReader(namehamn, read_ints = True)
+    readero = rp.PsiReader(namehamo, read_ints = True)
     cifread = CIFlow_Reader(namewf)
 
     cifread.read_rdm()
     print cifread.ordm
-    e_n = reader.calc_energy( cifread.ordm , cifread.trdm   )
-    print e_n
-    e_nn = reader.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [0,1,2,3,4]  )
-    e_no = reader.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [5,6,7,8,9]  )
+    e_n = readermo.calc_energy( cifread.ordm , cifread.trdm )
+    e_nn = readern.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [0,1,2,3,4], nucrepbool = False  )
+    e_no = readero.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [0,1,2,3,4] , nucrepbool = False, startrdm = 5)
     print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_n - e_nn - e_no
 
     import numpy
-    unitary = reader.get_unitary().T
-    #unitary = numpy.linalg.inv(reader.get_unitary() ).T
-    #unitary = rp.generate_random_unitary(reader.values['norb'])
-    print unitary
+    unitary = readermo.get_unitary().T
     t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
-    np.savetxt('rdm_ao.dat' , t2index[0] )
-    unitary = numpy.linalg.inv(reader.get_unitary() )
-    #unitary = numpy.linalg.inv(reader.get_unitary() )
-    t2 , t4 =  reader.transform_integrals(unitary)
-    reader.matrix_to_list(t2 , t4)
-    e_all = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4,5,6,7,8,9]  )
-    e_nn = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4]  )
-    e_no = reader.calc_energy( t2index , t4index , orblist = [5,6,7,8,9]  )
-    print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_n - e_nn - e_no
-    print 'e all check: ' , e_all
+     
+    unitary = numpy.linalg.inv(readern.get_unitary() )
+    t2 , t4 =  readern.transform_integrals(unitary)
+    readern.matrix_to_list(t2 , t4)
 
-    reader.create_output(fname = 'newoutput.dat')
+    unitary = numpy.linalg.inv(readero.get_unitary() )
+    t2 , t4 =  readero.transform_integrals(unitary)
+    readero.matrix_to_list(t2 , t4)
+
+    e_nn = readern.calc_energy( t2index , t4index , orblist = [0,1,2,3,4]  , nucrepbool = False)
+    e_no = readero.calc_energy( t2index , t4index , orblist = [0,1,2,3,4]  , nucrepbool = False, startrdm = 5)
+    print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_n - e_nn - e_no , ' e all : ' , e_n
+
+    #reader.create_output(fname = 'newoutputao.dat')
 
 def energy_atom():
-    #nameham = './results/n2plusconstrained10bohrreadyforpare/psioutput.dat' 
-    #rootdir = './results/n2plusconstrained10bohrreadyforpare/output_files/'
-    nameham = './results/noplusconstrained5bohrreadyforpare/psioutput.dat' 
-    rootdir = './results/5bohrnoplusconstrainednatomdd/output_files/'
-    rootdir = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/'
-    nameham = './ham_patrick/hamnoplussto-3gpatrick5.0new.out' 
-    nameham = './5psioutput.dat' 
+    rootdir = './results/10bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/'
+    nameham = './ham_patrick/hamnoplussto-3gpatrick10.0new.out' 
+    namemoham = './10psioutput.dat' 
+    readermo = rp.PsiReader(namemoham, read_ints = True) #for the  unitary transformation
+    nameham = "5natomhammo.dat"
+    namehamo = "5oatomhammo.dat"
+
+    #nameconstrained = './results/10bohrnoplusconstrainednatomddmostartplusdiisoffpsi/noconstrainedm_.dat'
+    #constrained_data = np.loadtxt(nameconstrained)
+    #print constrained_data
     #rootdir = './results/5bohrnoplusnatom/'
     fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)\.[m]?dat[\d]*' , x).group(1))
     collector = fc.File_Collector(rootdir , r'[-\w\d.]*outputfci[\d\w_\.]+.dat[\d]*', notsearch = 'rdm_ao' , sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= 0 and fileinfo(x) < 10000)
 
     data = []
-    for outfile in collector.plotfiles:
+    for row , outfile in enumerate(collector.plotfiles ):
+        #print outfile , 'we are at', fileinfo(outfile)
+        #print constrained_data[row , 0]
 
         reader = rp.PsiReader(nameham, read_ints = True)
+        readero = rp.PsiReader(namehamo, read_ints = True)
+        #reader.create_constrained_vals(constrained_data[row , 3], constrained_data[row , 4], [0,1,2,3,4])
         cifread = CIFlow_Reader(outfile)
         cifread.read_rdm()
-        #e_n = reader.calc_energy( cifread.ordm , cifread.trdm   )
-        #print e_n
-        #e_nn = reader.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [0,1,2,3,4]  )
-        #e_no = reader.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [5,6,7,8,9]  )
-        #print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_n - e_nn - e_no
 
         import numpy
-        unitary = reader.get_unitary().T
+        unitary = readermo.get_unitary().T
         #unitary = numpy.linalg.inv(reader.get_unitary() ).T
         #unitary = rp.generate_random_unitary(reader.values['norb'])
         print unitary
         t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
+
+        e_tot = readermo.calc_energy( cifread.ordm , cifread.trdm   )
+         
+
         #np.savetxt('rdm_ao.dat' , t2index)
         unitary = numpy.linalg.inv(reader.get_unitary() )
-        #unitary = numpy.linalg.inv(reader.get_unitary() )
         t2 , t4 =  reader.transform_integrals(unitary)
         reader.matrix_to_list(t2 , t4)
-        e_all = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4,5,6,7,8,9]  )
-        e_nn = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4]  )
-        e_no = reader.calc_energy( t2index , t4index , orblist = [5,6,7,8,9]  )
-        print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_all - e_nn - e_no
-        print 'e all check: ' , e_all
-        data.append( (fileinfo(outfile) ,  e_nn , e_no , e_all - e_nn - e_no ,  e_all , e_nn + (e_all - e_nn - e_no)/2. )   )
+        unitaryo = numpy.linalg.inv(readero.get_unitary() )
+        t2o , t4o =  readero.transform_integrals(unitaryo)
+        readero.matrix_to_list(t2o , t4o)
+        #e_all = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4,5,6,7,8,9]  )
+        e_nn = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4] ,nucrepbool = False )
+        e_no = readero.calc_energy( t2index , t4index , orblist = [0,1,2,3,4] ,nucrepbool = False , startrdm= 5)
+        #e_nn = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4] ,nucrepbool = False  )
+        #e_no = reader.calc_energy( t2index , t4index , orblist = [5,6,7,8,9] ,nucrepbool = False  )
+        #print 'e n atom : ' , e_all - -73.4435839702339  - (e_all - e_nn - e_no )/2. , ' e o atom : ' , e_no , ' e interactie :   ',  e_all - e_nn - e_no
+        print 'e n check: ' , e_nn  , 'e o : check' , e_no , ' e int: ' , e_tot - e_nn - e_no,  'e tot check '  , e_tot 
+        data.append( (fileinfo(outfile) , e_nn , e_no , e_tot-e_nn-e_no ,    e_tot )  )
     with open(os.path.join(rootdir, 'n_atom_e2.dat') , 'w' ) as file:
-        file.write( '\n'.join([ str(dat[0]) + '\t' + str(dat[1]) + '\t' + str(dat[2]) + '\t' + str(dat[3]) + '\t' + str(dat[4]) + '\t' + str(dat[5])  for dat in data   ]  ) )
-
-
+        file.write( '\n'.join([ str(dat[0]) + '\t' + str(dat[1]) + '\t' + str(dat[2]) + '\t' + str(dat[3]) + '\t' + str(dat[4])  for dat in data   ]  ) )
 
 def energy_decomp():
     rootdir = './results/nisystemnoconstrainedwithwfnatom/'
@@ -773,5 +786,5 @@ if __name__ == "__main__":
     #test_max_det()
     #extract_properties()
     #energy_decomp()
-    energy_rdm()
-    #energy_atom()
+    #energy_rdm()
+    energy_atom()

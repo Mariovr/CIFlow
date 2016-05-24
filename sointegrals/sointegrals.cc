@@ -286,7 +286,7 @@ sointegrals(Options &options)
     for (int h=0; h<nirrep; ++h)
     {
         for (int i=0; i<dimension[h]; ++i)
-            for (int j=i; j<dimension[h]; ++j)
+            for (int j=0; j<dimension[h]; ++j)
             {
                 outfile->Printf("%1d %1d %16.48f \n", count+i, count+j, hMat->get(h,i,j));
                 Ham->setTmat(count+i, count+j, hMat->get(h,i,j));
@@ -371,7 +371,7 @@ sointegrals(Options &options)
     for (int h=0; h<nirrep; ++h)
     {
         for (int i=0; i<dimension[h]; ++i)
-            for (int j=i; j<dimension[h]; ++j)
+            for (int j=0; j<dimension[h]; ++j)
             {
                 outfile->Printf("%1d %1d %16.48f \n", count+i, count+j, hMat->get(h,i,j));
                 Ham->setTmat(count+i, count+j, hMat->get(h,i,j));

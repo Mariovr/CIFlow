@@ -312,6 +312,7 @@ class PsiReader(Reader):
             try:
                 self.values[key] = self.process_element(value[0] , self.data , value[1])
             except:
+                self.values[key] = [None]
                 print 'We couldnt extract : ' , key
                 print 'we continue'
 
@@ -544,28 +545,101 @@ class PsiReader(Reader):
         shutil.copy(newfile,self.filename)
         self.read()
 
-    def calc_energy(self , rdm1 , rdm2, orblist = []):
+    def create_constrained_vals(self, lagmul , elpop, orblist):
+        self.values['nucrep'] -=  lagmul * elpop 
+        partdiag = np.zeros((self.values['norb'], self.values['norb']), float )
+        for i in orblist:
+            partdiag[i,i] =1.
+        unit = self.get_unitary().T
+        overlap = self.overlap[0]
+        part = np.dot(unit , overlap )
+        part2 = np.dot(part , partdiag)
+        part = np.dot(part2 , unit.T)
+        total = (part + part.T)/2. * lagmul #for hermicity and mult with lagmul 
+        num = 0
+        for  i , j , integral in self.ints['mo2index']:
+            self.ints['mo2index'][num][2] += total[i,j]
+            num +=1
+
+    def calc_energy(self , rdm1 , rdm2, orblist = [], nucrepbool = True, startrdm = 0):
         #remark integrals are written in chemical notation, and rdms are in physical notation.
+        nucrep = 0 
+        if nucrepbool == True:
+            nucrep += self.values['nucrep']
+
         if orblist == []:
             orblist = range(0, self.values['norb'])
+
         energy1 = 0
         for i , j , integral in self.ints['mo2index']:
             #print i , j ,integral
             if i in orblist and j in orblist:
-                energy1 += integral * rdm1[0][i,j]
-                energy1 += integral * rdm1[1][i,j]
+                energy1 += (integral ) * rdm1[0][i+startrdm,j+startrdm] 
+                energy1 += (integral )  * rdm1[1][i+startrdm,j+startrdm]
         print 'Read psi 1 electron energy : ' , energy1
 
         energy2 = 0
         for i , j , k , l, integral in self.ints['mo4index']:
             if i in orblist and j in orblist and k in orblist and l in orblist :
-                energy2 += integral * rdm2[0][i , k ,j  ,l ]
-                energy2 += 2*integral * rdm2[1][i , k , j ,l ]
-                energy2 += integral * rdm2[2][i , k ,j  ,l ]
+                energy2 += integral * rdm2[0][i+startrdm , k+startrdm ,j+startrdm  ,l+startrdm ]
+                energy2 += 2*integral * rdm2[1][i+startrdm , k+startrdm , j+startrdm ,l+startrdm ]
+                energy2 += integral * rdm2[2][i+startrdm , k+startrdm ,j+startrdm  ,l+startrdm ]
 
         print 'Read psi 2 electron energy : ' , energy2/2.
-        print 'total energy = : ' , energy1 + 1/2.* energy2 + self.values['nucrep']
-        return energy1 + 1/2.*  energy2 + self.values['nucrep']
+        print 'total energy = : ' , energy1 + 1/2.* energy2 + nucrep
+        return energy1 + 1/2.*  energy2 + nucrep
+
+    def create_ham_matrix(self):
+        ham1 = np.zeros((self.values['norb'], self.values['norb']), float )
+        ham2 = np.zeros((self.values['norb'], self.values['norb'], self.values['norb'], self.values['norb']), float )
+        for i , j , integral in self.ints['mo2index']:
+            ham1[i,j] = integral
+            ham1[j,i] = integral
+
+        for i , j , k , l, integral in self.ints['mo4index']:
+            ham2[i,j, k ,l] = integral
+            ham2[j ,i,k ,l ] = integral
+            ham2[i ,j, l,k ] = integral
+            ham2[k ,l, i,j ] = integral
+            ham2[l ,k, i,j ] = integral
+            ham2[k ,l, j,i ] = integral
+            ham2[j,i, l ,k] = integral
+            ham2[l,k, j ,i] = integral
+        return ham1 , ham2
+
+    def calc_energy_sparse(self , rdm1 , rdm2, orblist = [], nucrepbool = True):
+        #remark integrals are written in chemical notation, and rdms are in physical notation.
+        nucrep = 0 
+        if nucrepbool == True:
+            nucrep += self.values['nucrep']
+
+        if orblist == []:
+            orblist = range(0, self.values['norb'])
+
+        ham1 , ham2 = self.create_ham_matrix()
+
+        energy1 = 0
+        for i in range(0, self.values['norb'] ):
+            for j in range(0, self.values['norb'] ):
+                if i in orblist and j in orblist:
+                    energy1 += ham1[i,j] * rdm1[0][i,j] 
+                    energy1 += ham1[i,j]  * rdm1[1][i,j]
+        print 'Read psi 1 electron energy : ' , energy1
+
+        energy2 = 0
+        for i in range(0, self.values['norb'] ):
+            for j in range(0, self.values['norb'] ):
+                for k in range(0, self.values['norb'] ):
+                    for l in range(0, self.values['norb'] ):
+                        if i in orblist and j in orblist and k in orblist and l in orblist :
+                            energy2 += ham2[i,j,k,l]* rdm2[0][i , k ,j  ,l ]
+                            energy2 += 2*ham2[i,j,k,l]* rdm2[1][i , k , j ,l ]
+                            energy2 += ham2[i,j,k,l]* rdm2[2][i , k ,j  ,l ]
+
+        print 'Read psi 2 electron energy : ' , energy2/2.
+
+        print 'total energy = : ' , energy1 + 1/2.* energy2 + nucrep
+        return energy1 + 1/2.*  energy2 + nucrep
 
     def create_ni_system(self, outname = 'outputsc.dat'):
         oeint =list(self.ints['mo2index'])
@@ -781,6 +855,7 @@ def reverse_repulsion():
 
 def test_new_format():
     filename = "psioutput.dat"
+    filename = "5natomhamao.dat"
     reader = PsiReader(filename, isbig = False, numorbs = None, read_ints = True)
     reader.create_output(fname = 'newpsioutput.dat')
 
@@ -864,10 +939,10 @@ if __name__ == "__main__":
     #print_unitary('unitary.txt')
     #test_new_format()
     #test_mod_ham()
-    generate_random_hams()
+    #generate_random_hams()
     #hdf5_ham()
     #list_test()
     #main()
-    #test_new_format()
+    test_new_format()
     #test_pierre_format()
     #add_ni_system()

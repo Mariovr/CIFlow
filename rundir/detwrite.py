@@ -275,24 +275,26 @@ def main(*args , **kwargs):
     #detlist = doci(psir.values['nalpha'],psir.values['norb'])
     #write_to_file(detlist , fname = 'determinantscibig.dat', header = '#determinants for FCI\n')
 
-def num_dets():
-    fname = 'psi0_output10.dat' 
-    #fname = 'beh20.86ccpvdz.out' 
-    psir = rp.PsiReader(fname, isbig = False, numorbs = -1 , read_ints = False)
+def num_dets(nup , ndown , norb):
     detmethods = []
-    #detmethods.append( len(cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[range(1, psir.values['nbeta']+psir.values['nalpha']+1), []  ], [],fname = '',ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0 , write = False) ) )
     from scipy import special as sc
-    detmethods.append(sc.binom(psir.values['norb'] , psir.values['nalpha']) * sc.binom(psir.values['norb'] , psir.values['nbeta']))
-    detmethods.append( len(cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[ [] , [1]  ], [],fname = '',ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0 , write = False) ) )
-    detmethods.append( len(cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[ [] , [1,2]  ], [],fname = '',ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0 , write = False) ) )
-    detmethods.append( len(cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[ [] , [1,2,3]  ], [],fname = '',ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0 , write = False) ) )
-    detmethods.append( len(cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[ [] , []  ], [0],fname = '',ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0 , write = False) ) )
-    detmethods.append( len(cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[ [1,2] , []  ], [],fname = '',ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0 , write = False) ) )
-    detmethods.append( len(cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[ [1,2] , [1,2]  ], [],fname = '',ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0 , write = False) ) )
-    detmethods.append( len(cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[ [1,2] , [1,2,3]  ], [],fname = '',ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0 , write = False) ) )
-    detmethods.append( len(cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[ [1,2] , []  ], [0],fname = '',ref = [lambda x , y , z : psir.get_hf_orbs()] , add_frozen = 0 , write = False) ) )
+    detmethods.append(sc.binom(norb , nup ) * sc.binom(norb , ndown ))
+    refdet = get_hf_det(nup ,ndown , norb)
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [] , [1]  ], [],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [] , [1,2]  ], [],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [] , [1,2,3]  ], [],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [] , []  ], [0],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [] , []  ], [0,2],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [] , []  ], [0,2,4],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [1,2] , []  ], [],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [1,2,3] , []  ], [],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [1,2,3,4] , []  ], [],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [1,2] , [1,2]  ], [],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [1,2] , [1,2,3]  ], [],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [1,2] , []  ], [0],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
+    detmethods.append( len(cimain(nup,ndown ,norb,[ [] , []  ], [0,4],fname = '',ref = [lambda x , y , z : refdet] , add_frozen = 0 , write = False) ) )
     detmethods = [ (value , value / float(detmethods[0]) * 100.)    for value in detmethods]
-    with open("numdetsn2.dat" , "w") as file:
+    with open(str(nup)+ str(ndown) + str(norb)+"numdetsh6631gfrozen2.dat" , "w") as file:
         for value in detmethods:
             file.write("%f    %.9f\n" % (value[0] , value[1]))
 
@@ -344,10 +346,10 @@ if __name__ == "__main__":
     #test_main()
     #reflist = get_reference_list(3,3,10)
     #main()
-    #num_dets()
+    num_dets(5,5,16)
     #print len(fci( 6, 6, 12))
     #cimain(7, 7, 10, [ [1,2,3,4] , [] ], [ ] , fname = "cisddeterminants.dat" ,ref =  [lambda x , y , z :  get_hf_det(7,7,10)] , add_frozen = 0) #FCI
-    cimain(4, 4, 9, [ [1,2] , [] ], [ ] , fname = "cisddeterminants.dat" ,ref =  [lambda x , y , z :  get_hf_det(4,4,9)] , add_frozen = 0) #FCI
+    #cimain(4, 4, 9, [ [1,2] , [] ], [ ] , fname = "cisddeterminants.dat" ,ref =  [lambda x , y , z :  get_hf_det(4,4,9)] , add_frozen = 0) #FCI
     #biggest_det_ex()
     #generate_all_sen(3,5,6)
     #generate_all_sen(3,5,10, 'sendetextra')

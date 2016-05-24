@@ -444,7 +444,7 @@ def main_opt(*args , **kwargs):
     #methods = ["file" ,detfile1, "mmin" , "no" , "sim", "file" , detfile2 ,"mmin" , "no" , "sim", "file", detfile3, "mmin" , "no" , "sim","file" , detfile4 , "mmin" , "no" , "sim","file" ,detfile5 ,  "mmin" , "no" , "sim","file" , detfile6, "mmin" , "no" , "sim", ] #, "doci" , "fmmin"]
     #methods = ["file" , detfile1 , "file", detfile2 , "file", detfile3,"file" , detfile4 ,"file" , detfile5 , "file" , detfile6]
     #methods = ["doci" , "local", " sim" ]#,  "file" , detfile23, "local" ] #, "doci" , "fmmin"]
-    methods = [  "file", detfile2 , "file" , detfile3 ] + ["doci"  , "local", "fno" , "file" , detfile21 , "file" , detfile22 ]
+    methods = [  "file", detfile2 , "mmind" , "file" , detfile3 ] + ["doci"  , "local" , "file" , detfile21 , "file" , detfile22 ]
     #methods = ["fci" , "hmmin"]
     #methods =  ["doci"  , "local" , "file" , detfile21, "file" , detfile22 ]
     #methods =  ["doci" , "loadham" , "file" , detfile21, "loadham" , "file" , detfile22 ,  "loadham"  ]
@@ -483,15 +483,15 @@ def main_opt(*args , **kwargs):
     #runlist = np.append( np.append(np.arange(0.6 , 1.2, 0.2) , np.arange(1.2 , 2. , 0.05)) , np.arange(2.,6., 0.4) )
     #runlist = np.arange(5.1 ,8. , 0.1) 
     #runlist = [0.0]
-    runlist = np.arange(0.3 , 8.1, 0.1) 
+    runlist = np.arange(1.7 , 8.1, 0.1) 
     #runlist = [0.]
     #runlist = [ 3,3.5, 4,4.5,5,5.5 , 6 , 6.5 , 7 , 7.5, 8 ,8.5,  9 ,9.5 ,10]
     #atoms = [6,6] #C2 
     #atoms = [7,6] 
     #atoms = [8,1,1] #H2O
-    #atoms = [6 , 8]
+    atoms = [6 , 8]
     #atoms = [4]
-    atoms = [1,1,1,1 , 1, 1]
+    #atoms = [1,1,1,1 , 1, 1]
     #atoms = [7 , 9]
     #atoms = [6,7]
     #atoms = [4,1,1] #beh2
@@ -505,8 +505,8 @@ def main_opt(*args , **kwargs):
     #atoms = [6,6,6,6,6,6,1,1,1,1,1,1] #benzene
     #runlist = [x*math.pi/180. for x in range(55,61) ]#+ [59.5]] #, 60]  ] #angle between two triangles in benzene.
     #runlist = [2.224207488557] 
-    name = 'phdsenhierh6restwithoutmmin'
-    rootdir = './results/phdsenhierh66-31gnostar' #relative to the directory that contains this script
+    name = 'phdsenhiercorest'
+    rootdir = './results/phdsenhierco26-31g2' #relative to the directory that contains this script
     #rootdir = './results/phdsenebeccpvdzfcimminc1' #relative to the directory that contains this script
     exe = 'ciflow.x'
     elemdir = 'matrixelements'
@@ -544,7 +544,7 @@ def main_opt(*args , **kwargs):
     #search = r'ham.+%s.+FCIunit\d+\.dat' 
     #search = r'psi.+%s.+orthon.h5'
     for basis in basissets:
-        hamfiles[basis] = fc.File_Collector(elemdir , search = search %basis ,notsearch = r'(\.sw\w)|(unitary)',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1 and fileinfo(x) <= 1000. )
+        hamfiles[basis] = fc.File_Collector(elemdir , search = search %basis ,notsearch = r'(\.sw\w)|(unitary)',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= 1.7 and fileinfo(x) <= 1000. )
         #hamfiles[basis] = fc.File_Collector( '.', search = search %basis ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) <= 10. and fileinfo(x) >= 2  and fileinfo(x) in runlist  and not '.sw' in x  )
         #hamfiles[basis] = fc.File_Collector(elemdir , search = search ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1 and fileinfo(x) < 1000. )
 
@@ -558,9 +558,9 @@ def main_opt(*args , **kwargs):
     for basis in basissets:
         fname = name + "_" +basis + ".dat"
         psir = rp.PsiReader(hamfiles[basis].plotfiles[0], isbig = False, numorbs = -1 , read_ints = False) #just to get number of electrons and orbitals
-        dw.generate_all_ex(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], ( psir.get_hf_orbs()[0][:], psir.get_hf_orbs()[1][:] )  , aname = 'determinants', addfrozen = 0)
+        #dw.generate_all_ex(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], ( psir.get_hf_orbs()[0][:], psir.get_hf_orbs()[1][:] )  , aname = 'determinants', addfrozen = 0)
         #dw.biggest_det_ex(outputfilesfci.plotfiles[index])
-        dw.generate_all_sen(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], 'sen', addfrozen = 0)
+        #dw.generate_all_sen(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], 'sen', addfrozen = 0)
         #reflist = dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'], [1] , [] , pairex = True)
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2] , []], [] ,fname = detfile1 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2,3] , []], [] ,fname = detfile14 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
@@ -985,19 +985,14 @@ def con_dm(mat):
     #methods = ["file" , detfile1]
     methods = ["doci", "local"]
     methods = ["fci"]
-    name = 'noconstrainedm3'
+    name = 'noconstrainedm'
     rootdir = './results/cnmin' + mat.translate(None ,'/.') + 'fciconstrainedextra'  #relative to the directory that contains this script
     rootdir = './results/n2' + mat.translate(None ,'/.') + 'fciconstrained2bohr'  #relative to the directory that contains this script
-    rootdir = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/'
+    rootdir = './results/10bohrnoplusconstrainednatomdd/'
     exe = 'ciflow.x'
     elemdir = 'matrixelements'
     import numpy as np
-    #runlist = [6.001 ]+list(np.arange(7.96,8.01,0.01)) + [7.999]
-    #runlist = list(np.arange(5.,8.01,0.01)) 
-    runlist = list(np.arange(6.66,8.01,0.01)) 
-    #runlist = list(np.arange(7.01,7.23,0.01)) 
-    #runlist = list(np.arange(6.54,7.01,0.01)) 
-    #runlist = list(np.arange(7.,8.01,0.01)) 
+    runlist = list(np.arange(5.0,8.01,0.01)) 
 
 
     olddir = os.getcwd()
@@ -1007,19 +1002,6 @@ def con_dm(mat):
     shutil.copy(matrixelements, rootdir)#When the matrixelements are already present.
     os.chdir(rootdir) #When the matrixelements are already present.
     outputfile = open(ciflowoutputfile , 'w')
-
-    #norb  = 10 ;  
-    #nalpha = 7;
-    #modtype = 'Constrained_DM' ; params = [0. , 1. , 2. , 3. , 4. ,  8 , 4.]  ; options = [ "lj"]
-    #create_modham_input(elemdir,nalpha  , norb , modtype , options , params , runlist ,matrixelements)
-
-
-    #fileinfo = lambda x: float(re.search(r'run[\=]*([-]?\d+\.\d+[e\-]*\d*)\.mod' , x).group(1))
-    #hamfiles = {}
-    #search = modtype+ '.+mod' 
-    #hamfiles= fc.File_Collector(elemdir , search = search  ,notsearch = r'\.sw\w',sortfunction = fileinfo, filterf =  lambda x : fileinfo(x) >= -1000 and fileinfo(x) < 1000. )
-    #generate_dir('output_files', None)
-    #os.chdir('..')
   
     afh = 'R'
     fname = name + "_" + ".dat"
@@ -1060,9 +1042,9 @@ def con_dm(mat):
                 #return ( mullikencharge, energies )
 
             if r <  7.:
-                extremumval = gss(func, -0.3 , 4.,tol=1e-8)
+                extremumval = gss(func, -1. , 0.5 ,   2.,tol=1e-12)
             elif r < 9:
-                extremumval = gss(func,-4. , 0.3,tol=1e-8)
+                extremumval = gss(func,-2. , -0.5 , 1.,tol=1e-12)
             energies, mullikencharge = func(extremumval)
             #shutil.copy( 'conelementsoutputdoci.dat' , os.path.join('output_files' , 'conelementsoutputdoci' + str(r)+ '.dat') )
             shutil.copy( 'conelementsoutputfci.dat' , os.path.join('output_files' , 'conelementsoutputfci' + str(r)+ '.dat') )
@@ -1086,9 +1068,31 @@ def con_dm(mat):
         #plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
     os.chdir(olddir)
 
+
+def gss(f, a, b, c, tol = 1e-3):
+    '''
+    Python recursive version of Golden Section Search algorithm
+
+    tau is the tolerance for the minimal value of function f
+    b is any number between the interval a and c
+    '''
+    goldenRatio = (1 + math.sqrt(5)) / 2
+    if b < c:
+        x = b + (2 - goldenRatio) * (c - b)
+    else:
+        x = b - (2 - goldenRatio) * (b - a)
+    if abs(c - a) < tol  * (abs(b) + abs(x)): 
+        return (c + a) / 2
+    fx = f(x)[0][-1]
+    fb=f(b)[0][-1]
+    if fx < fb:
+        return gss(f, b, x, c, tol ) if b < c else gss(f, a, x, b, tol )
+    else:
+        return gss(f, a, b, x, tol ) if b < c else gss(f, x, b, c, tol )
+
 '''python program for golden section search'''
 gr=(math.sqrt(5)-1)/2
-def gss(f,a,b,tol=1e-5):
+def gss2(f,a,b,tol=1e-5):
     '''
     golden section search
     to find the minimum of f on [a,b]
@@ -1117,6 +1121,34 @@ def gss(f,a,b,tol=1e-5):
             fc=fd;fd=f(d)[0][-1]
     return (b+a)/2 
 
+def gss3(f, a, b, tol=1e-5):
+    '''
+    golden section search
+    to find the minimum of f on [a,b]
+    f: a strictly unimodal function on [a,b]
+
+    example:
+    >>> f = lambda x: (x-2)**2
+    >>> x = gss(f, 1, 5)
+    >>> x
+    2.000009644875678
+
+    '''
+    c = b - gr * (b - a)
+    d = a + gr * (b - a)
+    fc=f(c)[0][-1];fd=f(d)[0][-1]
+    while abs(c - d) > tol:
+        if fc < fd:
+            b = d
+        else:
+            a = c
+
+        # we recompute both c and d here to avoid loss of precision which may lead to incorrect results or infinite loop
+        c = b - gr * (b - a)
+        d = a + gr * (b - a)
+        fc=f(c)[0][-1];fd=f(d)[0][-1]
+
+    return (b + a) / 2
 
 def con_dmloop():
     ciflowoutputfile = "ciflowoutput.txt" ; flowname = "flow.dat"
@@ -1380,11 +1412,11 @@ if __name__ == "__main__":
     #print create_header("R" , ["fci" , "doci" , "local" , "file" , "dfddf" , "local" , "mmin" , "file" ,"dfdfdf" ], [] )
     #con_dm("hamhamnoplussto-3gpatrick10.0newDOCIsim0.dat")
     #con_dm("hamnoplussto-3gpatrick5.0new.out")
-    #con_dm("hampsiham005.00noplusorthon.dat")
+    con_dm("10psioutput.dat")
     #con_dm("hampsiham002.00cnminorthon.dat")
     #con_dm("hamnoplussto-3gpatrick2.0new.out")
     #con_dm("n2_2bohr.dat")
-    con_dm("5psioutput.dat")
+    #con_dm("10psioutput.dat")
     #con_dmloop()
     #con_dm_wrap()
     #farnaz()
