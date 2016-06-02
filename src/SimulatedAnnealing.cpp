@@ -547,7 +547,7 @@ double Iterative_Subotnik::optimize()
         {
             std::cout  << "Trace(R): " << calc_value() << " (should increase) " <<std::endl;
         }
-        if(i > 5000)
+        if(i > 30000)
         {
             //to many oscillations.
             cout << "Stopped through the unaccept criterium." << endl;

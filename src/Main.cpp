@@ -192,13 +192,13 @@ void orb_opt(string sort , CIMethod * cim, bool printoutput, bool hamsave)
     else if(sort == "loadham")
     {
     	//string hamname = "matrixelements_otherbasis/ham" + cim->get_ham()->get_short_filename()+"FCI_Filecisddeterminantsmmin.h5" ; 
-    	//string hamname = "hamiltonians/ham" + cim->get_ham()->get_short_filename()+"FCI_Filecisddeterminantsmmin.h5" ; 
-        std::string t = cim->get_ham()->get_short_filename();
-        std::string s = "DOCIlocal2";
-        std::string::size_type i = t.find(s);
-        if (i != std::string::npos) //make sure substring is contained in t
-               t.erase(i, s.length());
-    	string hamname =  t + "FCI_Filedeterminants2hmmin0.dat";
+    	string hamname = cim->get_ham()->get_short_filename()+"DOCIlocal1.dat" ; 
+        //std::string t = cim->get_ham()->get_short_filename();
+        //std::string s = "DOCIlocal1";
+        //std::string::size_type i = t.find(s);
+        //if (i != std::string::npos) //make sure substring is contained in t
+        //       t.erase(i, s.length());
+    	//string hamname =  t + "FCI_Filedeterminants2hmmin0.dat";
     	//string hamname = "hampsi0_cc-pvdz0.00DOCIlocal0.dat" ;
     	//string hamname = "matrixelements_otherbasis/ham" + cim->get_ham()->get_short_filename() + "FCImmin.h5";
 	    cout << hamname << endl;
