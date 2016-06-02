@@ -161,8 +161,8 @@ class Plot_Files(object):
         sc = self.fig.axes[self.axnum].scatter(xvars ,yvars, c=colorvars, cmap = cm )
         pl.colorbar(sc)
   
-    def plot_line(self, xlist , ylist , axnum = 0 , style= None , color = None):
-        self.fig.axes[axnum].plot(xlist , ylist , color = color , ls = style) 
+    def plot_line(self, xlist , ylist , axnum = 0 , style= None , color = None, label = None):
+        self.fig.axes[axnum].plot(xlist , ylist , color = color , ls = style , label = label) 
 
     def normalize_to_groundstate(self):
       print('Warning we normalize all the excited states to the groundstate energy')
@@ -229,17 +229,17 @@ class Plot_Files(object):
                                       self.fig.axes[self.axnum].legend(h,l)
       """
       if finetuning == True:
+        pass
         # the matplotlib.patches.Rectangle instance surrounding the legend
-        frame  = leg.get_frame()  
+        #frame  = leg.get_frame()  
         #frame.set_facecolor('0.80')    # set the frame face color to light gray
   
         # matplotlib.text.Text instances you can change all properties of labels
-        for t in leg.get_texts():
-          t.set_fontsize(25)    # the legend text fontsize
-  
+        #for t in leg.get_texts():
+        #  t.set_fontsize(25)    # the legend text fontsize
         # matplotlib.lines.Line2D instances
-        for l in leg.get_lines():
-          l.set_linewidth(2)  # the legend line width
+        #for l in leg.get_lines():
+        #  l.set_linewidth(2)  # the legend line width
   
     def savefig(self , name , filenum = 0 , samedir = False , prefix = True, exdir = './', typ = 'pdf'):
       """
@@ -603,12 +603,12 @@ def sen_hier_plot2():
     #xlim = (0. , 10.)
     #ylim = (None , None)
     xlim = None
-    ylim = None
+    ylim = (-15.8 , -15.4)
     title = ''
     seniorities = ['0','2','4']
     plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2, 4, 7,8,9,10, 11,12, 14 , 16] , titel = '', name = '' , exname = 'senhier', exdir= '', prefix = True)
     plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2, 4, 7, 11,15] , titel = '', name = '' , exname = 'senhiermo', exdir= '', prefix = True, color = ['','g','','g--','','','b','','','','b--','','','','b-.',''])
-    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [ 2 , 7, 8,9,11, 13,14, 15] , titel = '', name = '' , exname = 'senhierbasis', exdir= '', prefix = True, color = ['','k','','','','','b','b--','b-*','b-*','r','r--','r-.','r-*','g','g--','','','',''])
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [ 2 , 7, 8,9,11, 13,14, 15] , titel = '', name = '' , exname = 'senhierbasis', exdir= '', prefix = True, color = ['','g','','','','','b','b--','b-*','b-*','r','r--','r-.','r-*','c-*','g--','','','',''])
     plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [ 12,13,14,15] , titel = '', name = '' , exname = 'senhierbasis02', exdir= '', prefix = True, color = ['','g','','g--','','','b','','','','b--','b-.','','','','','','','',''])
     plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [ 12,13,14,15,16,17,18,19,20] , titel = '', name = '' , exname = 'senhierbasis04', exdir= '', prefix = True, color = ['','g','','g--','','','b','','','','b--','b-.','','','','','','','',''])
 
@@ -622,12 +622,12 @@ def sen_hier_ploth6():
     plotter.data[0].units['y'] = r'(E$_h$)'
     #xlim = (0. , 10.)
     #ylim = (None , None)
-    xlim = (0. , 6.)
-    ylim = None
+    xlim = (0. , 5.)
+    ylim = (-3.5 , -2.2)
     title = ''
     seniorities = ['0','2','4']
     #plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2, 3 , 4,5,6,7 , 8, 9 ] , titel = '', name = '' , exname = 'senhiermo', exdir= '', prefix = True, color = ['','g','g--','b','b--','b-*','r','k', 'c-*', 'm'])
-    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2, 3 , 4,5,6,7 , 8, 9 , 10] , titel = '', name = '' , exname = 'senhiermowithsen04', exdir= '', prefix = True, color = ['','g','g--','b','b--','b-*','r','k', 'c-*', 'm'])
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2, 3 , 4,5,6,7 , 8, 9 , 10] , titel = '', name = '' , exname = 'senhiermowithsen04', exdir= '', prefix = True, color = ['','g','g--','b','b--','b-*','r','m', 'c-*', 'k', ])
 
 def sen_hier_plotco():
     #7,11,12 plot senhier beh2
@@ -645,11 +645,11 @@ def sen_hier_plotco():
     title = ''
     #seniorities = ['0','2','4']
     #plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2, 3 , 4,5,6,7 , 8, 9 ] , titel = '', name = '' , exname = 'senhiermo', exdir= '', prefix = True, color = ['','g','g--','b','b--','b-*','r','k', 'c-*', 'm'])
-    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2, 3 , 4,5,6,7 , 8] , titel = '', name = '' , exname = 'senhiermowithsen04', exdir= '', prefix = True, color = ['','g','g--','b','b--','b-*','r','k', 'c-*', 'm'])
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2,  4,5,7 , 8,9] , titel = '', name = '' , exname = 'senhiermowithsen04', exdir= '', prefix = True, color = ['','g','g--','g--','b--','b-*','r','r-*', 'c-*', 'm'])
 
 
 def plot_constrained_atom():
-    fname = './results/10bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/n_atom_e2.dat'
+    fname = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/n_atom_e2ghost4.dat'
     plotter = Plot_Files(fname)
 
     title = 'N atom in (NO+)'
@@ -664,16 +664,18 @@ def plot_constrained_atom():
     nlist = [(8,-53.350340026) , (7, -53.7190101625), (6,-53.263409) , (5,-52.1689555)]
     olist = [(9,-73.4269), (8,-73.804150223) , (7, -73.44358397), (6,-72.12995502249) ]
 
+    nlist = [(8,-53.3527603927) , (7, -53.7193006926), (6,-53.263462230) , (5,-52.1689675568)]
+    olist = [(9,-73.4313469197), (8,-73.8051362649) , (7, -73.4436716743), (6,-72.1299704413) ]
     plotter.plot_line( zip(*nlist)[0], zip(*nlist)[1] , color = 'k' , style = '--' )
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'cienergiesne')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'cienergiesneghost4')
     title = 'interactie in (NO+)'
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist =[3], titel = title, name = 'plot' , exname = 'cienergiescore')
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3], titel = None, name = 'plot' , exname = 'cienergiestoge')
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2], titel = None, name = 'plot' , exname = 'cienergiesalle')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist =[3], titel = title, name = 'plot' , exname = 'cienergiescoreghost4')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3], titel = None, name = 'plot' , exname = 'cienergiestogeghost4')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2], titel = None, name = 'plot' , exname = 'cienergiesalleghost4')
     plotter.adjust_data( lambda x : 14-x ,  0 )
     title = 'O atom in (NO+)'
     plotter.plot_line( zip(*olist)[0], zip(*olist)[1], color ='k' , style = '--' )
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'cienergiesoe')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'cienergiesoeghost4')
 
 if __name__ == '__main__':
     #main()  

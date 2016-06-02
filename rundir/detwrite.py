@@ -321,6 +321,7 @@ def generate_all_sen(nup ,ndown , norb , aname = 'sendeterminants', addfrozen = 
     maxpairbreaking = min(numpair , norb - max(nup , ndown) )
     maxextrasen = 2*maxpairbreaking
     totmaxsen = 2*maxpairbreaking + startsen
+    totmaxsen =6
     for sen in range(startsen, totmaxsen+1,2):
         senlist = range(startsen,sen +1,2) #
         print senlist

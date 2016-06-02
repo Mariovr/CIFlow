@@ -31,6 +31,55 @@ import filecollector as fc
 if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
     import plotfunctions as pf
 
+# Using the generator pattern (an iterable)
+class Bitstring(object):
+    def __init__(self, norb, nalpha):
+        self.norb = norb
+        self.nalpha = nalpha
+        from scipy.special import binom
+        self.dim = binom(self.norb , self.nalpha)
+        self.reset()
+        print 'A Bitstring generator of ', nalpha , ' electrons in ', norb , ' orbitals is constructed with dimension : ' , self.dim , ' and first element: ' , self.current , ' in string notation: ' , "{0:b}".format(self.current)
+
+    def __iter__(self):
+        return self
+
+    # Python 3 compatibility
+    def __next__(self):
+        return self.next()
+
+    def reset(self):
+        self.current = self.start_bit(self.nalpha)
+        self.pos = 0
+
+    def start_bit( self, nalpha):
+        return 2**nalpha -1
+
+    #    00111000     # 56
+    #    01001000     # twos complement, -56
+    # &= 00001000
+    # Determines lowest set bit
+    def lowestSet(self, int_type):
+        low = (int_type & -int_type)
+        lowBit = -1
+        while (low):
+            low >>= 1
+            lowBit += 1
+        return(lowBit)
+
+    def next(self):
+        if self.pos  == self.dim:
+            raise StopIteration()
+        else:
+            v= self.current
+            t = v | ( v - 1); # t gets v's least significant 0 bits set to 1
+            #print "{0:b}".format(t)
+            self.current = (t+1) # Next set to 1 the most significant bit to change, and set to 0 the least significant ones
+            #print "{0:b}".format(self.current)
+            self.current = self.current | ((((~t) & (-~t) ) - 1) >> ( self.lowestSet(v)+ 1 )); #finally add the ones before the changed bit to the upmost right and in between zeros
+            self.pos += 1 
+            return  v
+
 class Reader(object):
     """
     Class to read in outputfiles from CIFlow.
@@ -276,6 +325,104 @@ class CIFlow_Reader(Reader):
                 #sys.exit(1)
                 pass
         return abs(som)
+
+    def calc_1rdm(self):
+        dim = self.header['norbs']
+        t2index = [np.zeros((dim,dim)) for i in range(2)]
+        upbitgenerator = Bitstring(dim,self.header['nup']) #Creates bitstring generator for 5 orbitals and 3 electrons
+        downbitgenerator =Bitstring(dim,self.header['ndown']) #Creates bitstring generator for 5 orbitals and 3 electrons 
+        for upbit in bitgenerator:
+            print 'We are at position: ' , bitgenerator.pos-1 , ' with bitstring: ', "{0:b}".format(bit)
+
+    def calc_2rdm(self):
+        dim = self.header['norbs']
+        t4index = [np.zeros((dim,dim, dim, dim)) for i in range(3)]
+
+    def project_herm(self, orblist):
+        dim = self.header['norbs']
+        for i in range(dim):
+            for j in range(dim):
+                if i not in orblist and j not in orblist:
+                    self.ordm[0][i,j] = 0
+                    self.ordm[1][i,j] = 0
+                if i in orblist and j not in orblist:
+                    self.ordm[0][i,j] /= 2.
+                    self.ordm[1][i,j] /= 2.
+                if j in orblist and i not in orblist:
+                    self.ordm[0][i,j] /= 2.
+                    self.ordm[1][i,j] /= 2.
+                for k in range(dim):
+                    for l in range(dim):
+                        if i not in orblist and j not in orblist and k not in orblist and l not in orblist:
+                            self.trdm[0][i , k , j , l] = 0
+                            self.trdm[1][i , k , j , l] = 0
+                            self.trdm[2][i , k , j , l] = 0
+                        if i in orblist and j not in orblist and k in orblist and l not in orblist:
+                            self.trdm[0][i , k , j , l] /=4.
+                            self.trdm[1][i , k , j , l] /=4.
+                            self.trdm[2][i , k , j , l] /=4.
+                        if i in orblist and j not in orblist and k not in orblist and l in orblist:
+                            self.trdm[0][i , k , j , l] /=4.
+                            self.trdm[1][i , k , j , l] /=4.
+                            self.trdm[2][i , k , j , l] /=4.
+                        if i not in orblist and j in orblist and k in orblist and l not in orblist:
+                            self.trdm[0][i , k , j , l] /=4.
+                            self.trdm[1][i , k , j , l] /=4.
+                            self.trdm[2][i , k , j , l] /=4.
+                        if i not in orblist and j in orblist and k not in orblist and l in orblist:
+                            self.trdm[0][i , k , j , l] /=4.
+                            self.trdm[1][i , k , j , l] /=4.
+                            self.trdm[2][i , k , j , l] /=4.
+                        if i in orblist and j in orblist and k not in orblist and l not in orblist:
+                            self.trdm[0][i , k , j , l] =0
+                            self.trdm[1][i , k , j , l] =0
+                            self.trdm[2][i , k , j , l] =0
+                        if i not in orblist and j not in orblist and k in orblist and l in orblist:
+                            self.trdm[0][i , k , j , l] =0
+                            self.trdm[1][i , k , j , l] =0
+                            self.trdm[2][i , k , j , l] =0
+                        if i not in orblist and j not in orblist and k not in orblist and l in orblist:
+                            self.trdm[0][i , k , j , l] = 0
+                            self.trdm[1][i , k , j , l] = 0
+                            self.trdm[2][i , k , j , l] = 0
+                        if i not in orblist and j not in orblist and k in orblist and l not in orblist:
+                            self.trdm[0][i , k , j , l] = 0
+                            self.trdm[1][i , k , j , l] = 0
+                            self.trdm[2][i , k , j , l] = 0
+
+                        if i not in orblist and j in orblist and k not in orblist and l not in orblist:
+                            self.trdm[0][i , k , j , l] = 0
+                            self.trdm[1][i , k , j , l] = 0
+                            self.trdm[2][i , k , j , l] = 0
+                        if i in orblist and j not in orblist and k not in orblist and l not in orblist:
+                            self.trdm[0][i , k , j , l] = 0
+                            self.trdm[1][i , k , j , l] = 0
+                            self.trdm[2][i , k , j , l] = 0
+                        if i in orblist and j in orblist and k in orblist and l not in orblist:
+                            self.trdm[0][i , k , j , l] = 0
+                            self.trdm[1][i , k , j , l] = 0
+                            self.trdm[2][i , k , j , l] = 0
+                        if i not in orblist and j in orblist and k in orblist and l in orblist:
+                            self.trdm[0][i , k , j , l] = 0
+                            self.trdm[1][i , k , j , l] = 0
+                            self.trdm[2][i , k , j , l] = 0
+
+                        if i in orblist and j not in orblist and k in orblist and l in orblist:
+                            self.trdm[0][i , k , j , l] = 0
+                            self.trdm[1][i , k , j , l] = 0
+                            self.trdm[2][i , k , j , l] = 0
+                        if i in orblist and j in orblist and k not in orblist and l in orblist:
+                            self.trdm[0][i , k , j , l] = 0
+                            self.trdm[1][i , k , j , l] = 0
+                            self.trdm[2][i , k , j , l] = 0
+
+    def project(self, orblist):
+        pass
+
+
+    def set_rdm(self , ordm , trdm):
+        self.ordm = ordm
+        self.trdm = trdm
 
     def transform_rdms(self,unitary, twordm = True):
         """
@@ -658,11 +805,11 @@ def extract_properties():
 def energy_rdm():
     #nameham = "hamnoplussto-3gpatrick10.0new.out"
     #namewf = "hamnoplussto-3gpatrick10.0newoutputfci.dat"
-    nameham = "100psioutput.dat"
-    namewf =  "100psioutputoutputfci.dat"
+    nameham = "5psioutput.dat"
+    namewf =  "5psioutputoutputfci.dat"
     readermo = rp.PsiReader(nameham, read_ints = True)
-    namehamn = "5natomhammo.dat"
-    namehamo = "5oatomhammo.dat"
+    namehamn = "5natomhammogost.dat"
+    namehamo = "5oatomhammogost.dat"
     #nameham = "ni_system.dat"
     #namewf = "ni_systemoutputfci.dat"
     rootdir = '.'
@@ -672,7 +819,9 @@ def energy_rdm():
     cifread = CIFlow_Reader(namewf)
 
     cifread.read_rdm()
-    print cifread.ordm
+
+    print 'Before manipulation rdm trace(ordm) : ' , sum(cifread.ordm[0].diagonal() + cifread.ordm[1].diagonal())
+
     e_n = readermo.calc_energy( cifread.ordm , cifread.trdm )
     e_nn = readern.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [0,1,2,3,4], nucrepbool = False  )
     e_no = readero.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [0,1,2,3,4] , nucrepbool = False, startrdm = 5)
@@ -681,6 +830,14 @@ def energy_rdm():
     import numpy
     unitary = readermo.get_unitary().T
     t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
+
+    cifread.set_rdm(t2index , t4index)
+    cifread.project_herm([0,1,2,3,4])
+    t2index , t4index = cifread.transform_rdms(readermo.get_unitary() , twordm = True)
+
+    print 'after manipulation rdm trace(ordm) : ' , sum(cifread.ordm[0].diagonal() + cifread.ordm[1].diagonal())
+
+    #t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
      
     unitary = numpy.linalg.inv(readern.get_unitary() )
     t2 , t4 =  readern.transform_integrals(unitary)
@@ -697,12 +854,12 @@ def energy_rdm():
     #reader.create_output(fname = 'newoutputao.dat')
 
 def energy_atom():
-    rootdir = './results/10bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/'
+    rootdir = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/'
     nameham = './ham_patrick/hamnoplussto-3gpatrick10.0new.out' 
-    namemoham = './10psioutput.dat' 
+    namemoham = './5psioutput.dat' 
     readermo = rp.PsiReader(namemoham, read_ints = True) #for the  unitary transformation
-    nameham = "5natomhammo.dat"
-    namehamo = "5oatomhammo.dat"
+    nameham = "5natomhammogost.dat"
+    namehamo = "5oatomhammogost.dat"
 
     #nameconstrained = './results/10bohrnoplusconstrainednatomddmostartplusdiisoffpsi/noconstrainedm_.dat'
     #constrained_data = np.loadtxt(nameconstrained)
@@ -741,13 +898,13 @@ def energy_atom():
         readero.matrix_to_list(t2o , t4o)
         #e_all = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4,5,6,7,8,9]  )
         e_nn = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4] ,nucrepbool = False )
-        e_no = readero.calc_energy( t2index , t4index , orblist = [0,1,2,3,4] ,nucrepbool = False , startrdm= 5)
+        e_no = readero.calc_energy( t2index , t4index , orblist = [5,6,7,8,9] ,nucrepbool = False , startrdm= 5)
         #e_nn = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4] ,nucrepbool = False  )
         #e_no = reader.calc_energy( t2index , t4index , orblist = [5,6,7,8,9] ,nucrepbool = False  )
         #print 'e n atom : ' , e_all - -73.4435839702339  - (e_all - e_nn - e_no )/2. , ' e o atom : ' , e_no , ' e interactie :   ',  e_all - e_nn - e_no
         print 'e n check: ' , e_nn  , 'e o : check' , e_no , ' e int: ' , e_tot - e_nn - e_no,  'e tot check '  , e_tot 
         data.append( (fileinfo(outfile) , e_nn , e_no , e_tot-e_nn-e_no ,    e_tot )  )
-    with open(os.path.join(rootdir, 'n_atom_e2.dat') , 'w' ) as file:
+    with open(os.path.join(rootdir, 'n_atom_e2ghost4.dat') , 'w' ) as file:
         file.write( '\n'.join([ str(dat[0]) + '\t' + str(dat[1]) + '\t' + str(dat[2]) + '\t' + str(dat[3]) + '\t' + str(dat[4])  for dat in data   ]  ) )
 
 def energy_decomp():
@@ -786,5 +943,5 @@ if __name__ == "__main__":
     #test_max_det()
     #extract_properties()
     #energy_decomp()
-    #energy_rdm()
-    energy_atom()
+    energy_rdm()
+    #energy_atom()

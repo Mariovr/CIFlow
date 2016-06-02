@@ -561,29 +561,63 @@ class PsiReader(Reader):
             self.ints['mo2index'][num][2] += total[i,j]
             num +=1
 
-    def calc_energy(self , rdm1 , rdm2, orblist = [], nucrepbool = True, startrdm = 0):
+    def calc_energy(self , rdm1 , rdm2, orblist = [], nucrepbool = True, startrdm = 0, mul_check = True):
         #remark integrals are written in chemical notation, and rdms are in physical notation.
+        if orblist == []:
+            orblist = range(0, self.values['norb'])
+
+        
+        if mul_check:
+            overlap = self.overlap[0]
+            print overlap , rdm1[0]
+            part = np.dot(overlap, rdm1[0] )
+            som = 0
+            for orb in orblist:
+                som += part[orb,orb]
+            print 'Mulliken charge or orblist: ' , orblist , ' is equal to : ' , 2*som
+
+
         nucrep = 0 
         if nucrepbool == True:
             nucrep += self.values['nucrep']
 
-        if orblist == []:
-            orblist = range(0, self.values['norb'])
-
         energy1 = 0
         for i , j , integral in self.ints['mo2index']:
             #print i , j ,integral
-            if i in orblist and j in orblist:
-                energy1 += (integral ) * rdm1[0][i+startrdm,j+startrdm] 
-                energy1 += (integral )  * rdm1[1][i+startrdm,j+startrdm]
+            if i in orblist: # and j in orblist:
+                energy1 += (integral ) * rdm1[0][i,j] 
+                energy1 += (integral )  * rdm1[1][i,j]
+        for i , j , integral in self.ints['mo2index']:
+            #print i , j ,integral
+            if j in orblist: # and j in orblist:
+                energy1 += (integral ) * rdm1[0][i,j] 
+                energy1 += (integral )  * rdm1[1][i,j]
+        energy1 /=2.
         print 'Read psi 1 electron energy : ' , energy1
 
         energy2 = 0
         for i , j , k , l, integral in self.ints['mo4index']:
-            if i in orblist and j in orblist and k in orblist and l in orblist :
-                energy2 += integral * rdm2[0][i+startrdm , k+startrdm ,j+startrdm  ,l+startrdm ]
-                energy2 += 2*integral * rdm2[1][i+startrdm , k+startrdm , j+startrdm ,l+startrdm ]
-                energy2 += integral * rdm2[2][i+startrdm , k+startrdm ,j+startrdm  ,l+startrdm ]
+            if i in orblist and k in orblist:# and l in orblist and j in orblist :
+                energy2 += integral * rdm2[0][i , k ,j  ,l ]
+                energy2 += 2*integral * rdm2[1][i , k , j ,l ]
+                energy2 += integral * rdm2[2][i , k ,j  ,l ]
+
+        for i , j , k , l, integral in self.ints['mo4index']:
+            if i in orblist and l in orblist:# and l in orblist and j in orblist :
+                energy2 += integral * rdm2[0][i , k ,j  ,l ]
+                energy2 += 2*integral * rdm2[1][i , k , j ,l ]
+                energy2 += integral * rdm2[2][i , k ,j  ,l ]
+        for i , j , k , l, integral in self.ints['mo4index']:
+            if k in orblist and j in orblist:# and l in orblist and j in orblist :
+                energy2 += integral * rdm2[0][i , k ,j  ,l ]
+                energy2 += 2*integral * rdm2[1][i , k , j ,l ]
+                energy2 += integral * rdm2[2][i , k ,j  ,l ]
+        for i , j , k , l, integral in self.ints['mo4index']:
+            if l in orblist and j in orblist:# and l in orblist and j in orblist :
+                energy2 += integral * rdm2[0][i , k ,j  ,l ]
+                energy2 += 2*integral * rdm2[1][i , k , j ,l ]
+                energy2 += integral * rdm2[2][i , k ,j  ,l ]
+        energy2 /= 4.
 
         print 'Read psi 2 electron energy : ' , energy2/2.
         print 'total energy = : ' , energy1 + 1/2.* energy2 + nucrep

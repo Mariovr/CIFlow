@@ -258,6 +258,7 @@ def main_opt(*args , **kwargs):
     psienergies = [] #provide here a list of energies to be calculated by psi.
     methods = [  "file", detfile2 , "mmind" , "file" , detfile3 ] + ["doci"  , "local" , "file" , detfile21 , "file" , detfile22 ]
     methods = ["file" ,  detfile30, "mminsd"]
+    methods = ["doci" ,  "local"]
     extra = None
     basissets = ['6-31g']
     import numpy as np
@@ -271,8 +272,8 @@ def main_opt(*args , **kwargs):
     #atoms = [7,8] #NO+
     #atoms = [6,6,6,6,6,6,1,1,1,1,1,1] #benzene
     #runlist = [x*math.pi/180. for x in range(55,61) ]#+ [59.5]] #, 60]  ] #angle between two triangles in benzene.
-    name = 'phdsenhierbeh2sen04'
-    rootdir = './results/phdsenhierbeh26-31g' #relative to the directory that contains this script
+    name = 'phdsenhierh6docilocal'
+    rootdir = './results/phdsenhierh66-31gnostar' #relative to the directory that contains this script
     #rootdir = './results/phdsenebeccpvdzfcimminc1' #relative to the directory that contains this script
     exe = 'ciflow.x'
     #elemdir = 'matrixelements'
@@ -291,19 +292,19 @@ def main_opt(*args , **kwargs):
     #create_matrix_elements(elemdir , basissets, runlist, atoms, chmult = (0,1) , moltype = 'atom', package = 'psi' , units = 'angstrom', path_mo = '../../../../mointegrals/mointegrals.so' , DOCC = None, energies = psienergies, sym = 'c1', hdf5 = False, guess = 'read', extrapar = 0.741, ref = 'rhf', su = False, basispath = '../../../data/basissets/')#, extrapar = 1.398) #extrapar is size for benzene, and angle for c2v, benzene extrapar = 1.398 C-C distance , extrapar = 104.479848 for angle h2o, 0.741 = extrapar for h2 equilibrium geometry in but
 
     outputfile = open(ciflowoutputfile , 'w')
-    #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?out' , x).group(1))
-    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]+\d+[eEd]?[\-+]?\d*)[-\w\d_]*\.[m]?dat' , x).group(1))
+    fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.[m]?out' , x).group(1))
+    #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]+\d+[eEd]?[\-+]?\d*)[-\w\d_]*\.[m]?dat' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'FCIunit(\d+)\.[m]?dat' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'.*-[\w\d]*([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)orthon\.h5' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)[-\w\d]*\.out' , x).group(1))
     #fileinfo = lambda x: float(re.search(r'hamnoplussto-3gpatrick([\-+]?\d+[\.,]?\d+[eEDd]?[\-+]?\d*)new\.out' , x).group(1))
 
     hamfiles = {}
-    #search = r'psi.+%s.+mout' 
+    search = r'psi.+%s.+mout' 
     #search = r'hampsi0_%s.+sdmmin3.dat'
     #search = r'hampsi0_%s.+local2.dat'
     #search = 'hamnoplus.*%s.+out'
-    search = r'hampsi.+%s.+FCI.+hmmin0.dat'
+    #search = r'hampsi.+%s.+FCI.+hmmin0.dat'
     #search = r'randomham.+\d+\.dat' 
     #search = r'ham.+%s.+out' 
     #search = r'hampsi0.+%s.+smmind0.dat' 
@@ -328,7 +329,7 @@ def main_opt(*args , **kwargs):
         #dw.biggest_det_ex(outputfilesfci.plotfiles[index])
         #dw.generate_all_sen(psir.values['nalpha'],psir.values['nbeta'],psir.values['norb'], 'sen', addfrozen = 0)
         #reflist = dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'], [1] , [] , pairex = True)
-        dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[] , []], [0,4] ,fname = detfile30 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
+        #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[] , []], [0,4] ,fname = detfile30 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2,3] , []], [] ,fname = detfile14 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[1,2,3,4] , []], [] ,fname = detfile15 ,ref =  [lambda x , y , z : psir.get_hf_orbs()] ) #CISD
         #dw.cimain(psir.values['nalpha'],psir.values['nbeta'] ,psir.values['norb'],[[] ,[]], [0,2] ,fname = detfile2 ,ref = [lambda x , y , z : dw.get_hf_det(x,y,z)]) #SEN0-2
