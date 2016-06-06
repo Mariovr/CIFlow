@@ -218,7 +218,7 @@ class Plot_Files(object):
       #handles, labels  = self.fig.axes[self.axnum].get_legend_handles_labels()
       #reg = r'SEN(\d+)'
       #handles , labels = zip(*sorted(zip(handles , labels), key=lambda t: float(re.search( reg , t[1] ).group(1))    ))
-      #self.fig.axes[self.axnum].legend(handles, labels, loc = 0, fontsize = 25)
+      #self.fig.axes[self.axnum].legend(legendhand, legendlab, loc = 0, fontsize = 25)
       leg = self.fig.axes[self.axnum].legend(loc = legendpos) #draws the legend on axes[axnum] all the plots that you labeled are now depicted in legend
   
       if axbg != None:
@@ -229,17 +229,16 @@ class Plot_Files(object):
                                       self.fig.axes[self.axnum].legend(h,l)
       """
       if finetuning == True:
-        pass
-        # the matplotlib.patches.Rectangle instance surrounding the legend
-        #frame  = leg.get_frame()  
-        #frame.set_facecolor('0.80')    # set the frame face color to light gray
+        #the matplotlib.patches.Rectangle instance surrounding the legend
+        frame  = leg.get_frame()  
+        frame.set_facecolor('0.80')    # set the frame face color to light gray
   
-        # matplotlib.text.Text instances you can change all properties of labels
-        #for t in leg.get_texts():
-        #  t.set_fontsize(25)    # the legend text fontsize
-        # matplotlib.lines.Line2D instances
-        #for l in leg.get_lines():
-        #  l.set_linewidth(2)  # the legend line width
+        ##matplotlib.text.Text instances you can change all properties of labels
+        for t in leg.get_texts():
+          t.set_fontsize(25)    # the legend text fontsize
+         #matplotlib.lines.Line2D instances
+        for l in leg.get_lines():
+          l.set_linewidth(2)  # the legend line width
   
     def savefig(self , name , filenum = 0 , samedir = False , prefix = True, exdir = './', typ = 'pdf'):
       """
@@ -390,12 +389,12 @@ def main():
     #    plotter.data[i].data[:, 1] =plotter.data[i].data[:, 1]   - plotter.data[i].data[:,2] #+ plotter.data[i].data[:,3]/2.
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'ciennpluscore')
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2,4,5,6, 7, 8, 9], titel = title, name = 'plot' , exname = 'cienergies')
-    #plotter.data[0].depvar['yas'] = 'Mulliken charge' #change the future y-axis label 
+    #plotter.data[0].depvar['yas'] = 'Mulliken population' #change the future y-axis label 
     #ylim = None
-    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [4], titel = title, name = 'plot' , exname = 'mullikencharges')
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [4], titel = title, name = 'plot' , exname = ' population')
 
-    #For plots in function of changed atomic charge.
-    #plotter.data[0].depvar['xas'] = 'Mulliken charge on N'#change the future y-axis label 
+    #For plots in function of changed atomic population.
+    #plotter.data[0].depvar['xas'] = 'Mulliken  population on N'#change the future y-axis label 
     #plotter.data[0].depvar['yas'] = 'Extremum lambda'#change the future y-axis label 
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambda')
     #plotter.data[0].depvar['yas'] = 'Energy'#change the future y-axis label 
@@ -406,8 +405,8 @@ def main():
     #plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergy')
 
 
-    ##For plots in function of changed atomic charge.
-    #plotter.data[0].depvar['xas'] = 'Mulliken charge on N'#change the future y-axis label 
+    ##For plots in function of changed atomic population.
+    #plotter.data[0].depvar['xas'] = 'Mulliken population on N'#change the future y-axis label 
     #plotter.data[0].depvar['yas'] = 'Energy'#change the future y-axis label 
     #plotter.data[0].units['y'] = r'(E$_h$)'
     #title = 'N FCI (STO-3G)'
@@ -451,7 +450,7 @@ def togethermulliken():
     xlim = None
     ylim = None
 
-    plotter.data[len(plotter.data)-1].depvar['xas'] = 'Mulliken charge on N'#change the future y-axis label 
+    plotter.data[len(plotter.data)-1].depvar['xas'] = 'Mulliken population on N'#change the future y-axis label 
     plotter.data[len(plotter.data)-1].depvar['yas'] = 'Lambda at extremum'#change the future y-axis label 
     plotter.data[len(plotter.data)-1].units['y'] = r'(a.u.)'
     saveflag = False
@@ -522,7 +521,7 @@ def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison', exn
     title = title
     xlim = None
     ylim = None
-    plotter.data[len(plotter.data)-1].depvar['xas'] = 'Mulliken charge on N'#change the future y-axis label 
+    plotter.data[len(plotter.data)-1].depvar['xas'] = 'Mulliken population on N'#change the future y-axis label 
     plotter.data[len(plotter.data)-1].depvar['yas'] = 'Lambda at extremum'#change the future y-axis label 
     plotter.data[len(plotter.data)-1].units['y'] = r'(a.u.)'
 
@@ -649,7 +648,7 @@ def sen_hier_plotco():
 
 
 def plot_constrained_atom():
-    fname = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/n_atom_e2ghost4.dat'
+    fname = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/n_atom_e2ghost5.dat'
     #fname = './results/5bohrnoplusconstrainednatomdd/output_files/n_atom_e2ghost4.dat'
     #fname = './results/6bohrnoplusconstrainednatomdd/output_files/n_atom_e2ghost4.dat'
     plotter = Plot_Files(fname)
@@ -658,7 +657,7 @@ def plot_constrained_atom():
     xlim = None
     ylim = None
 
-    plotter.data[0].depvar['yas'] = 'CI Energy' #change the future y-axis label 
+    plotter.data[0].depvar['yas'] = 'Energy' #change the future y-axis label 
     plotter.data[0].units['y'] = r'(E$_h$)'
     plotter.data[0].depvar['xas'] = 'Mulliken population' #change the future y-axis label 
     plotter.data[0].units['x'] = r'(a.u.)'
@@ -669,15 +668,59 @@ def plot_constrained_atom():
     nlist = [(8,-53.3527603927) , (7, -53.7193006926), (6,-53.263462230) , (5,-52.1689675568)]
     olist = [(9,-73.4313469197), (8,-73.8051362649) , (7, -73.4436716743), (6,-72.1299704413) ]
     plotter.plot_line( zip(*nlist)[0], zip(*nlist)[1] , color = 'k' , style = '--' )
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'cienergiesneghost4')
-    title = 'interactie in (NO+)'
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist =[3], titel = title, name = 'plot' , exname = 'cienergiescoreghost4')
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3], titel = None, name = 'plot' , exname = 'cienergiestogeghost4')
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2], titel = None, name = 'plot' , exname = 'cienergiesalleghost4')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'cienergiesneghost5')
+    title = 'interaction in (NO+)'
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist =[3], titel = title, name = 'plot' , exname = 'cienergiescoreghost5')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3], titel = None, name = 'plot' , exname = 'cienergiestogeghost5')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2], titel = None, name = 'plot' , exname = 'cienergiesalleghost5')
     plotter.adjust_data( lambda x : 14-x ,  0 )
     title = 'O atom in (NO+)'
     plotter.plot_line( zip(*olist)[0], zip(*olist)[1], color ='k' , style = '--' )
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'cienergiesoeghost4')
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'cienergiesoeghost5')
+
+def plot_constrained_atom_tog():
+    fname1 = './results/eqbohrnopluseqpsioutputdatfciconstrainedeqbohr/output_files/n_atom_e2ghost5.dat'
+    fname2 = './results/4bohrnoplus4psioutputdatfciconstrained4bohr/output_files/n_atom_e2ghost5.dat'
+    #fname1 = './results/eqbohrnoplusconstrainednatomddpsieq/output_files/n_atom_e2ghost5.dat'
+    #fname2 = './results/4bohrnoplusconstrainednatomddpsi4/output_files/n_atom_e2ghost6.dat'
+    fname3 = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/n_atom_e2ghost5.dat'
+
+    filelist = [ ( fname1, r'eq'), (fname2 , r'4 bohr')  , (fname3 , r'5 bohr' ) ]
+    #filelist = [ ( fname1, r'eq')  , (fname3 , r'5 bohr' ) ]
+    plotter = Plot_Files( [ tup[0] for tup in filelist ] )
+
+    xlim = None
+    ylim = None
+
+    plotter.data[len(plotter.data)-1].depvar['yas'] = 'Energy' #change the future y-axis label 
+    plotter.data[len(plotter.data)-1].units['y'] = r'(E$_h$)'
+    plotter.data[len(plotter.data)-1].depvar['xas'] = 'Mulliken population' #change the future y-axis label 
+    plotter.data[len(plotter.data)-1].units['x'] = r'(a.u.)'
+
+    nlist = [(8,-53.350340026) , (7, -53.7190101625), (6,-53.263409) , (5,-52.1689555)]
+    olist = [(9,-73.4269), (8,-73.804150223) , (7, -73.44358397), (6,-72.12995502249) ]
+
+    #nlist = [(8,-53.3527603927) , (7, -53.7193006926), (6,-53.263462230) , (5,-52.1689675568)]
+    #olist = [(9,-73.4313469197), (8,-73.8051362649) , (7, -73.4436716743), (6,-72.1299704413) ]
+
+    title = 'N atom in (NO+)'
+    for index, tup in enumerate(filelist):
+        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'cienergiesneghost5tog', save = False, datanum = index, label =tup[1])
+    plotter.plot_line( zip(*nlist)[0], zip(*nlist)[1] , color = 'k' , style = '--', label = r'\infty' )
+    plotter.savefig('cienergiesneghost5tog', prefix = True , typ = '.pdf')
+
+    title = 'interaction in (NO+)'
+    for index, tup in enumerate(filelist):
+        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'cienergiescoreghost5tog', save = False , datanum = index , label = tup[1])
+    plotter.savefig('cienergiescoreghost5tog', prefix = True , typ = '.pdf')
+
+    title = 'O atom in (NO+)'
+    plotter.adjust_data( lambda x : 14-x ,  0 )
+    for index, tup in enumerate(filelist):
+        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'cienergiesoeghost5tog', save =False, datanum = index, label =tup[1])
+    plotter.plot_line( zip(*olist)[0], zip(*olist)[1], color ='k' , style = '--' , label = r'$\infty$')
+    plotter.savefig('cienergiesoeghost5tog', prefix = True , typ = '.pdf')
+
 
 if __name__ == '__main__':
     #main()  
@@ -693,4 +736,5 @@ if __name__ == '__main__':
     #togethermulliken()
     #togethermullikenmethods()
     #plot_togethermullikenmethods()
-    plot_constrained_atom()
+    #plot_constrained_atom()
+    plot_constrained_atom_tog()

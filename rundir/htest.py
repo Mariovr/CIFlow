@@ -911,7 +911,7 @@ def con_dm_wrap():
         con_dm(mat)
 
 def con_dm(mat):
-    matrixelements = "psioutput.dat"
+    matrixelements = "eqpsioutput.dat"
     #matrixelements = "hamnoplussto-3gpatrick100.0.out"
     #matrixelements = "ni_system.dat"
     matrixelements = mat
@@ -922,26 +922,26 @@ def con_dm(mat):
     methods = ["doci", "local"]
     methods = ["fci"]
     name = 'noconstrainedm'
-    rootdir = './results/6bohrnoplusconstrainednatomddpsi4/'
+    rootdir = './results/4bohrnoplusconstrainednatomddpsi4/'
     exe = 'ciflow.x'
     elemdir = 'matrixelements'
     import numpy as np
-    runlist = list(np.arange(5.1,8.01,0.1)) 
+    runlist = list(np.arange(5.,8.01,0.1)) 
 
 
     olddir = os.getcwd()
-    #generate_dir(rootdir , exe,  args = [matrixelements] )
-    #matrixelements = os.path.split(matrixelements)[1]
-    shutil.copy(exe, rootdir)#When the matrixelements are already present.
+    generate_dir(rootdir , exe,  args = [matrixelements] )
+    matrixelements = os.path.split(matrixelements)[1]
+    #shutil.copy(exe, rootdir)#When the matrixelements are already present.
     #shutil.copy(matrixelements, rootdir)#When the matrixelements are already present.
     #os.chdir(rootdir)
     outputfile = open(ciflowoutputfile , 'w')
-    #os.mkdir('output_files')
+    os.mkdir('output_files')
   
     afh = 'R'
     fname = name + "_" + ".dat"
-    solsave = 1. 
-    width = 0.5
+    solsave = 1.4
+    width = 1.
     with open(fname , 'w') as f:
         header = create_header(afh , methods, [] , extra = None).replace('\n', '') + "\tlambda" +"\tMulliken_A\n"
         print header
@@ -1338,7 +1338,7 @@ if __name__ == "__main__":
     #con_dm("hamhamnoplussto-3gpatrick10.0newDOCIsim0.dat")
     #con_dm("hamnoplussto-3gpatrick5.0new.out")
     #con_dm("hamnoplussto-3gpatrick6.0new.out")
-    con_dm("6psioutput.dat")
+    con_dm("4psioutput.dat")
     #con_dm("hampsiham002.00cnminorthon.dat")
     #con_dm("hamnoplussto-3gpatrick2.0new.out")
     #con_dm("n2_2bohr.dat")

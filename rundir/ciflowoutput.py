@@ -28,6 +28,7 @@ import math
 import detwrite as dw
 import read_psi as rp
 import filecollector as fc
+import copy
 if (os.getenv('VSC_INSTITUTE_LOCAL') != 'gent'):
     import plotfunctions as pf
 
@@ -215,6 +216,36 @@ class CIFlow_Reader(Reader):
                                 #print self.trdm[startrdm-2][int(match.group(1)) , int(match.group(2)) , int(match.group(3)) , int(match.group(4)) ] 
               
     
+    def print_rdm(self, twordm = True, filename = 'densitymatrix.dat'):
+        dim = self.header['norbs']
+        with open(filename , 'w') as dfile:
+            dfile.write('#One rdm of the alpha electrons:\n')
+            for i in range(dim):
+                for j in range(dim):
+                    dfile.write('%d\t%d\t%.14f\n' %(i,j , self.ordm[0][i,j]))
+            dfile.write('#One rdm of the beta electrons:\n')
+            for i in range(dim):
+                for j in range(dim):
+                    dfile.write('%d\t%d\t%.14f\n' %(i,j , self.ordm[1][i,j]))
+            dfile.write('#Two rdm of the alpha electrons (up up up up):\n')
+            for i in range(dim):
+                for j in range(dim):
+                    for k in range(dim):
+                        for l in range(dim):
+                            dfile.write('%d\t%d\t%d\t%d\t%.14f\n' %(i,j, k ,l ,  self.trdm[0][i,j,k,l]))
+            dfile.write('#Two rdm of the mixed spin electrons (up down up down):\n')
+            for i in range(dim):
+                for j in range(dim):
+                    for k in range(dim):
+                        for l in range(dim):
+                            dfile.write('%d\t%d\t%d\t%d\t%.14f\n' %(i,j, k ,l ,  self.trdm[1][i,j,k,l]))
+            dfile.write('#Two rdm of the beta electrons (up down up down):\n')
+            for i in range(dim):
+                for j in range(dim):
+                    for k in range(dim):
+                        for l in range(dim):
+                            dfile.write('%d\t%d\t%d\t%d\t%.14f\n' %(i,j, k ,l ,  self.trdm[2][i,j,k,l]))
+
     def read_matrix(self, filename, comment = '#'):
         #return  np.loadtxt(self.filename, dtype='float', comments= '#')
         reg = r'(([\-+]?\d+\.*\d*[eEdD]?[\-+]?\d*)\s*)+'
@@ -346,9 +377,9 @@ class CIFlow_Reader(Reader):
             for j in range(dim):
                 for k in range(dim):
                     for l in range(dim):
-                        cumul[0][i,j,k,l] = trdm[0][i , j , k , l] -1./2.* (ordm[0][i,k]* ordm[0][j , l]  - ordm[0][i, l ] * ordm[0][ j , k])
-                        cumul[1][i,j,k,l] = trdm[1][i , j , k , l]-1./2. *(ordm[0][i,k]* ordm[1][j , l]  )
-                        cumul[2][i,j,k,l] = trdm[2][i , j , k , l]-1./2. *(ordm[1][i,k]* ordm[1][j , l]  - ordm[1][i, l ] * ordm[1][ j , k])
+                        cumul[0][i,j,k,l] = 1./2.*trdm[0][i , j , k , l] -1./2.* (ordm[0][i,k]* ordm[0][j , l]  - ordm[0][i, l ] * ordm[0][ j , k])
+                        cumul[1][i,j,k,l] = 1./2.*trdm[1][i , j , k , l]-1./2. *(ordm[0][i,k]* ordm[1][j , l]  )
+                        cumul[2][i,j,k,l] = 1./2.*trdm[2][i , j , k , l]-1./2. *(ordm[1][i,k]* ordm[1][j , l]  - ordm[1][i, l ] * ordm[1][ j , k])
                         hfcor[0][i,j,k,l] = 1./2.* (ordm[0][i,k]* ordm[0][j , l]  - ordm[0][i, l ] * ordm[0][ j , k])
                         hfcor[1][i,j,k,l] = 1./2.* (ordm[0][i,k]* ordm[1][j , l]  )
                         hfcor[2][i,j,k,l] = 1./2.* (ordm[1][i,k]* ordm[1][j , l]  - ordm[1][i, l ] * ordm[1][ j , k])
@@ -356,7 +387,7 @@ class CIFlow_Reader(Reader):
 
         return hfcor , cumul
 
-    def project_herm(self, orblist):
+    def project_herm_sym(self, orblist):
         dim = self.header['norbs']
         for i in range(dim):
             for j in range(dim):
@@ -364,8 +395,11 @@ class CIFlow_Reader(Reader):
                     self.ordm[0][i,j] = 0
                     self.ordm[1][i,j] = 0
                 if i in orblist and j not in orblist:
-                    self.ordm[0][i,j] /= 2.
-                    self.ordm[1][i,j] /= 2.
+                    self.ordm[0][i,j] = self.ordm[0][i,j] * 1./2. 
+                    self.ordm[1][i,j] = self.ordm[1][i,j] * 1./2. 
+                #if j in orblist and i not in orblist:
+                #    self.ordm[0][i,j] = 0
+                #    self.ordm[1][i,j] = 0
                 if j in orblist and i not in orblist:
                     self.ordm[0][i,j] /= 2.
                     self.ordm[1][i,j] /= 2.
@@ -376,9 +410,9 @@ class CIFlow_Reader(Reader):
                             self.trdm[1][i , k , j , l] = 0
                             self.trdm[2][i , k , j , l] = 0
                         if i in orblist and j not in orblist and k in orblist and l not in orblist:
-                            self.trdm[0][i , k , j , l] /=4.
-                            self.trdm[1][i , k , j , l] /=4.
-                            self.trdm[2][i , k , j , l] /=4.
+                            self.trdm[0][i , k , j , l] =  self.trdm[0][i , k , j , l] * 1./4.
+                            self.trdm[1][i , k , j , l] =  self.trdm[1][i , k , j , l] * 1./4.
+                            self.trdm[2][i , k , j , l] =  self.trdm[2][i , k , j , l] * 1./4.
                         if i in orblist and j not in orblist and k not in orblist and l in orblist:
                             self.trdm[0][i , k , j , l] /=4.
                             self.trdm[1][i , k , j , l] /=4.
@@ -391,6 +425,18 @@ class CIFlow_Reader(Reader):
                             self.trdm[0][i , k , j , l] /=4.
                             self.trdm[1][i , k , j , l] /=4.
                             self.trdm[2][i , k , j , l] /=4.
+                        if i in orblist and j not in orblist and k not in orblist and l in orblist:
+                            self.trdm[0][i , k , j , l] =0.
+                            self.trdm[1][i , k , j , l] =0.
+                            self.trdm[2][i , k , j , l] =0.
+                        if i not in orblist and j in orblist and k in orblist and l not in orblist:
+                            self.trdm[0][i , k , j , l] =0.
+                            self.trdm[1][i , k , j , l] =0.
+                            self.trdm[2][i , k , j , l] =0.
+                        if i not in orblist and j in orblist and k not in orblist and l in orblist:
+                            self.trdm[0][i , k , j , l] =0.
+                            self.trdm[1][i , k , j , l] =0.
+                            self.trdm[2][i , k , j , l] =0.
                         if i in orblist and j in orblist and k not in orblist and l not in orblist:
                             self.trdm[0][i , k , j , l] =0
                             self.trdm[1][i , k , j , l] =0
@@ -424,7 +470,6 @@ class CIFlow_Reader(Reader):
                             self.trdm[0][i , k , j , l] = 0
                             self.trdm[1][i , k , j , l] = 0
                             self.trdm[2][i , k , j , l] = 0
-
                         if i in orblist and j not in orblist and k in orblist and l in orblist:
                             self.trdm[0][i , k , j , l] = 0
                             self.trdm[1][i , k , j , l] = 0
@@ -434,13 +479,37 @@ class CIFlow_Reader(Reader):
                             self.trdm[1][i , k , j , l] = 0
                             self.trdm[2][i , k , j , l] = 0
 
+    def project_herm(self, orblist):
+        dim = self.header['norbs']
+        ordm = [np.zeros((dim,dim)) for i in range(3)]
+        trdm = [np.zeros((dim,dim, dim, dim)) for i in range(3)]
+        for i in range(dim):
+            for j in range(dim):
+                if i in orblist and j in orblist:
+                    ordm[0][i,j] = self.ordm[0][i,j]
+                    ordm[1][i,j] = self.ordm[1][i,j]
+                #if i in orblist and j not in orblist:
+                #    ordm[0][i,j] = self.ordm[0][i,j]  
+                #    ordm[1][i,j] = self.ordm[1][i,j]  
+                for k in range(dim):
+                    for l in range(dim):
+                        if i in orblist and j in orblist and k in orblist and l in orblist:
+                            trdm[0][i , k , j , l] = self.trdm[0][i,k,j,l]
+                            trdm[1][i , k , j , l] = self.trdm[1][i,k,j,l]
+                            trdm[2][i , k , j , l] = self.trdm[2][i,k,j,l]
+                        if i in orblist and k in orblist:
+                            trdm[0][i , k , j , l] =  self.trdm[0][i , k , j , l] 
+                            trdm[1][i , k , j , l] =  self.trdm[1][i , k , j , l] 
+                            trdm[2][i , k , j , l] =  self.trdm[2][i , k , j , l]
+        self.ordm = ordm
+        self.trdm =  trdm
+
     def project(self, orblist):
         pass
 
-
     def set_rdm(self , ordm , trdm):
-        self.ordm = ordm
-        self.trdm = trdm
+        self.ordm = copy.deepcopy(ordm)
+        self.trdm = copy.deepcopy(trdm)
 
     def transform_rdms(self,unitary, twordm = True):
         """
@@ -837,23 +906,44 @@ def energy_rdm():
     cifread = CIFlow_Reader(namewf)
 
     cifread.read_rdm()
+    cifread.print_rdm()
 
     print 'Before manipulation rdm trace(ordm) : ' , sum(cifread.ordm[0].diagonal() + cifread.ordm[1].diagonal())
 
     e_n = readermo.calc_energy( cifread.ordm , cifread.trdm )
-    e_nn = readern.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [0,1,2,3,4], nucrepbool = False  )
-    e_no = readero.calc_energy( cifread.ordm ,cifread.trdm    , orblist = [0,1,2,3,4] , nucrepbool = False, startrdm = 5)
-    print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_n - e_nn - e_no
+    print ' e totaal:   ',  e_n
 
     import numpy
     unitary = readermo.get_unitary().T
     t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
 
-    #cifread.set_rdm(t2index , t4index)
-    #cifread.project_herm([0,1,2,3,4])
-    #t2index , t4index = cifread.transform_rdms(readermo.get_unitary() , twordm = True)
+    cifread.set_rdm(t2index  , t4index  )
+    print 'after manipulation 1 rdm trace(ordm) in atom without overlap: ' , sum(cifread.ordm[0].diagonal() + cifread.ordm[1].diagonal())
+    cifread.project_herm([0,1,2,3,4])
+    t2index2 , t4index2 = cifread.transform_rdms( numpy.linalg.inv(readern.get_unitary().T) , twordm = True)
+    cifread.set_rdm(t2index2 , t4index2)
+    print 'after projection  manipulation and transformation to mo trace(ordm) : ' , sum(cifread.ordm[0].diagonal() + cifread.ordm[1].diagonal())
+    
+    cifread.print_rdm(filename = 'projecteddensitymatrix.dat')
 
-    print 'after manipulation rdm trace(ordm) : ' , sum(cifread.ordm[0].diagonal() + cifread.ordm[1].diagonal())
+
+    e_n = readern.calc_energy( cifread.ordm , cifread.trdm )
+    print ' e totaal:   ',  e_n
+
+    #cifread2 = CIFlow_Reader(namewf)
+    #cifread2.read_rdm()
+
+    #L = cifread2.header['norbs']
+    #for w in range(3):
+    #    for i in range(L):
+    #        for j in range(i,L):
+    #            for k in range(L):
+    #                for l in range(k,L):
+    #                    if abs(cifread2.trdm[w][i,j,k,l] -cifread.trdm[w][i,j,k,l]) > 1e-9 :
+    #                        print abs(cifread.trdm[w][i,j,k,l] - cifread2.trdm[w][i,j,k,l] ) 
+    #                        print w, " " , i , " " , j, " " , k , " " , l , " " , cifread.trdm[w][i,j,k,l] , ' and nopar' , cifread2.trdm[w][i,j,k,l]
+
+    #print 'after manipulation rdm trace(ordm) : ' , sum(cifread.ordm[0].diagonal() + cifread.ordm[1].diagonal())
 
     #t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
      
@@ -866,7 +956,7 @@ def energy_rdm():
     readero.matrix_to_list(t2 , t4)
 
     e_nn = readern.calc_energy( t2index , t4index , orblist = [0,1,2,3,4]  , nucrepbool = False)
-    e_no = readero.calc_energy( t2index , t4index , orblist = [0,1,2,3,4]  , nucrepbool = False, startrdm = 5)
+    e_no = readero.calc_energy( t2index , t4index , orblist = [5,6,7,8,9]  , nucrepbool = False, startrdm = 5)
     print 'e n atom : ' , e_nn , ' e o atom : ' , e_no , ' e interactie :   ',  e_n - e_nn - e_no , ' e all : ' , e_n
 
     #reader.create_output(fname = 'newoutputao.dat')
@@ -874,11 +964,13 @@ def energy_rdm():
 def energy_atom():
     rootdir = './results/5bohrnoplusconstrainednatomdd/output_files/'
     rootdir = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/'
-    namemoham = './5psioutput.dat' 
+    rootdir = './results/eqbohrnopluseqpsioutputdatfciconstrainedeqbohr/output_files/'
+    rootdir = './results/4bohrnoplus4psioutputdatfciconstrained4bohr/output_files/'
+    namemoham = './4psioutput.dat' 
     #namemoham = './hamnoplussto-3gpatrick6.0new.out' 
     readermo = rp.PsiReader(namemoham, read_ints = True) #for the  unitary transformation
-    nameham = "5natomhammogost.dat"
-    namehamo = "5oatomhammogost.dat"
+    nameham = "4natomhammogost.dat"
+    namehamo = "4oatomhammogost.dat"
 
     #nameconstrained = './results/10bohrnoplusconstrainednatomddmostartplusdiisoffpsi/noconstrainedm_.dat'
     #constrained_data = np.loadtxt(nameconstrained)
