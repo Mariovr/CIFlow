@@ -186,7 +186,7 @@ def create_matrix_elements(elemdir, basissets, runlist, atoms, chmult = (0,1) , 
 
     os.chdir(olddir)    
 
-def create_ciflow_input_file(matrixelements , methods , fname = "flow.dat"):
+def create_ciflow_input_file(matrixelements , methods , fname = "flow.dat", prin = False):
     with open(fname, 'w') as file:
         if matrixelements == '.':
             matrixelements = matrixelements.lstrip('.')
@@ -198,6 +198,8 @@ def create_ciflow_input_file(matrixelements , methods , fname = "flow.dat"):
             file.write(cimethod+'\n')
         file.write('endm\n')
         file.write('end\n')
+        if prin:
+            file.write('true\n')
 
 def gkci():
     root = 'Be_exrapolation_gamma' ; fname = 'flow.dat'
@@ -920,25 +922,26 @@ def con_dm(mat):
     methods = ["doci", "local"]
     methods = ["fci"]
     name = 'noconstrainedm'
-    rootdir = './results/6bohrnoplusconstrainednatomdd/'
+    rootdir = './results/6bohrnoplusconstrainednatomddpsi4/'
     exe = 'ciflow.x'
     elemdir = 'matrixelements'
     import numpy as np
-    runlist = list(np.arange(5.0,8.01,0.1)) 
+    runlist = list(np.arange(5.1,8.01,0.1)) 
 
 
     olddir = os.getcwd()
-    generate_dir(rootdir , exe,  args = [matrixelements] )
+    #generate_dir(rootdir , exe,  args = [matrixelements] )
     #matrixelements = os.path.split(matrixelements)[1]
-    #shutil.copy(exe, rootdir)#When the matrixelements are already present.
+    shutil.copy(exe, rootdir)#When the matrixelements are already present.
     #shutil.copy(matrixelements, rootdir)#When the matrixelements are already present.
     #os.chdir(rootdir)
     outputfile = open(ciflowoutputfile , 'w')
+    #os.mkdir('output_files')
   
     afh = 'R'
     fname = name + "_" + ".dat"
-    solsave = 1.9 
-    width = 0.6
+    solsave = 1. 
+    width = 0.5
     with open(fname , 'w') as f:
         header = create_header(afh , methods, [] , extra = None).replace('\n', '') + "\tlambda" +"\tMulliken_A\n"
         print header
@@ -949,13 +952,18 @@ def con_dm(mat):
         for r in runlist:
             norb  = 10 ;  
             nalpha = 7;
+            if (r-0.1) * 10 % 10 == 0:
+                width = 1.2
+            else:
+                width = 1.
+            print 'width ' , width
 
-            def func(x):
+            def func(x , pri = False):
                 print 'r ' , r , ' x ' , x
                 modtype = 'Constrained_DM' ; params = [0. , 1. , 2. , 3. , 4. ,  r , x]  ; options = [ "lj"]
                 condm = rp.ModHam(nalpha, nalpha,norb,modtype , options , params, matrixelements =matrixelements)
                 condm.write_file(fname = 'conelements.mod')
-                create_ciflow_input_file('conelements.mod', methods , fname = flowname)
+                create_ciflow_input_file('conelements.mod', methods , fname = flowname, prin = pri)
                 ci_flow =""
                 if methods:
                     try:
@@ -973,18 +981,18 @@ def con_dm(mat):
 
                 energies = process_output(ci_flow) 
                 mullikencharge = process_output(ci_flow, regexp = "Mulliken[\s\w]+:\s*([\-+]?\d+[\.,]?\d*[eEDd]?[\-+]?\d*)") 
-                return (energies , [ float(m)-r for m in mullikencharge] )
+                return (energies , [ abs(float(m) - r) for m in mullikencharge] )
                 #return ( mullikencharge, energies )
 
-            solsave = gss(func, solsave , solsave-width/2. , solsave -width, tol=1e-5)
-            energies, mullikencharge = func(solsave )
+            solsave = gss(func, solsave +width/10.,  solsave -width, tol=1e-8)
+            energies, mullikencharge = func(solsave , pri = True)
             #shutil.copy( 'conelementsoutputdoci.dat' , os.path.join('output_files' , 'conelementsoutputdoci' + str(r)+ '.dat') )
             shutil.copy( 'conelementsoutputfci.dat' , os.path.join('output_files' , 'conelementsoutputfci' + str(r)+ '.dat') )
             #shutil.copy( 'conelementscisddeterminantsoutputci_file.dat' , os.path.join('output_files' , 'conelementsoutputcisd' + str(r)+ '.dat') )
             #shutil.copy( 'conelementsoutputdocilocal0.dat' , os.path.join('output_files' , 'conelementsoutputdocilocal' + str(r)+ '.dat') )
 
             print_output('searchfor:'+str(r), energies , methods)
-            f.write("%.15f\t%s\t%f\t%s\n" %(r, '\t'.join(energies ), extremumval , '\t'.join(mullikencharge ) ) )
+            f.write("%.15f\t%s\t%f\t%f\n" %(r, '\t'.join(energies ), solsave , mullikencharge[-1] ) ) 
   
     os.remove(exe) #can be handy to keep it in the dir, to exactly reproduce results later. (but be warned its big.)
 
@@ -1000,29 +1008,6 @@ def con_dm(mat):
         #plotter.generate_plot(xlimg = None , ylimg =None , exname = '' , prefix = True, titel =  name, name = fname, depcol = 0, ylist = None )
     os.chdir(olddir)
 
-
-def gss(f, a, b, c, tol = 1e-3):
-    '''
-    Python recursive version of Golden Section Search algorithm
-
-    tau is the tolerance for the minimal value of function f
-    b is any number between the interval a and c
-    '''
-    goldenRatio = (1 + math.sqrt(5)) / 2
-    if b < c:
-        x = b + (2 - goldenRatio) * (c - b)
-    else:
-        x = b - (2 - goldenRatio) * (b - a)
-    if abs(c - a) < tol  * (abs(b) + abs(x)): 
-        return (c + a) / 2
-    fx = f(x)[-1][0]
-    print fx
-    fb=f(b)[-1][0]
-    print fb
-    if fx < fb:
-        return gss(f, b, x, c, tol ) if b < c else gss(f, a, x, b, tol )
-    else:
-        return gss(f, a, b, x, tol ) if b < c else gss(f, x, b, c, tol )
 
 '''python program for golden section search'''
 gr=(math.sqrt(5)-1)/2
@@ -1047,15 +1032,15 @@ def gss2(f,a,b,tol=1e-5):
             b=d
             d=c  
             c=b-gr*(b-a)
-            fd=fc;fc=f(c)[0][-1]
+            fd=f(d)[0][-1];fc=f(c)[0][-1]
         else:
             a=c
             c=d  
             d=a+gr*(b-a)
-            fc=fd;fd=f(d)[0][-1]
+            fc=f(c)[0][-1];fd=f(d)[0][-1]
     return (b+a)/2 
 
-def gss3(f, a, b, tol=1e-5):
+def gss(f, a, b, tol=1e-5):
     '''
     golden section search
     to find the minimum of f on [a,b]
@@ -1070,17 +1055,23 @@ def gss3(f, a, b, tol=1e-5):
     '''
     c = b - gr * (b - a)
     d = a + gr * (b - a)
-    fc=f(c)[0][-1];fd=f(d)[0][-1]
+    fc=f(c)[1][-1];fd=f(d)[1][-1]
     while abs(c - d) > tol:
+        print fc , ' vals ' , fd
         if fc < fd:
             b = d
+            c = b - gr * (b - a)
+            d = a + gr * (b - a)
+            fd = fc 
+            fc=f(c)[1][-1]
         else:
             a = c
+            c = b - gr * (b - a)
+            d = a + gr * (b - a)
+            fc = fd
+            fd=f(d)[1][-1]
 
         # we recompute both c and d here to avoid loss of precision which may lead to incorrect results or infinite loop
-        c = b - gr * (b - a)
-        d = a + gr * (b - a)
-        fc=f(c)[0][-1];fd=f(d)[0][-1]
 
     return (b + a) / 2
 
@@ -1346,6 +1337,7 @@ if __name__ == "__main__":
     #print create_header("R" , ["fci" , "doci" , "local" , "file" , "dfddf" , "local" , "mmin" , "file" ,"dfdfdf" ], [] )
     #con_dm("hamhamnoplussto-3gpatrick10.0newDOCIsim0.dat")
     #con_dm("hamnoplussto-3gpatrick5.0new.out")
+    #con_dm("hamnoplussto-3gpatrick6.0new.out")
     con_dm("6psioutput.dat")
     #con_dm("hampsiham002.00cnminorthon.dat")
     #con_dm("hamnoplussto-3gpatrick2.0new.out")

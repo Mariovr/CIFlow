@@ -650,6 +650,8 @@ def sen_hier_plotco():
 
 def plot_constrained_atom():
     fname = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/n_atom_e2ghost4.dat'
+    #fname = './results/5bohrnoplusconstrainednatomdd/output_files/n_atom_e2ghost4.dat'
+    #fname = './results/6bohrnoplusconstrainednatomdd/output_files/n_atom_e2ghost4.dat'
     plotter = Plot_Files(fname)
 
     title = 'N atom in (NO+)'

@@ -338,6 +338,24 @@ class CIFlow_Reader(Reader):
         dim = self.header['norbs']
         t4index = [np.zeros((dim,dim, dim, dim)) for i in range(3)]
 
+    def construct_cum(self, ordm , trdm):
+        dim = self.header['norbs']
+        cumul = [np.zeros((dim,dim, dim, dim)) for i in range(3)]
+        hfcor = [np.zeros((dim,dim, dim, dim)) for i in range(3)]
+        for i in range(dim):
+            for j in range(dim):
+                for k in range(dim):
+                    for l in range(dim):
+                        cumul[0][i,j,k,l] = trdm[0][i , j , k , l] -1./2.* (ordm[0][i,k]* ordm[0][j , l]  - ordm[0][i, l ] * ordm[0][ j , k])
+                        cumul[1][i,j,k,l] = trdm[1][i , j , k , l]-1./2. *(ordm[0][i,k]* ordm[1][j , l]  )
+                        cumul[2][i,j,k,l] = trdm[2][i , j , k , l]-1./2. *(ordm[1][i,k]* ordm[1][j , l]  - ordm[1][i, l ] * ordm[1][ j , k])
+                        hfcor[0][i,j,k,l] = 1./2.* (ordm[0][i,k]* ordm[0][j , l]  - ordm[0][i, l ] * ordm[0][ j , k])
+                        hfcor[1][i,j,k,l] = 1./2.* (ordm[0][i,k]* ordm[1][j , l]  )
+                        hfcor[2][i,j,k,l] = 1./2.* (ordm[1][i,k]* ordm[1][j , l]  - ordm[1][i, l ] * ordm[1][ j , k])
+
+
+        return hfcor , cumul
+
     def project_herm(self, orblist):
         dim = self.header['norbs']
         for i in range(dim):
@@ -831,9 +849,9 @@ def energy_rdm():
     unitary = readermo.get_unitary().T
     t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
 
-    cifread.set_rdm(t2index , t4index)
-    cifread.project_herm([0,1,2,3,4])
-    t2index , t4index = cifread.transform_rdms(readermo.get_unitary() , twordm = True)
+    #cifread.set_rdm(t2index , t4index)
+    #cifread.project_herm([0,1,2,3,4])
+    #t2index , t4index = cifread.transform_rdms(readermo.get_unitary() , twordm = True)
 
     print 'after manipulation rdm trace(ordm) : ' , sum(cifread.ordm[0].diagonal() + cifread.ordm[1].diagonal())
 
@@ -854,9 +872,10 @@ def energy_rdm():
     #reader.create_output(fname = 'newoutputao.dat')
 
 def energy_atom():
+    rootdir = './results/5bohrnoplusconstrainednatomdd/output_files/'
     rootdir = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/'
-    nameham = './ham_patrick/hamnoplussto-3gpatrick10.0new.out' 
     namemoham = './5psioutput.dat' 
+    #namemoham = './hamnoplussto-3gpatrick6.0new.out' 
     readermo = rp.PsiReader(namemoham, read_ints = True) #for the  unitary transformation
     nameham = "5natomhammogost.dat"
     namehamo = "5oatomhammogost.dat"
@@ -886,7 +905,10 @@ def energy_atom():
         print unitary
         t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
 
+        #hartree , cum = cifread.construct_cum(t2index , t4index )
+
         e_tot = readermo.calc_energy( cifread.ordm , cifread.trdm   )
+        print 'etot ' , e_tot
          
 
         #np.savetxt('rdm_ao.dat' , t2index)
@@ -897,14 +919,16 @@ def energy_atom():
         t2o , t4o =  readero.transform_integrals(unitaryo)
         readero.matrix_to_list(t2o , t4o)
         #e_all = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4,5,6,7,8,9]  )
-        e_nn = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4] ,nucrepbool = False )
-        e_no = readero.calc_energy( t2index , t4index , orblist = [5,6,7,8,9] ,nucrepbool = False , startrdm= 5)
+        #e_nn = reader.calc_atom_e( t2index , hartree , cum, orblist = [0,1,2,3,4])
+        #e_no = readero.calc_atom_e( t2index ,hartree , cum , orblist = [5,6,7,8,9])
+        e_nn = reader.calc_energy( t2index , t4index, orblist = [0,1,2,3,4])
+        e_no = readero.calc_energy( t2index ,t4index, orblist = [5,6,7,8,9])
         #e_nn = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4] ,nucrepbool = False  )
         #e_no = reader.calc_energy( t2index , t4index , orblist = [5,6,7,8,9] ,nucrepbool = False  )
         #print 'e n atom : ' , e_all - -73.4435839702339  - (e_all - e_nn - e_no )/2. , ' e o atom : ' , e_no , ' e interactie :   ',  e_all - e_nn - e_no
         print 'e n check: ' , e_nn  , 'e o : check' , e_no , ' e int: ' , e_tot - e_nn - e_no,  'e tot check '  , e_tot 
         data.append( (fileinfo(outfile) , e_nn , e_no , e_tot-e_nn-e_no ,    e_tot )  )
-    with open(os.path.join(rootdir, 'n_atom_e2ghost4.dat') , 'w' ) as file:
+    with open(os.path.join(rootdir, 'n_atom_e2ghost5.dat') , 'w' ) as file:
         file.write( '\n'.join([ str(dat[0]) + '\t' + str(dat[1]) + '\t' + str(dat[2]) + '\t' + str(dat[3]) + '\t' + str(dat[4])  for dat in data   ]  ) )
 
 def energy_decomp():
@@ -943,5 +967,5 @@ if __name__ == "__main__":
     #test_max_det()
     #extract_properties()
     #energy_decomp()
-    energy_rdm()
-    #energy_atom()
+    #energy_rdm()
+    energy_atom()
