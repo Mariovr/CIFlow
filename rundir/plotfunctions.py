@@ -231,7 +231,7 @@ class Plot_Files(object):
       if finetuning == True:
         #the matplotlib.patches.Rectangle instance surrounding the legend
         frame  = leg.get_frame()  
-        frame.set_facecolor('0.80')    # set the frame face color to light gray
+        frame.set_facecolor('1.')    # set the frame face color to light gray
   
         ##matplotlib.text.Text instances you can change all properties of labels
         for t in leg.get_texts():

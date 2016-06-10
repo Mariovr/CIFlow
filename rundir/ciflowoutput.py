@@ -965,12 +965,12 @@ def energy_atom():
     rootdir = './results/5bohrnoplusconstrainednatomdd/output_files/'
     rootdir = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/'
     rootdir = './results/eqbohrnopluseqpsioutputdatfciconstrainedeqbohr/output_files/'
-    rootdir = './results/4bohrnoplus4psioutputdatfciconstrained4bohr/output_files/'
-    namemoham = './4psioutput.dat' 
+    rootdir = './results/eqbohrnopluseqpsioutputdatfciconstrainedeqbohr/output_files/'
+    namemoham = './eqpsioutput.dat' 
     #namemoham = './hamnoplussto-3gpatrick6.0new.out' 
     readermo = rp.PsiReader(namemoham, read_ints = True) #for the  unitary transformation
-    nameham = "4natomhammogost.dat"
-    namehamo = "4oatomhammogost.dat"
+    nameham = "eqnatomhammogost.dat"
+    namehamo = "eqoatomhammogost.dat"
 
     #nameconstrained = './results/10bohrnoplusconstrainednatomddmostartplusdiisoffpsi/noconstrainedm_.dat'
     #constrained_data = np.loadtxt(nameconstrained)
