@@ -914,21 +914,21 @@ def energy_rdm():
     print ' e totaal:   ',  e_n
 
     import numpy
-    unitary = readermo.get_unitary().T
+    unitary = readermo.get_unitary()
     t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
 
     cifread.set_rdm(t2index  , t4index  )
     print 'after manipulation 1 rdm trace(ordm) in atom without overlap: ' , sum(cifread.ordm[0].diagonal() + cifread.ordm[1].diagonal())
     cifread.project_herm([0,1,2,3,4])
-    t2index2 , t4index2 = cifread.transform_rdms( numpy.linalg.inv(readern.get_unitary().T) , twordm = True)
+    t2index2 , t4index2 = cifread.transform_rdms( numpy.linalg.inv(readern.get_unitary()) , twordm = True)
     cifread.set_rdm(t2index2 , t4index2)
     print 'after projection  manipulation and transformation to mo trace(ordm) : ' , sum(cifread.ordm[0].diagonal() + cifread.ordm[1].diagonal())
     
     cifread.print_rdm(filename = 'projecteddensitymatrix.dat')
 
 
-    e_n = readern.calc_energy( cifread.ordm , cifread.trdm )
-    print ' e totaal:   ',  e_n
+    e_proj = readern.calc_energy( cifread.ordm , cifread.trdm )
+    print ' e totaal:   ',  e_proj
 
     #cifread2 = CIFlow_Reader(namewf)
     #cifread2.read_rdm()
@@ -947,11 +947,11 @@ def energy_rdm():
 
     #t2index , t4index = cifread.transform_rdms(unitary , twordm = True)
      
-    unitary = numpy.linalg.inv(readern.get_unitary() )
+    unitary = numpy.linalg.inv(readern.get_unitary().T )
     t2 , t4 =  readern.transform_integrals(unitary)
     readern.matrix_to_list(t2 , t4)
 
-    unitary = numpy.linalg.inv(readero.get_unitary() )
+    unitary = numpy.linalg.inv(readero.get_unitary().T )
     t2 , t4 =  readero.transform_integrals(unitary)
     readero.matrix_to_list(t2 , t4)
 
@@ -991,7 +991,7 @@ def energy_atom():
         cifread.read_rdm()
 
         import numpy
-        unitary = readermo.get_unitary().T
+        unitary = readermo.get_unitary()
         #unitary = numpy.linalg.inv(reader.get_unitary() ).T
         #unitary = rp.generate_random_unitary(reader.values['norb'])
         print unitary
@@ -1004,10 +1004,10 @@ def energy_atom():
          
 
         #np.savetxt('rdm_ao.dat' , t2index)
-        unitary = numpy.linalg.inv(reader.get_unitary() )
+        unitary = numpy.linalg.inv(reader.get_unitary().T )
         t2 , t4 =  reader.transform_integrals(unitary)
         reader.matrix_to_list(t2 , t4)
-        unitaryo = numpy.linalg.inv(readero.get_unitary() )
+        unitaryo = numpy.linalg.inv(readero.get_unitary().T )
         t2o , t4o =  readero.transform_integrals(unitaryo)
         readero.matrix_to_list(t2o , t4o)
         #e_all = reader.calc_energy( t2index , t4index , orblist = [0,1,2,3,4,5,6,7,8,9]  )
@@ -1059,5 +1059,5 @@ if __name__ == "__main__":
     #test_max_det()
     #extract_properties()
     #energy_decomp()
-    #energy_rdm()
-    energy_atom()
+    energy_rdm()
+    #energy_atom()

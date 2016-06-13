@@ -257,9 +257,9 @@ class PsiReader(Reader):
             self.values = copy.deepcopy(self.values)
             self.overlap = self.read_ao_info(filename, "CIFlowOverlap")
             self.unit = self.read_ao_info(filename, "CIFlowTransformation")
-            for i in range(len(self.unit) ):
-                if self.unit[i] != None:
-                    self.unit[i] = np.array(self.unit[i]).T #save in columns the new basis
+            #for i in range(len(self.unit) ):
+                #if self.unit[i] != None:
+                    #self.unit[i] = np.array(self.unit[i]).T #save in columns the new basis
 
             if isbig:
                 self.delete_lines(numorbs) #numorbs is the number of orbitals you wanna keep
