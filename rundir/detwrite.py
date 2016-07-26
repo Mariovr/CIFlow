@@ -305,6 +305,7 @@ def generate_all_ex(nup ,ndown , norb , refdet, aname = 'determinants', addfroze
     exlist = [[],[] ] #single ex, pair ex
     maxex = 2*norb-nup-ndown
     maxex = max(maxex , nup+ndown)
+    maxex = 4
     for ex_max in range(1, maxex+1):
         exlist[0] = range(1,ex_max+1) #
         print exlist

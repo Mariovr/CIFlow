@@ -120,7 +120,7 @@ class Plot_Files(object):
       filecol = fc.File_Collector(dirname , search , notsearch = notsearch ,filelist = filelist , sortfunction = sortfunction , rev =rev )
       self.readdata(filecol.plotfiles, regexp = regexp ,  substr = substr, filename = filename)
   
-    def generate_plot(self, xlimg = None , ylimg =None , exname = '' , prefix = True, titel = None ,name = 'energyplot', depcol = 0, ylist = None , save = True, color = ['', '','', '','','','','','','','','', '','', '' , '' , '' , '', '' , ''], exdir = './', samedir = False, datanum = 0, label = None):
+    def generate_plot(self, xlimg = None , ylimg =None , exname = '' , prefix = True, titel = None ,name = 'energyplot', depcol = 0, ylist = None , save = True, color = ['', '','', '','','','','','','','','', '','', '' , '' , '' , '', '' , ''], exdir = './', samedir = False, datanum = 0, label = None, sort = None):
       """
       Some nice plots to visualize the data with matplotlib.
       """
@@ -140,14 +140,14 @@ class Plot_Files(object):
               labeli = label[i]
           else:
               labeli = label
-          self.plotwrap(depcol, i, 'energy' , name =  exname, xlim = xlimg , ylim = ylimg , prefix = prefix ,save = False, label = labeli , color = color[i-1], datanum = datanum)
+          self.plotwrap(depcol, i, 'energy' , name =  exname, xlim = xlimg , ylim = ylimg , prefix = prefix ,save = False, label = labeli , color = color[i-1], datanum = datanum, sort = sort)
 
       self.layout(self.data[datanum].get_xlabel() , self.data[datanum].get_ylabel(), tit = titel, xlim = xlimg , ylim = ylimg )
       if save:
           self.savefig(name+exname,  prefix = prefix, exdir = exdir, samedir =  samedir)  
   
     def plotwrap(self, xindex, yindex, yas, name = None, titel = None ,color = 'r' , sort = '' , label = None , xlim = None , ylim = None , prefix = False,save = True, datanum = 0):
-      self.fig.axes[self.axnum].plot(self.data[datanum].data[:len(self.data[datanum].data[:,yindex]),xindex],self.data[datanum].data[:,yindex], color+sort , label = label)
+      self.fig.axes[self.axnum].plot(self.data[datanum].data[:len(self.data[datanum].data[:,yindex]),xindex],self.data[datanum].data[:,yindex], color, ls = sort , label = label)
       #self.fig.axes[self.axnum].scatter(self.data[datanum].data[:len(self.data[datanum].data[:-3,yindex]),xindex],self.data[datanum].data[:-3,yindex])
       if self.separated == True and save:
         self.layout(self.data[datanum].get_xlabel(), self.data[datanum].get_ylabel(), tit = titel, xlim = xlim , ylim = ylim)
@@ -163,6 +163,16 @@ class Plot_Files(object):
   
     def plot_line(self, xlist , ylist , axnum = 0 , style= None , color = None, label = None):
         self.fig.axes[axnum].plot(xlist , ylist , color = color , ls = style , label = label) 
+        leg = self.fig.axes[self.axnum].legend(loc = 0) #draws the legend on axes[axnum] all the plots that you labeled are now depicted in legend
+        frame  = leg.get_frame()  
+        frame.set_facecolor('1.')    # set the frame face color to light gray
+  
+        ##matplotlib.text.Text instances you can change all properties of labels
+        for t in leg.get_texts():
+          t.set_fontsize(25)    # the legend text fontsize
+         #matplotlib.lines.Line2D instances
+        for l in leg.get_lines():
+          l.set_linewidth(2)  # the legend line width
 
     def normalize_to_groundstate(self):
       print('Warning we normalize all the excited states to the groundstate energy')
@@ -212,13 +222,12 @@ class Plot_Files(object):
       for tick in self.fig.axes[self.axnum].yaxis.get_major_ticks():
         tick.label.set_fontsize(ticksize) 
     
-    
       self.fig.subplots_adjust(hspace=.5)
   
       #handles, labels  = self.fig.axes[self.axnum].get_legend_handles_labels()
       #reg = r'SEN(\d+)'
       #handles , labels = zip(*sorted(zip(handles , labels), key=lambda t: float(re.search( reg , t[1] ).group(1))    ))
-      #self.fig.axes[self.axnum].legend(legendhand, legendlab, loc = 0, fontsize = 25)
+      #leg = self.fig.axes[self.axnum].legend(handles, labels, loc = 0, fontsize = 25)
       leg = self.fig.axes[self.axnum].legend(loc = legendpos) #draws the legend on axes[axnum] all the plots that you labeled are now depicted in legend
   
       if axbg != None:
@@ -235,10 +244,10 @@ class Plot_Files(object):
   
         ##matplotlib.text.Text instances you can change all properties of labels
         for t in leg.get_texts():
-          t.set_fontsize(25)    # the legend text fontsize
+          t.set_fontsize(35)    # the legend text fontsize
          #matplotlib.lines.Line2D instances
         for l in leg.get_lines():
-          l.set_linewidth(2)  # the legend line width
+          l.set_linewidth(3)  # the legend line width
   
     def savefig(self , name , filenum = 0 , samedir = False , prefix = True, exdir = './', typ = 'pdf'):
       """
@@ -342,6 +351,8 @@ def main():
     fname = 'results/phdsenhierbut6-31g/phdsenhierbut6-31g_6-31g*.dat'
     fname = 'results/5bohrnoplusconstrainednatomdd/n_atom_e2.dat'
     fname = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/n_atom_e2.dat'
+    fname = './results/6bohrcisdnoplusconstrained/noconstrainedm2_.dat'
+    fname = './results/psioutput.datnoplusconstrainednatomddpsi4cisdt6-31g/noconstrainedm3_.dat'
     #fname = './results/phdsenbeh26-31gmminwfc1/wavefunctionanalysisfcihmmin.dat'
  
     plotter = Plot_Files(fname)
@@ -349,7 +360,7 @@ def main():
     #title = 'NO$^+$ infinte distance scan at $N_O= 6.8$ (STO-3G)'
     #title = 'CN$^-$  FCI (STO-3G)'
     #title = 'CO  FCI (STO-3G)'
-    title = 'H$_6$  FCI (6-31g*)'
+    #title = 'H$_6$  FCI (6-31g*)'
     title = 'N atom in (NO+)'
     #title = 'benzene  (6-31g)'
     #title = ''
@@ -374,17 +385,17 @@ def main():
     #plotter.data[0].units['x'] = r'(\AA)' #change the future y-axis label 
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3 ,5,6, 7], titel = title, name = 'plot' , exname = 'cienergiesn')
     ##ylim = ( -2.4 , -2.2) 
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'cienergiesne')
-    nlist = [(8,-53.350340026) , (7, -53.7190101625), (6,-53.263409) , (5,-52.1689555)]
-    olist = [(9,-73.661817), (8,-73.804150223) , (7, -53.44358397), (6,-72.12995502249) ]
-    title = 'interactie in (NO+)'
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist =[3], titel = title, name = 'plot' , exname = 'cienergiescore')
-    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [4], titel = title, name = 'plot' , exname = 'cienergiesnopluse')
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3], titel = None, name = 'plot' , exname = 'cienergiestoge')
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2], titel = None, name = 'plot' , exname = 'cienergiesalle')
-    plotter.adjust_data( lambda x : 14-x ,  0 )
-    title = 'O atom in (NO+)'
-    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'cienergiesoe')
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'cienergiesne')
+    #nlist = [(8,-53.350340026) , (7, -53.7190101625), (6,-53.263409) , (5,-52.1689555)]
+    #olist = [(9,-73.661817), (8,-73.804150223) , (7, -53.44358397), (6,-72.12995502249) ]
+    #title = 'interactie in (NO+)'
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist =[3], titel = title, name = 'plot' , exname = 'cienergiescore')
+    ##plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [4], titel = title, name = 'plot' , exname = 'cienergiesnopluse')
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2,3], titel = None, name = 'plot' , exname = 'cienergiestoge')
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1,2], titel = None, name = 'plot' , exname = 'cienergiesalle')
+    #plotter.adjust_data( lambda x : 14-x ,  0 )
+    #title = 'O atom in (NO+)'
+    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'cienergiesoe')
     #for i in range(len(plotter.data)):
     #    plotter.data[i].data[:, 1] =plotter.data[i].data[:, 1]   - plotter.data[i].data[:,2] #+ plotter.data[i].data[:,3]/2.
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [1], titel = title, name = 'plot' , exname = 'ciennpluscore')
@@ -394,15 +405,15 @@ def main():
     #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [4], titel = title, name = 'plot' , exname = ' population')
 
     #For plots in function of changed atomic population.
-    #plotter.data[0].depvar['xas'] = 'Mulliken  population on N'#change the future y-axis label 
-    #plotter.data[0].depvar['yas'] = 'Extremum lambda'#change the future y-axis label 
-    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambda')
-    #plotter.data[0].depvar['yas'] = 'Energy'#change the future y-axis label 
-    #plotter.data[0].units['y'] = r'(E$_h$)'
-    #plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergy')
-    #plotter.data[0].depvar['xas'] = 'Extremum lambda'#change the future y-axis label 
-    #plotter.data[0].units['x'] = r'(a.u.)'
-    #plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergy')
+    plotter.data[0].depvar['xas'] = 'Mulliken  population on N'#change the future y-axis label 
+    plotter.data[0].depvar['yas'] = 'Extremum lambda'#change the future y-axis label 
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambda')
+    plotter.data[0].depvar['yas'] = 'Energy'#change the future y-axis label 
+    plotter.data[0].units['y'] = r'(E$_h$)'
+    plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergy')
+    plotter.data[0].depvar['xas'] = 'Extremum lambda'#change the future y-axis label 
+    plotter.data[0].units['x'] = r'(a.u.)'
+    plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergy')
 
 
     ##For plots in function of changed atomic population.
@@ -441,9 +452,12 @@ def togethermulliken():
     fname2 =  'results/noconstraineddmkeepwfhamnoplussto-3gpatrick5.0new.outfci/noconstrainedm_.dat'
     fname6 =   'results/noconstrainded7borhpatrick.outfci/noconstrainedm_.dat'
     fname3 = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick10.0new.out/noconstrainedm_.dat'
+    #fname3 = 'results/10psioutput.datnoplusconstrainednatomddpsi4/noconstrainedm_.dat'
     fname4 = 'results/noconstraineddmhermextremainfinitedistance/noconstrainedm_.dat'
 
     filelist = [( fname1, '1.225 angstrom')  , (fname5 , '3 bohr' ) , (fname7 , '4 bohr' ),( fname2, '5 bohr'),( fname6 , '7 bohr'),( fname3, '10 bohr')  , (fname4, 'infinite distance')]
+    sort = ['-' , '--' , '-.' , ':' ,  '-', '--', '-.' , ':' , '-']
+    #marker = ['','','','','','','','','','','','','','']
 
     plotter = Plot_Files([tup[0] for tup in filelist])
     title = 'NO$^+$ dissociation limit'
@@ -455,7 +469,7 @@ def togethermulliken():
     plotter.data[len(plotter.data)-1].units['y'] = r'(a.u.)'
     saveflag = False
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambdatogether', save = saveflag, datanum = index, label = tup[1])
+        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = 'plot' , exname = 'mullikenlambdatogether', save = saveflag, datanum = index, label = tup[1], sort = sort[index])
         if index == len(filelist)-2:
             saveflag = True
 
@@ -463,14 +477,14 @@ def togethermulliken():
     plotter.data[len(plotter.data)-1].depvar['yas'] = 'Energy'#change the future y-axis label 
     plotter.data[len(plotter.data)-1].units['y'] = r'(E$_h$)'
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergytogether', save = saveflag, datanum = index, label = tup[1])
+        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'mullikenenergytogether', save = saveflag, datanum = index, label = tup[1], sort = sort[index])
         if index == len(filelist)-2:
             saveflag = True
 
     saveflag = False
     plotter.data[len(plotter.data)-1].depvar['xas'] = 'Lambda at extremum'#change the future y-axis label 
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergytogether', save = saveflag, datanum = index, label = tup[1])
+        plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'lambdaenergytogether', save = saveflag, datanum = index, label = tup[1], sort = sort[index])
         if index == len(filelist)-2:
             saveflag = True
 
@@ -482,12 +496,12 @@ def plot_togethermullikenmethods():
     #fname4 = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick10.0new.out/noconstrainedm_.dat'
 
     #fname0 =  'results/noconstraineddmkeepwfham_patrickhamnoplussto-3gpatrick50newoutdocioutput/noconstrainedm_.dat'
-    fname1 = 'results/noconstraineddmkeepwfhamhamnoplussto-3gpatrick5.0newDOCIsim0.datdocioutput/noconstrainedm_.dat'
-    fname2 = 'results/noconstraineddmkeepwfham_patrickhamnoplussto-3gpatrick50newoutcisdoutput/noconstrainedm_.dat'
-    fname3 = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick5.0new.outfci/noconstrainedm_.dat'
+    #fname1 = 'results/noconstraineddmkeepwfhamhamnoplussto-3gpatrick5.0newDOCIsim0.datdocioutput/noconstrainedm_.dat'
+    #fname2 = 'results/noconstraineddmkeepwfham_patrickhamnoplussto-3gpatrick50newoutcisdoutput/noconstrainedm_.dat'
+    #fname3 = 'results/noconstraineddmkeepwfhamnoplussto-3gpatrick5.0new.outfci/noconstrainedm_.dat'
 
     filelist = [ ( fname1, 'DOCI(OO)')  , (fname2 , 'CISD' ) , (fname3 , 'FCI' )]
-    togethermullikenmethods(filelist , title = "NO$^+$ methods comparison at 5 bohr")
+    togethermullikenmethods(filelist , title = "NO$^+$ methods comparison at 10 bohr")
 
 def plot_togetherenv4():
     fname1 = 'results/cnminhampsiham00400cnminorthonatfci/noconstrainedm_.dat'
@@ -516,7 +530,7 @@ def plot_togetherenv2():
     #togethermullikenmethods(filelist , title = ', '.join([ tup[1] for tup in filelist  ])     + " at 2 bohr", exname = 'nenv2comp')
     togethermullikenmethods(filelist , title = "", exname = 'nenv2comp')
 
-def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison', exname = ''):
+def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison', exname = '', sort = ['-' , '-.' , ':' , '-*' , '-o', '-' , '-.']):
     plotter = Plot_Files( [ tup[0] for tup in filelist ] )
     title = title
     xlim = None
@@ -526,12 +540,12 @@ def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison', exn
     plotter.data[len(plotter.data)-1].units['y'] = r'(a.u.)'
 
     #normalize
-    for dat in plotter.data:
-        dat.normalize(2)
+    #for dat in plotter.data:
+        #dat.normalize(2)
 
     saveflag = False
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = exname , exname = 'mullikenlambda', save = saveflag, datanum = index, label =tup[1])
+        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [3], titel = title, name = exname , exname = 'mullikenlambda', save = saveflag, datanum = index, label =tup[1] , sort = sort[index] )
         if index == len(filelist)-2:
             saveflag = True
 
@@ -540,14 +554,14 @@ def togethermullikenmethods( filelist , title = 'NO$^+$ methods comparison', exn
     plotter.data[len(plotter.data)-1].depvar['yas'] = 'Energy'#change the future y-axis label 
     plotter.data[len(plotter.data)-1].units['y'] = r'(E$_h$)'
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = exname , exname = 'mullikenenergy', save = saveflag, datanum = index, label = tup[1])
+        plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = exname , exname = 'mullikenenergy', save = saveflag, datanum = index, label = tup[1], sort = sort[index])
         if index == len(filelist)-2:
             saveflag = True
 
     saveflag = False
     plotter.data[len(plotter.data)-1].depvar['xas'] = 'Lambda at extremum'#change the future y-axis label 
     for index, tup in enumerate(filelist):
-        plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = exname , exname = 'lambdaenergy', save = saveflag, datanum = index, label = tup[1])
+        plotter.generate_plot(depcol = 3 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = exname , exname = 'lambdaenergy', save = saveflag, datanum = index, label = tup[1], sort = sort[index])
         if index == len(filelist)-2:
             saveflag = True
 
@@ -575,6 +589,7 @@ def shannon_scatter():
 def sen_hier_plot():
     #7,11,12 plot senhier beh2
     fname = './results/senhierfcifnocisdmminbeh26-31g/wavefunctionanalysisfcino.dat'
+    #fname = './results/beh2mmin/wavefunctionanalysisfcino.dat'
     plotter = Plot_Files(fname)
     plotter.data[0].depvar['yas'] = 'Partitions'#change the future y-axis label 
     plotter.data[0].depvar['xas'] = 'R'#change the future y-axis label 
@@ -582,14 +597,14 @@ def sen_hier_plot():
     plotter.data[0].units['y'] = r''
     #xlim = (0. , 10.)
     #ylim = (None , None)
-    xlim = None
+    xlim = (0.8 , 7.4)
     ylim = None
     title = ''
     seniorities = ['0','2','4']
-    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [1 ,5, 9 ], titel = 'seniority 0 determinants', name = '' , exname = 'seniorityhier0', exdir= '', prefix = True, color = ['r-.','','','','b--','','','','g','','','','','','',''])
-    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2 ,6, 10 ], titel = 'seniority 2  determinants', name = '' , exname = 'seniorityhier2', exdir= '', prefix = True , color = ['','r-.','','','','b--','','','','g','','','','','',''])
-    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [3 ,7, 11], titel = 'seniority 4 determinants', name = '' , exname = 'seniorityhier4', exdir= '', prefix = True , color = ['','','r-.','','','','b--','','','','g','','','','',''])
-    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [1,2, 3 ,5 ,6 ,7, 9, 10, 11], titel = '', name = '' , exname = 'seniorityallseniorities', exdir= '', prefix = True, color = ['r','g','b','','r--','g--','b--','','r-.','g-.','b-.','','','','',''])
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [1 ,5, 9 ,17], titel = 'seniority 0 determinants', name = '' , exname = 'seniorityhier0', exdir= '', prefix = True, color = ['r-.','','','','b--','','','','g','','','','','','','','k-*','',''])
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2 ,6, 10 ,18], titel = 'seniority 2  determinants', name = '' , exname = 'seniorityhier2', exdir= '', prefix = True , color = ['','r-.','','','','b--','','','','g','','','','','','','','k-*','','',''])
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [3 ,7, 11, 19], titel = 'seniority 4 determinants', name = '' , exname = 'seniorityhier4', exdir= '', prefix = True , color = ['','','r-.','','','','b--','','','','g','','','','','','','','k-*'])
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [1,2, 3 ,5 ,6 ,7, 9, 10, 11,17,18,19], titel = '', name = '' , exname = 'seniorityallseniorities', exdir= '', prefix = True, color = ['r','g','b','','r--','g--','b--','','r-.','g-.','b-.','','r-*','g-*','b-*','','r-*','g-*','b-*','','','','','','',''])
 
 def sen_hier_plot2():
     #7,11,12 plot senhier beh2
@@ -647,8 +662,27 @@ def sen_hier_plotco():
     plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2,  4,5,7 , 8,9] , titel = '', name = '' , exname = 'senhiermowithsen04', exdir= '', prefix = True, color = ['','g','g--','g--','b--','b-*','r','r-*', 'c-*', 'm'])
 
 
+def sen_hier_plotco2():
+    #7,11,12 plot senhier beh2
+    fname = './results/phdsenhierco2sto-3gg2/phdsenhiercootherbases_sto-3g.dat'
+    plotter = Plot_Files(fname)
+    plotter.data[0].depvar['yas'] = 'CI Energies'#change the future y-axis label 
+    plotter.data[0].depvar['xas'] = 'R'#change the future y-axis label 
+    plotter.data[0].units['x'] = r'(a.u.)'
+    plotter.data[0].units['y'] = r'(E$_h$)'
+    #xlim = (0. , 10.)
+    #ylim = (None , None)
+    #xlim = (0. , 6.)
+    xlim = (None , None)
+    ylim = (-112 , -110)
+    title = ''
+    #seniorities = ['0','2','4']
+    #plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2, 3 , 4,5,6,7 , 8, 9 ] , titel = '', name = '' , exname = 'senhiermo', exdir= '', prefix = True, color = ['','g','g--','b','b--','b-*','r','k', 'c-*', 'm'])
+    plotter.generate_plot(xlimg = xlim, ylimg = ylim, ylist = [2,3,  4,5,6, 7 , 8,9] , titel = '', name = '' , exname = 'senhiermowithsen04', exdir= '', prefix = True, color = ['','g','g--','g--','b--','b-*','r','r-*', 'c-*', 'm'])
+
 def plot_constrained_atom():
     fname = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/n_atom_e2ghost5.dat'
+    fname = './results/6bohrpsi6psioutputdatfciconstrained6bohr/output_files/n_atom_e2ghost5.dat'
     #fname = './results/5bohrnoplusconstrainednatomdd/output_files/n_atom_e2ghost4.dat'
     #fname = './results/6bohrnoplusconstrainednatomdd/output_files/n_atom_e2ghost4.dat'
     plotter = Plot_Files(fname)
@@ -680,12 +714,18 @@ def plot_constrained_atom():
 
 def plot_constrained_atom_tog():
     fname1 = './results/eqbohrnopluseqpsioutputdatfciconstrainedeqbohr/output_files/n_atom_e2ghost5.dat'
+    fname15 = './results/3bohrpsi3psioutputdatfciconstrained3bohr/output_files/n_atom_e2ghost5.dat'
     fname2 = './results/4bohrnoplus4psioutputdatfciconstrained4bohr/output_files/n_atom_e2ghost5.dat'
     #fname1 = './results/eqbohrnoplusconstrainednatomddpsieq/output_files/n_atom_e2ghost5.dat'
     #fname2 = './results/4bohrnoplusconstrainednatomddpsi4/output_files/n_atom_e2ghost6.dat'
     fname3 = './results/5bohrnoplusconstrainednatomddmostartplusdiisoffpsi/output_files/n_atom_e2ghost5.dat'
+    fname4 = './results/6bohrpsi6psioutputdatfciconstrained6bohr/output_files/n_atom_e2ghost5.dat'
+    fname5 = './results/7psioutput.datnoplusconstrainednatomddpsi4/output_files/n_atom_e2ghost5.dat'
+    fname6 = './results/8psioutput.datnoplusconstrainednatomddpsi4/output_files/n_atom_e2ghost5.dat'
+    fname7 = './results/10psioutput.datnoplusconstrainednatomddpsi4/output_files/n_atom_e2ghost5.dat'
 
-    filelist = [ ( fname1, r'eq'), (fname2 , r'4 bohr')  , (fname3 , r'5 bohr' ) ]
+    #filelist = [ ( fname1, r'eq'), (fname15 , '3 bohr') ,(fname2 , r'4 bohr')  , (fname3 , r'5 bohr' ), (fname4 , r'6 bohr' ), (fname5 , '7 bohr'), (fname6 , '8 bohr'), (fname7 , '10 bohr') ]
+    filelist = [ ( fname1, r'eq'), (fname15 , '3 bohr') ,(fname2 , r'4 bohr')  , (fname3 , r'5 bohr' ),   (fname6 , '8 bohr')]
     #filelist = [ ( fname1, r'eq')  , (fname3 , r'5 bohr' ) ]
     plotter = Plot_Files( [ tup[0] for tup in filelist ] )
 
@@ -718,7 +758,7 @@ def plot_constrained_atom_tog():
     plotter.adjust_data( lambda x : 14-x ,  0 )
     for index, tup in enumerate(filelist):
         plotter.generate_plot(depcol = 0 , xlimg = xlim, ylimg = ylim, ylist = [2], titel = title, name = 'plot' , exname = 'cienergiesoeghost5tog', save =False, datanum = index, label =tup[1])
-    plotter.plot_line( zip(*olist)[0], zip(*olist)[1], color ='k' , style = '--' , label = r'$\infty$')
+    plotter.plot_line( zip(*olist)[0], zip(*olist)[1], color ='k' , style = '--' , label = r'\infty')
     plotter.savefig('cienergiesoeghost5tog', prefix = True , typ = '.pdf')
 
 
@@ -728,13 +768,14 @@ if __name__ == '__main__':
     #sen_hier_plot2()
     #sen_hier_ploth6()
     #sen_hier_plotco()
+    #sen_hier_plotco2()
     #plot_togetherenv2()
     #plot_togetherenv3()
     #plot_togetherenv4()
     #makemovie()
     #shannon_scatter()
-    #togethermulliken()
+    togethermulliken()
     #togethermullikenmethods()
     #plot_togethermullikenmethods()
     #plot_constrained_atom()
-    plot_constrained_atom_tog()
+    #plot_constrained_atom_tog()

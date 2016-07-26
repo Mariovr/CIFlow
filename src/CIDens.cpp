@@ -1093,6 +1093,75 @@ void DensDOCI::construct_CI_one_dens(unsigned int start , unsigned int end, vala
     } 
 }
 
+#include <unordered_map>
+//void DensDOCI::construct_CI_two_dens(unsigned int start , unsigned int end, vector<Vector2d > & twordm ) 
+//{
+//    Permutator_Bit my_perm(dim());
+//    TYPE upset = my_perm.get_start_int(_cim->gNup());
+//    TYPE up1= my_perm.get_start_int(_cim->gNup());
+//
+//    std::unordered_map<TYPE , unsigned int >  map; 
+//    for(auto idx_begin=0;idx_begin< _cim->get_dim() ;idx_begin++)
+//    {
+//        map[upset] = idx_begin;
+//        if(idx_begin == start)
+//            up1 = upset;
+//        //std::cout << "index: " << upset << " value of map : " << map[upset] << endl;
+//        upset = my_perm.permutate_bit(upset);
+//    }
+//
+//    for (long i = start; i < end ; i++) 
+//    {
+//        double contr = _cim->get_eigvec(i,_state) * _cim->get_eigvec(i,_state);
+//        for (int j = 0; j < dim() ; j++) //Loop over the L spatial orbitals.
+//        {
+//            // first test the string with itself.
+//            TYPE shiftbit = 1;
+//            if(up1 & ( shiftbit << j))
+//            {
+//                for (int k = j; k < dim(); k++) 
+//                {
+//                    if(up1 & ( shiftbit << k))
+//                    {
+//                        if (j != k) 
+//                        {
+//                            add_two_rdm(0,j,k,j,k , contr,twordm) ;
+//                            //add_two_rdm(0,j,k,k,j, -1.*contr);
+//
+//                            add_two_rdm(2,j,k,j,k, contr,twordm) ;
+//                            //add_two_rdm(2,j,k,k,j, -1.* contr) ;
+//
+//                            add_two_rdm(1,k,j,k,j, contr,twordm);
+//                        }
+//                        add_two_rdm(1,j,k,j,k, contr,twordm);
+//                    }
+//                }
+//
+//                // Then test all the single excitations you can think off.
+//                TYPE up_interm = up1 ^ (shiftbit << j);
+//                for (int k = j + 1; k < dim() ; k++) 
+//                {
+//                    if(up1 & ( shiftbit << k))
+//                    {
+//                        continue;
+//                    } 
+//                    else 
+//                    {
+//                        TYPE up2 = up_interm ^ (shiftbit << k);
+//                        unsigned int index = map[up2];
+//                        double contr2 = _cim->get_eigvec(i,_state) * _cim->get_eigvec(index,_state);
+//                        add_two_rdm(1,j,j,k,k, contr2,twordm);
+//                        //add_two_rdm(1,k,k,j,j, contr2, twordm); //Contribution of transposed.
+//                    } 
+//                }
+//            }//End jth orbital is occupied in current determinant.
+//        }
+//        up1 = my_perm.permutate_bit(up1);
+//    }//End for determinants
+//}
+     
+
+
 void DensDOCI::construct_CI_two_dens(unsigned int start , unsigned int end, vector<Vector2d > & twordm ) 
 {
     vector< vector<int> > vw  ( dim() +1,  vector<int> ( _cim->gNup() + 1 , 0));

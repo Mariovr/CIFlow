@@ -562,19 +562,23 @@ class PsiReader(Reader):
             self.ints['mo2index'][num][2] += total[i,j]
             num +=1
 
+    def get_mulliken(self, rdm, orblist):
+        overlap = self.overlap[0]
+        part = np.dot(overlap, rdm[0] )
+        som = 0
+        for orb in orblist:
+            som += part[orb,orb]
+        som *= 2 #take into account beta orbitals
+        return som
+
     def calc_energy(self , rdm1 , rdm2, orblist = [], nucrepbool = True, startrdm = 0, mul_check = True):
         #remark integrals are written in chemical notation, and rdms are in physical notation.
         if orblist == []:
             orblist = range(0, self.values['norb'])
 
         if mul_check:
-            overlap = self.overlap[0]
-            print overlap , rdm1[0]
-            part = np.dot(overlap, rdm1[0] )
-            som = 0
-            for orb in orblist:
-                som += part[orb,orb]
-            print 'Mulliken charge or orblist: ' , orblist , ' is equal to : ' , 2*som
+            mul = self.get_mulliken(rdm1, orblist)
+            print 'Mulliken charge or orblist: ' , orblist , ' is equal to : ' , mul
 
         nucrep = 0 
         if nucrepbool == True:
@@ -628,13 +632,8 @@ class PsiReader(Reader):
             orblist = range(0, self.values['norb'])
 
         if mul_check:
-            overlap = self.overlap[0]
-            print overlap , rdm1[0]
-            part = np.dot(overlap, rdm1[0] )
-            som = 0
-            for orb in orblist:
-                som += part[orb,orb]
-            print 'Mulliken charge or orblist: ' , orblist , ' is equal to : ' , 2*som
+            mul = self.get_mulliken(rdm1, orblist)
+            print 'Mulliken charge or orblist: ' , orblist , ' is equal to : ' , mul
 
         nucrep = 0 
         if nucrepbool == True:
